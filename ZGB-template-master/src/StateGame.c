@@ -4,9 +4,6 @@
 #include "Scroll.h"
 #include "SpriteManager.h"
 
-
-uint8_t currentJoypad = 0;
-
 IMPORT_MAP(map);
 
 void START() {

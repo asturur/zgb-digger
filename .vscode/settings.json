@@ -3,6 +3,8 @@
         "mapinfo.h": "c",
         "main.h": "c",
         "setautobank.h": "c",
-        "keys.h": "c"
+        "keys.h": "c",
+        "spritemanager.h": "c",
+        "zgbmain.h": "c"
     }
 }
