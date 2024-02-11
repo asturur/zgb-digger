@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "mapinfo.h": "c",
+        "main.h": "c",
+        "setautobank.h": "c",
+        "keys.h": "c"
+    }
+}
