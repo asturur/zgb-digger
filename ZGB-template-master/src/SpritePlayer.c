@@ -6,7 +6,7 @@ const UBYTE anim_walk_right[] = {4, 0, 1, 2, 1};
 const UBYTE anim_walk_left[] = {4, 9, 10, 11, 10};
 const UBYTE anim_walk_up[] = {4, 6, 7, 8, 7};
 const UBYTE anim_walk_down[] = {4, 3, 4, 5, 4};
-uint8_t direction;
+UBYTE direction;
 UBYTE column;
 UBYTE row;
 
@@ -50,14 +50,16 @@ void updateForDown() {
     }
 }
 
-void updateMap() {
+void updateMap(BOOLEAN changeDirection) {
     // position of digger is the TOP LEFT first pixel of the sprite.
     // this check runs AFTER the digger has moved
     UBYTE modRight = THIS->x % 8;
+    UBYTE modDown = THIS->y % 8;
     UBYTE nextColumn = (THIS->x - modRight) / 8;
-    UBYTE nextRow = (THIS->y - (THIS->y % 8)) / 8;
-    UBYTE tile, tileNext, targetColumn;
-    if (nextColumn != column || nextRow != row) {
+    UBYTE nextRow = (THIS->y - modDown) / 8;
+    UBYTE tile, tileNext, target;
+    // TODO optimization: can i run this if only when necessary?
+    // if (nextColumn != column || nextRow != row || changeDirection) {
         column = nextColumn;
         row = nextRow;
         switch(direction) {
@@ -72,15 +74,14 @@ void updateMap() {
                 }
                 break;
             case J_DOWN:
-                tile = get_bkg_tile_xy(column, row + 1);
-                tileNext = get_bkg_tile_xy(column, row + 2);
+                target = row + (modDown ? 2 : 1);
+                tile = get_bkg_tile_xy(column, target);
+                tileNext = get_bkg_tile_xy(column + 1, target);
                 if (tile != 0) {
-                    set_bkg_tile_xy(column, row + 1, 0);
-                    set_bkg_tile_xy(column + 1, row + 1, 0);
+                    set_bkg_tile_xy(column, target, 0);
                 }
                 if (tileNext != 0) {
-                    set_bkg_tile_xy(column, row + 2, 0);
-                    set_bkg_tile_xy(column + 1, row + 2, 0);
+                    set_bkg_tile_xy(column + 1, target, 0);
                 }
                 break;
             case J_LEFT:
@@ -95,22 +96,23 @@ void updateMap() {
                 }
                 break;
             case J_RIGHT:
-                targetColumn = column + (modRight ? 2 : 1);
-                tile = get_bkg_tile_xy(targetColumn, row);
-                tileNext = get_bkg_tile_xy(targetColumn, row + 1);
+                target = column + (modRight ? 2 : 1);
+                tile = get_bkg_tile_xy(target, row);
+                tileNext = get_bkg_tile_xy(target, row + 1);
                 if (tile != 0) {
-                    set_bkg_tile_xy(targetColumn, row, 0);
+                    set_bkg_tile_xy(target, row, 0);
                 }
                 if (tileNext != 0) {
-                    set_bkg_tile_xy(targetColumn, row + 1, 0);
+                    set_bkg_tile_xy(target, row + 1, 0);
                 }
                 break;
         }
-    }
+    // }
 }
 
 void UPDATE() {
     BOOLEAN moving = FALSE;
+    BOOLEAN changeDirection = FALSE;
     if (KEY_PRESSED(J_UP)) {
         moving = TRUE;
         if (isColumnDisaligned() && THIS->y > 24) {
@@ -120,6 +122,7 @@ void UPDATE() {
                 direction = J_LEFT;
             }
         } else {
+            changeDirection = direction != J_UP;
             direction = J_UP;
         }
 	} 
@@ -132,6 +135,7 @@ void UPDATE() {
                 direction = J_LEFT;
             }
         } else {
+            changeDirection = direction != J_DOWN;
             direction = J_DOWN;
         }
 	}
@@ -144,6 +148,7 @@ void UPDATE() {
                 direction = J_DOWN;
             }
         } else {
+            changeDirection = direction != J_LEFT;
             direction = J_LEFT;
         }
 	}
@@ -156,6 +161,7 @@ void UPDATE() {
                 direction = J_DOWN;
             }
         } else {
+            changeDirection = direction != J_RIGHT;
             direction = J_RIGHT;
         }
 	}
@@ -174,7 +180,7 @@ void UPDATE() {
                 updateForRight();
                 break;
         }
-        updateMap();
+        updateMap(changeDirection);
     }
     
     
