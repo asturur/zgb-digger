@@ -7,9 +7,10 @@
 IMPORT_MAP(map);
 
 void START() {
-	scroll_target = SpriteManagerAdd(SpritePlayer, 50, 50);
+	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 168);
 	InitScroll(BANK(map), &map, 0, 0);
 }
 
 void UPDATE() {
+	
 }

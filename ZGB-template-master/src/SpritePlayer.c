@@ -2,21 +2,23 @@
 #include "Keys.h"
 #include "SpriteManager.h"
 
-const UINT8 anim_walk_right[] = {4, 0, 1, 2, 1};
-const UINT8 anim_walk_left[] = {4, 9, 10, 11, 10};
-const UINT8 anim_walk_up[] = {4, 6, 7, 8, 7};
-const UINT8 anim_walk_down[] = {4, 3, 4, 5, 4};
+const UBYTE anim_walk_right[] = {4, 0, 1, 2, 1};
+const UBYTE anim_walk_left[] = {4, 9, 10, 11, 10};
+const UBYTE anim_walk_up[] = {4, 6, 7, 8, 7};
+const UBYTE anim_walk_down[] = {4, 3, 4, 5, 4};
 uint8_t direction;
+UBYTE column;
+UBYTE row;
 
 void START() {
     direction = J_RIGHT;
 }
 
-UINT8 isColumnDisaligned () {
+BOOLEAN isColumnDisaligned () {
     return (THIS->x - 8) % 16;
 }
 
-UINT8 isRowDisaligned () {
+BOOLEAN isRowDisaligned () {
     return (THIS->y - 8) % 16;
 }
 
@@ -48,66 +50,131 @@ void updateForDown() {
     }
 }
 
+void updateMap() {
+    // position of digger is the TOP LEFT first pixel of the sprite.
+    // this check runs AFTER the digger has moved
+    UBYTE nextColumn = (THIS->x - (THIS->x % 8)) / 8;
+    UBYTE nextRow = (THIS->y - (THIS->y % 8)) / 8;
+    uint8_t tile, tileNext;
+    if (nextColumn != column || nextRow != row) {
+        column = nextColumn;
+        row = nextRow;
+        switch(direction) {
+            case J_UP:
+                tile = get_bkg_tile_xy(column, row);
+                tileNext = get_bkg_tile_xy(column + 1, row);
+                if (tile != 0) {
+                    set_bkg_tile_xy(column, row, 0);
+                }
+                if (tileNext != 0) {
+                    set_bkg_tile_xy(column + 1, row, 0);
+                }
+                break;
+            case J_DOWN:
+                tile = get_bkg_tile_xy(column, row + 1);
+                tileNext = get_bkg_tile_xy(column, row + 2);
+                if (tile != 0) {
+                    set_bkg_tile_xy(column, row + 1, 0);
+                    set_bkg_tile_xy(column + 1, row + 1, 0);
+                }
+                if (tileNext != 0) {
+                    set_bkg_tile_xy(column, row + 2, 0);
+                    set_bkg_tile_xy(column + 1, row + 2, 0);
+                }
+                break;
+            case J_LEFT:
+                // left is a good case, first pixel we cross we can clean up
+                tile = get_bkg_tile_xy(column, row);
+                tileNext = get_bkg_tile_xy(column, row + 1);
+                if (tile != 0) {
+                    set_bkg_tile_xy(column, row, 0);
+                }
+                if (tileNext != 0) {
+                    set_bkg_tile_xy(column, row + 1, 0);
+                }
+                break;
+            case J_RIGHT:
+                tile = get_bkg_tile_xy(column + 1, row);
+                tileNext = get_bkg_tile_xy(column + 2, row);
+                if (tile != 0) {
+                    set_bkg_tile_xy(column + 1, row, 0);
+                    set_bkg_tile_xy(column + 1, row + 1, 0);
+                }
+                if (tileNext != 0) {
+                    set_bkg_tile_xy(column + 2, row, 0);
+                    set_bkg_tile_xy(column + 2, row + 1, 0);
+                }
+                break;
+        }
+    }
+}
+
 void UPDATE() {
-    uint8_t finalDirection = 0;
+    BOOLEAN moving = FALSE;
     if (KEY_PRESSED(J_UP)) {
+        moving = TRUE;
         if (isColumnDisaligned() && THIS->y > 24) {
             if (direction == J_RIGHT) {
-                finalDirection = J_RIGHT;
+                direction = J_RIGHT;
             } else {
-                finalDirection = J_LEFT;
+                direction = J_LEFT;
             }
         } else {
-            finalDirection = J_UP;
+            direction = J_UP;
         }
 	} 
 	if(KEY_PRESSED(J_DOWN)) {
+        moving = TRUE;
         if (isColumnDisaligned() && THIS->y < 168) {
             if (direction == J_RIGHT) {
-                finalDirection = J_RIGHT;
+                direction = J_RIGHT;
             } else {
-                finalDirection = J_LEFT;
+                direction = J_LEFT;
             }
         } else {
-            finalDirection = J_DOWN;
+            direction = J_DOWN;
         }
 	}
 	if(KEY_PRESSED(J_LEFT)) {
+        moving = TRUE;
         if (isRowDisaligned() && THIS->x > 8) {
             if (direction == J_UP) {
-                finalDirection = J_UP;
+                direction = J_UP;
             } else {
-                finalDirection = J_DOWN;
+                direction = J_DOWN;
             }
         } else {
-            finalDirection = J_LEFT;
+            direction = J_LEFT;
         }
 	}
 	if(KEY_PRESSED(J_RIGHT)) {
+        moving = TRUE;
         if (isRowDisaligned() && THIS->x < 232) {
             if (direction == J_UP) {
-                finalDirection = J_UP;
+                direction = J_UP;
             } else {
-                finalDirection = J_DOWN;
+                direction = J_DOWN;
             }
         } else {
-            finalDirection = J_RIGHT;
+            direction = J_RIGHT;
         }
 	}
-    direction = finalDirection;
-    switch (finalDirection) {
-        case J_UP:
-            updateForUp();
-            break;
-        case J_DOWN:
-            updateForDown();
-            break;
-        case J_LEFT:
-            updateForLeft();
-            break;
-        case J_RIGHT:
-            updateForRight();
-            break;
+    if (moving) {
+        switch (direction) {
+            case J_UP:
+                updateForUp();
+                break;
+            case J_DOWN:
+                updateForDown();
+                break;
+            case J_LEFT:
+                updateForLeft();
+                break;
+            case J_RIGHT:
+                updateForRight();
+                break;
+        }
+        updateMap();
     }
     
     
