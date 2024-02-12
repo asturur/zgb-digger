@@ -53,9 +53,10 @@ void updateForDown() {
 void updateMap() {
     // position of digger is the TOP LEFT first pixel of the sprite.
     // this check runs AFTER the digger has moved
-    UBYTE nextColumn = (THIS->x - (THIS->x % 8)) / 8;
+    UBYTE modRight = THIS->x % 8;
+    UBYTE nextColumn = (THIS->x - modRight) / 8;
     UBYTE nextRow = (THIS->y - (THIS->y % 8)) / 8;
-    uint8_t tile, tileNext;
+    UBYTE tile, tileNext, targetColumn;
     if (nextColumn != column || nextRow != row) {
         column = nextColumn;
         row = nextRow;
@@ -94,15 +95,14 @@ void updateMap() {
                 }
                 break;
             case J_RIGHT:
-                tile = get_bkg_tile_xy(column + 1, row);
-                tileNext = get_bkg_tile_xy(column + 2, row);
+                targetColumn = column + (modRight ? 2 : 1);
+                tile = get_bkg_tile_xy(targetColumn, row);
+                tileNext = get_bkg_tile_xy(targetColumn, row + 1);
                 if (tile != 0) {
-                    set_bkg_tile_xy(column + 1, row, 0);
-                    set_bkg_tile_xy(column + 1, row + 1, 0);
+                    set_bkg_tile_xy(targetColumn, row, 0);
                 }
                 if (tileNext != 0) {
-                    set_bkg_tile_xy(column + 2, row, 0);
-                    set_bkg_tile_xy(column + 2, row + 1, 0);
+                    set_bkg_tile_xy(targetColumn, row + 1, 0);
                 }
                 break;
         }
