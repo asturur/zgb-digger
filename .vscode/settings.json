@@ -5,6 +5,7 @@
         "setautobank.h": "c",
         "keys.h": "c",
         "spritemanager.h": "c",
-        "zgbmain.h": "c"
+        "zgbmain.h": "c",
+        "zgbmain_init.h": "c"
     }
 }
