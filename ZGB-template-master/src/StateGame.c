@@ -6,12 +6,13 @@
 #include "MapInfo.h"
 #include <gb/gb.h> 
 #include <string.h>
+#include <Sound.h>
+
 extern const UBYTE direction;
 
 UBYTE currentLevel = 0;
 UDWORD score = 0;
 UBYTE diamonds = 0;
-BOOLEAN changeLevel = FALSE;
 // map descriptors
 // 0 grass
 // 1-15 walkable tunnel 5 is a V, 10 is H, 
@@ -59,23 +60,24 @@ void copyMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKE
 	SWITCH_ROM(levelToLoadBank);
 	// copy everything
 	currentInMemoryLevel = *levelToLoad;
+	// now copy the actual map data inside the array
+	memcpy(tileMap, levelToLoad->data, currentInMemoryLevel.width * currentInMemoryLevel.height);
 	// redefine the pointer to my in memory array
 	currentInMemoryLevel.data = tileMap;
-	// now copy the actual map data inside the array
-	memcpy(&tileMap, levelToLoad->data, currentInMemoryLevel.width * currentInMemoryLevel.height);
 	// if (levelToLoad->attributes) memcpy(map_attr, levelToLoad->attributes, current_level.width * current_level.height); else memset(map_attr, 0, sizeof(map_attr));
 	SWITCH_ROM(__save);
 }
 
 
 void runMapSideEffects() {
-	const UBYTE column = (scroll_target->x - (scroll_target->x % 16) - 8) / 16;
-	const UBYTE row = (scroll_target->y - (scroll_target->y % 16) - 24) / 16;
+	const UBYTE column = (scroll_target->x - ((scroll_target->x - 8) % 16) - 8) / 16;
+	const UBYTE row = (scroll_target->y - ((scroll_target->y - 24) % 16) - 24) / 16;
 	const UBYTE currentCell = row * 15 + column;
 	const UBYTE currentMapValue = map[currentCell];
 
 	// we eat a gem
 	if (currentMapValue == 16) {
+		PlayFx(CHANNEL_1, 10, 0x4f, 0xc7, 0xf3, 0x73, 0x86);
 		score += 50;
 		diamonds--;
 		if (direction == J_RIGHT) {
@@ -122,16 +124,22 @@ void loadLevel(UBYTE level) {
 			InitScroll(BANK(level1), &currentInMemoryLevel, 0, 0);
 			diamonds = 30;
 		break;
-		// case 2: 
-		// 	IMPORT_MAP(level2);
-		// 	InitScroll(BANK(level2), &level2, 0, 0);
-		// 	diamonds = 30;
-		// break;
+		case 2: 
+			IMPORT_MAP(level2);
+			copyMapToRam(BANK(level2), &level2);
+			InitScroll(BANK(level2), &currentInMemoryLevel, 0, 0);
+			diamonds = 30;
+		break;
 	}
 }
 
 void START() {
+	NR52_REG = 0x80; //Enables sound, you should always setup this first
+	NR51_REG = 0xFF; //Enables all channels (left and right)
+	NR50_REG = 0x77; //Max volume
+	// add first the spriteManager only then load the level
 	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 168);
+	loadLevel(1);
 }
 
 void UPDATE() {
@@ -139,5 +147,4 @@ void UPDATE() {
 		currentLevel++;
 		loadLevel(currentLevel);
 	}
-	runMapSideEffects();
 }

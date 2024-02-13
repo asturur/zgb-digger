@@ -3,6 +3,7 @@
 #include "SpriteManager.h"
 
 extern unsigned char tileMap[768];
+extern void runMapSideEffects();
 
 const UBYTE anim_walk_right[] = {4, 0, 1, 2, 1};
 const UBYTE anim_walk_left[] = {4, 9, 10, 11, 10};
@@ -70,9 +71,11 @@ void updateMapTiles() {
                 tileNext = get_bkg_tile_xy(column + 1, row);
                 if (tile != 0) {
                     set_bkg_tile_xy(column, row, 0);
+                    tileMap[row * 32 + column] = 0;
                 }
                 if (tileNext != 0) {
                     set_bkg_tile_xy(column + 1, row, 0);
+                    tileMap[row * 32 + column + 1] = 0;
                 }
                 break;
             case J_DOWN:
@@ -81,9 +84,11 @@ void updateMapTiles() {
                 tileNext = get_bkg_tile_xy(column + 1, target);
                 if (tile != 0) {
                     set_bkg_tile_xy(column, target, 0);
+                    tileMap[target * 32 + column] = 0;
                 }
                 if (tileNext != 0) {
                     set_bkg_tile_xy(column + 1, target, 0);
+                    tileMap[target * 32 + column + 1] = 0;
                 }
                 break;
             case J_LEFT:
@@ -92,9 +97,11 @@ void updateMapTiles() {
                 tileNext = get_bkg_tile_xy(column, row + 1);
                 if (tile != 0) {
                     set_bkg_tile_xy(column, row, 0);
+                    tileMap[row * 32 + column] = 0;
                 }
                 if (tileNext != 0) {
                     set_bkg_tile_xy(column, row + 1, 0);
+                    tileMap[(row + 1) * 32 + column] = 0;
                 }
                 break;
             case J_RIGHT:
@@ -185,6 +192,7 @@ void UPDATE() {
                 break;
         }
         updateMapTiles();
+        runMapSideEffects();
     }
     
     
