@@ -30,17 +30,41 @@ UBYTE map[] = {
    16, 16,  0,  0,  3, 10, 10, 10, 10, 10,  9,  0,  0, 16, 16, // "CC  HHHHHHH  CC",
 };
 
-unsigned char tileMap[768];
+
+/*
+uint8_t map_buffer[MAX_WIDTH * MAX_HEIGHT]; // tile map in RAM 2KB
+uint8_t map_attr[MAX_WIDTH * MAX_HEIGHT];   // tile attributes in RAM 2KB
+
+void copyMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
+    uint8_t __save = CURRENT_BANK;
+    SWITCH_ROM(levelToLoadBank);
+    // copy everything
+    current_level = *levelToLoad;
+    current_level.data = map_buffer;
+    current_level.attributes = map_attr;    
+    // now copy the actual map data inside the array
+    memcpy(map_buffer, levelToLoad->data, current_level.width * current_level.height);
+    if (levelToLoad->attributes) memcpy(map_attr, levelToLoad->attributes, current_level.width * current_level.height); else memset(map_attr, 0, sizeof(map_attr));
+    // restore bank
+    SWITCH_ROM(__save);
+}
+
+*/
 
 struct MapInfo currentInMemoryLevel;
+unsigned char tileMap[768];
 
-void copyMapToRam(struct MapInfo *levelToLoad) {
+void copyMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
+	uint8_t __save = CURRENT_BANK;
+	SWITCH_ROM(levelToLoadBank);
 	// copy everything
-	memcpy(&currentInMemoryLevel, levelToLoad, sizeof(currentInMemoryLevel));
+	currentInMemoryLevel = *levelToLoad;
 	// redefine the pointer to my in memory array
-	currentInMemoryLevel.data = &tileMap[0];
+	currentInMemoryLevel.data = tileMap;
 	// now copy the actual map data inside the array
-	memcpy(&tileMap, (*levelToLoad).data, 768);
+	memcpy(&tileMap, levelToLoad->data, currentInMemoryLevel.width * currentInMemoryLevel.height);
+	// if (levelToLoad->attributes) memcpy(map_attr, levelToLoad->attributes, current_level.width * current_level.height); else memset(map_attr, 0, sizeof(map_attr));
+	SWITCH_ROM(__save);
 }
 
 
@@ -66,10 +90,8 @@ void runMapSideEffects() {
 		if (direction == J_DOWN) {
 			map[currentCell] = 1;
 		}
-	}
-
+	} else if (currentMapValue <= 15) {
 	// we modify a tunnel flagging the bit of the walkable direction
-	if (currentMapValue <= 15) {
 		if (direction == J_RIGHT) {
 			map[currentCell] &= 8;
 		}
@@ -96,7 +118,7 @@ void loadLevel(UBYTE level) {
 	switch (level) {
 		case 1:
 			IMPORT_MAP(level1);
-			copyMapToRam(&level1);
+			copyMapToRam(BANK(level1), &level1);
 			InitScroll(BANK(level1), &currentInMemoryLevel, 0, 0);
 			diamonds = 30;
 		break;
