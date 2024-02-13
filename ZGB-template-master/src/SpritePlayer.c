@@ -50,7 +50,7 @@ void updateForDown() {
     }
 }
 
-void updateMap(BOOLEAN changeDirection) {
+void updateMapTiles() {
     // position of digger is the TOP LEFT first pixel of the sprite.
     // this check runs AFTER the digger has moved
     UBYTE modRight = THIS->x % 8;
@@ -180,7 +180,7 @@ void UPDATE() {
                 updateForRight();
                 break;
         }
-        updateMap(changeDirection);
+        updateMapTiles();
     }
     
     

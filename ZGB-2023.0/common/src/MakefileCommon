@@ -204,7 +204,7 @@ $(OBJDIR)/zgb/%.o: $(ZGB_PATH_UNIX)/src/%.c
 $(OBJDIR_ZGB)/zgb.lib: $(OBJDIR_ZGB) $(OBJS_ZGB) 
 	@echo creating zgb.lib
 	@rm -f $(OBJDIR_ZGB)/zgb.lib
-	@echo -e "$(OBJS_ZGB_LIB)" >> $(OBJDIR_ZGB)/zgb.lib
+	@echo "$(OBJS_ZGB_LIB)" >> $(OBJDIR_ZGB)/zgb.lib
 
 #Project files------------------------------------
 $(OBJDIR)/%.o: %.s

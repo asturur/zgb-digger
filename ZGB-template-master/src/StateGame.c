@@ -4,7 +4,7 @@
 #include "Scroll.h"
 #include "SpriteManager.h"
 
-
+extern const UBYTE direction;
 
 UBYTE currentLevel = 0;
 UDWORD score = 0;
@@ -16,21 +16,61 @@ BOOLEAN changeLevel = FALSE;
 // 16 diamond
 // 17 bag
 UBYTE map[] = {
-	4,  0, 0,  0, 17, 0,  0,  0,  0,  0, 14, 10, 10, 10,  8, // "S   B     HHHHS", 
-    5,  0, 0, 16, 16, 0,  0, 16,  0,  0,  5,  0, 17,  0,  0, // "V  CC  C  V B  "
-	5, 17, 0, 16, 16, 0,  0, 16,  0,  0,  5,  0,  0,  0,  0, // "VB CC  C  V    ",
-    5,  0, 0, 16, 16, 17, 0, 16, 17,  0,  5,  0, 16, 16, 16, // "V  CCB CB V CCC",
-    5,  0, 0, 16, 16,  0, 0, 16,  0,  0,  5,  0, 16, 16, 16, // "V  CC  C  V CCC",
-	3, 10, 0, 16, 16,  0, 0, 16,  0,  0,  5,  0, 16, 16, 16, // "HH CC  C  V CCC",
+	4,  0,  0,  0, 17,  0,  0,  0,  0,  0, 14, 10, 10, 10,  8, // "S   B     HHHHS", 
+    5,  0,  0, 16, 16,  0,  0, 16,  0,  0,  5,  0, 17,  0,  0, // "V  CC  C  V B  "
+	5, 17,  0, 16, 16,  0,  0, 16,  0,  0,  5,  0,  0,  0,  0, // "VB CC  C  V    ",
+    5,  0,  0, 16, 16, 17,  0, 16, 17,  0,  5,  0, 16, 16, 16, // "V  CCB CB V CCC",
+    5,  0,  0, 16, 16,  0,  0, 16,  0,  0,  5,  0, 16, 16, 16, // "V  CC  C  V CCC",
+	3, 10,  0, 16, 16,  0,  0, 16,  0,  0,  5,  0, 16, 16, 16, // "HH CC  C  V CCC",
+	0,  5,  0,  0,  0,  0, 17,  0, 17,  0,  5,  0,  0,  0,  0, // " V    B B V    ",
+    0,  3, 10, 10, 12,  0,  0,  0,  0,  0,  5,  0,  0,  0,  0, // " HHHH     V    ",
+   16,  0,  0,  0,  5,  0,  0,  0,  0,  0,  5,  0,  0,  0, 16, // "C   V     V   C",
+   16, 16,  0,  0,  3, 10, 10, 10, 10, 10,  9,  0,  0, 16, 16, // "CC  HHHHHHH  CC",
+};
 
-//   " V    B B V    ",
-//   " HHHH     V    ",
-//   "C   V     V   C",
-//   "CC  HHHHHHH  CC"
-}
+void runMapSideEffects() {
+	const UBYTE column = (scroll_target->x - (scroll_target->x % 16) - 8) / 16;
+	const UBYTE row = (scroll_target->y - (scroll_target->y % 16) - 24) / 16;
+	const UBYTE currentCell = row * 15 + column;
+	const UBYTE currentMapValue = map[currentCell];
 
-void eatDiamond() {
+	// we eat a gem
+	if (currentMapValue == 16) {
+		score += 50;
+		if (direction == J_RIGHT) {
+			map[currentCell] = 8;
+		}
+		if (direction == J_LEFT) {
+			map[currentCell] = 2;
+		}
+		if (direction == J_UP) {
+			map[currentCell] = 4;
+		}
+		if (direction == J_DOWN) {
+			map[currentCell] = 1;
+		}
+	}
 
+	// we modify a tunnel flagging the bit of the walkable direction
+	if (currentMapValue <= 15) {
+		if (direction == J_RIGHT) {
+			map[currentCell] &= 8;
+		}
+		if (direction == J_LEFT) {
+			map[currentCell] &= 2;
+		}
+		if (direction == J_UP) {
+			map[currentCell] &= 4;
+		}
+		if (direction == J_DOWN) {
+			map[currentCell] &= 1;
+		}
+	}
+
+	// we are under a bag, we need to activate it
+	if (currentCell > 14 && map[currentCell - 15] == 17) {
+		// to be done
+	}
 }
 
 void loadLevel(UBYTE level) {
@@ -53,4 +93,5 @@ void UPDATE() {
 		currentLevel++;
 		loadLevel(currentLevel);
 	}
+	runMapSideEffects();
 }
