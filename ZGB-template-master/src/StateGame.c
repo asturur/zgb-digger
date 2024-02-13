@@ -3,7 +3,9 @@
 #include "ZGBMain.h"
 #include "Scroll.h"
 #include "SpriteManager.h"
-
+#include "MapInfo.h"
+#include <gb/gb.h> 
+#include <string.h>
 extern const UBYTE direction;
 
 UBYTE currentLevel = 0;
@@ -28,6 +30,20 @@ UBYTE map[] = {
    16, 16,  0,  0,  3, 10, 10, 10, 10, 10,  9,  0,  0, 16, 16, // "CC  HHHHHHH  CC",
 };
 
+unsigned char tileMap[768];
+
+struct MapInfo currentInMemoryLevel;
+
+void copyMapToRam(struct MapInfo *levelToLoad) {
+	// copy everything
+	memcpy(&currentInMemoryLevel, levelToLoad, sizeof(currentInMemoryLevel));
+	// redefine the pointer to my in memory array
+	currentInMemoryLevel.data = &tileMap[0];
+	// now copy the actual map data inside the array
+	memcpy(&tileMap, (*levelToLoad).data, 768);
+}
+
+
 void runMapSideEffects() {
 	const UBYTE column = (scroll_target->x - (scroll_target->x % 16) - 8) / 16;
 	const UBYTE row = (scroll_target->y - (scroll_target->y % 16) - 24) / 16;
@@ -37,6 +53,7 @@ void runMapSideEffects() {
 	// we eat a gem
 	if (currentMapValue == 16) {
 		score += 50;
+		diamonds--;
 		if (direction == J_RIGHT) {
 			map[currentCell] = 8;
 		}
@@ -73,19 +90,26 @@ void runMapSideEffects() {
 	}
 }
 
+
+
 void loadLevel(UBYTE level) {
 	switch (level) {
-		case 1: 
+		case 1:
 			IMPORT_MAP(level1);
-			InitScroll(BANK(level1), &level1, 0, 0);
+			copyMapToRam(&level1);
+			InitScroll(BANK(level1), &currentInMemoryLevel, 0, 0);
 			diamonds = 30;
 		break;
+		// case 2: 
+		// 	IMPORT_MAP(level2);
+		// 	InitScroll(BANK(level2), &level2, 0, 0);
+		// 	diamonds = 30;
+		// break;
 	}
 }
 
 void START() {
 	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 168);
-
 }
 
 void UPDATE() {

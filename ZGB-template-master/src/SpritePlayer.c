@@ -2,6 +2,8 @@
 #include "Keys.h"
 #include "SpriteManager.h"
 
+extern unsigned char tileMap[768];
+
 const UBYTE anim_walk_right[] = {4, 0, 1, 2, 1};
 const UBYTE anim_walk_left[] = {4, 9, 10, 11, 10};
 const UBYTE anim_walk_up[] = {4, 6, 7, 8, 7};
@@ -101,9 +103,11 @@ void updateMapTiles() {
                 tileNext = get_bkg_tile_xy(target, row + 1);
                 if (tile != 0) {
                     set_bkg_tile_xy(target, row, 0);
+                    tileMap[row * 32 + target] = 0;
                 }
                 if (tileNext != 0) {
                     set_bkg_tile_xy(target, row + 1, 0);
+                    tileMap[(row + 1) * 32 + target] = 0;
                 }
                 break;
         }

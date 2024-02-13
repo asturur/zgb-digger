@@ -6,6 +6,11 @@
         "keys.h": "c",
         "spritemanager.h": "c",
         "zgbmain.h": "c",
-        "zgbmain_init.h": "c"
+        "zgbmain_init.h": "c",
+        "variant": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c",
+        "vector": "c"
     }
 }
