@@ -77,6 +77,7 @@ void runMapSideEffects() {
 
 	// we eat a gem
 	if (currentMapValue == 16) {
+		// took from a tutorial
 		PlayFx(CHANNEL_1, 10, 0x4f, 0xc7, 0xf3, 0x73, 0x86);
 		score += 50;
 		diamonds--;
