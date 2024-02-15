@@ -7,8 +7,12 @@
 #include <gb/gb.h> 
 #include <string.h>
 #include <Sound.h>
+#include "Music.h"
+
 
 extern const UBYTE direction;
+
+DECLARE_MUSIC(music);
 
 UBYTE currentLevel = 0;
 UDWORD score = 0;
@@ -141,6 +145,7 @@ void START() {
 	// add first the spriteManager only then load the level
 	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 168);
 	loadLevel(1);
+	PlayMusic(music, 1);
 }
 
 void UPDATE() {
