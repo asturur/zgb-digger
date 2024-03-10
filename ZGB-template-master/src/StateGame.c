@@ -10,7 +10,7 @@
 #include "Music.h"
 
 #define tilesPerRow 32
-#define maxEnimesCount 1
+#define maxEnimesCount 3
 #define enemySpawnTimer 300
 
 extern const UBYTE direction;
