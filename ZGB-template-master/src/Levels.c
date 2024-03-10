@@ -1,13 +1,21 @@
-// #pragma bank 255
-// #include <gb/gb.h>
-// #include "Levels.h"
+#pragma bank 255
+#include <gb/gb.h>
+
 // map descriptors
 // 0 grass
 // 1-15 walkable tunnel 5 is a V, 10 is H, 
 // 16 diamond
 // 17 bag
 
-// const void __at(255) __bank_level1Map;
+// walkability of tunnels
+// - 1 -
+// |   |
+// 8   2
+// |   |
+// - 4 -
+//
+//
+const void __at(255) __bank_level1Map;
 
 const unsigned char level1Map[] = {
 	4,  0,  0,  0, 17,  0,  0,  0,  0,  0, 14, 10, 10, 10,  8, // "S   B     HHHHS", 
@@ -22,7 +30,7 @@ const unsigned char level1Map[] = {
    16, 16,  0,  0,  3, 10, 10, 10, 10, 10,  9,  0,  0, 16, 16, // "CC  HHHHHHH  CC",
 };
 
-// const void __at(255) __bank_level2Map;
+const void __at(255) __bank_level2Map;
 
 const unsigned char level2Map[] = {
 	2, 10, 10, 10, 10, 12,  0,  0, 17,  0, 17,  0,  0,  6,  8, // "SHHHHH  B B  HS", 
@@ -35,4 +43,19 @@ const unsigned char level2Map[] = {
     0, 17, 17,  0,  0,  5, 16, 16, 16, 16,  5,  0, 16, 16,  0, // " BB  VCCCCV CC ",
    16,  0,  0,  0,  0,  5,  0, 16, 16,  0,  5,  0, 16, 16,  0, // "C    V CC V CC ",
    16, 16,  0,  0,  0,  3, 10, 10, 10, 10,  9,  0,  0,  0,  0, // "CC   HHHHHH    ",
+};
+
+const void __at(255) __bank_level3Map;
+
+const unsigned char level3Map[] = {
+	2, 10, 10, 10, 12, 17,  0, 17,  0, 17,  6, 10, 10, 10,  8, // "SHHHHB B BHHHHS",
+   16, 16,  0,  0,  5,  0, 16,  0, 16,  0,  5,  0, 17, 17,  0, // "CC  V C C V BB ",
+   16,  0,  0,  0,  5,  0, 16,  0, 16,  0,  5,  0, 16, 16,  0, // "C   V C C V CC ",
+    0, 17, 17,  0,  5,  0, 16,  0, 16,  0,  5, 16, 16, 16, 16, // " BB V C C VCCCC",
+   16, 16, 16, 16,  5,  0, 16,  0, 16,  0,  5, 16, 16, 16, 16, // "CCCCV C C VCCCC",
+   16, 16, 16, 16,  3, 10, 10, 14, 10, 10,  9,  0, 16, 16,  0, // "CCCCHHHHHHH CC ",
+	0, 16, 16,  0,  0, 16,  0,  5,  0, 16,  0,  0, 16, 16,  0, // " CC  C V C  CC ",
+    0, 16, 16,  0,  0, 16,  0,  5,  0, 16,  0,  0,  0,  0,  0, // " CC  C V C     ",
+   16,  0,  0,  0,  0, 16,  0,  5,  0, 16,  0,  0,  0,  0, 16, // "C    C V C    C",
+   16, 16,  0,  0,  0, 16,  0, 11,  0, 16,  0,  0,  0, 16, 16, // "CC   C H C   CC"
 };

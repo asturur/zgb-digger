@@ -16,6 +16,7 @@
         "scroll.h": "c",
         "music.h": "c",
         "levels.h": "c",
-        "sound.h": "c"
+        "sound.h": "c",
+        "tilesinfo.h": "c"
     }
 }
