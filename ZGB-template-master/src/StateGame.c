@@ -9,20 +9,9 @@
 #include <Sound.h>
 #include "Music.h"
 
-
 extern const UBYTE direction;
 
-DECLARE_MUSIC(music);
-
-UBYTE currentLevel = 0;
-UDWORD score = 0;
-UBYTE diamonds = 0;
-// map descriptors
-// 0 grass
-// 1-15 walkable tunnel 5 is a V, 10 is H, 
-// 16 diamond
-// 17 bag
-UBYTE map[] = {
+const unsigned char level1Map[] = {
 	4,  0,  0,  0, 17,  0,  0,  0,  0,  0, 14, 10, 10, 10,  8, // "S   B     HHHHS", 
     5,  0,  0, 16, 16,  0,  0, 16,  0,  0,  5,  0, 17,  0,  0, // "V  CC  C  V B  "
 	5, 17,  0, 16, 16,  0,  0, 16,  0,  0,  5,  0,  0,  0,  0, // "VB CC  C  V    ",
@@ -35,31 +24,32 @@ UBYTE map[] = {
    16, 16,  0,  0,  3, 10, 10, 10, 10, 10,  9,  0,  0, 16, 16, // "CC  HHHHHHH  CC",
 };
 
+const unsigned char level2Map[] = {
+	4,  0,  0,  0, 17,  0,  0,  0,  0,  0, 14, 10, 10, 10,  8, // "S   B     HHHHS", 
+    5,  0,  0, 16, 16,  0,  0, 16,  0,  0,  5,  0, 17,  0,  0, // "V  CC  C  V B  "
+	5, 17,  0, 16, 16,  0,  0, 16,  0,  0,  5,  0,  0,  0,  0, // "VB CC  C  V    ",
+    5,  0,  0, 16, 16, 17,  0, 16, 17,  0,  5,  0, 16, 16, 16, // "V  CCB CB V CCC",
+    5,  0,  0, 16, 16,  0,  0, 16,  0,  0,  5,  0, 16, 16, 16, // "V  CC  C  V CCC",
+	3, 10,  0, 16, 16,  0,  0, 16,  0,  0,  5,  0, 16, 16, 16, // "HH CC  C  V CCC",
+	0,  5,  0,  0,  0,  0, 17,  0, 17,  0,  5,  0,  0,  0,  0, // " V    B B V    ",
+    0,  3, 10, 10, 12,  0,  0,  0,  0,  0,  5,  0,  0,  0,  0, // " HHHH     V    ",
+   16,  0,  0,  0,  5,  0,  0,  0,  0,  0,  5,  0,  0,  0, 16, // "C   V     V   C",
+   16, 16,  0,  0,  3, 10, 10, 10, 10, 10,  9,  0,  0, 16, 16, // "CC  HHHHHHH  CC",
+};
 
-/*
-uint8_t map_buffer[MAX_WIDTH * MAX_HEIGHT]; // tile map in RAM 2KB
-uint8_t map_attr[MAX_WIDTH * MAX_HEIGHT];   // tile attributes in RAM 2KB
+DECLARE_MUSIC(music);
 
-void copyMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
-    uint8_t __save = CURRENT_BANK;
-    SWITCH_ROM(levelToLoadBank);
-    // copy everything
-    current_level = *levelToLoad;
-    current_level.data = map_buffer;
-    current_level.attributes = map_attr;    
-    // now copy the actual map data inside the array
-    memcpy(map_buffer, levelToLoad->data, current_level.width * current_level.height);
-    if (levelToLoad->attributes) memcpy(map_attr, levelToLoad->attributes, current_level.width * current_level.height); else memset(map_attr, 0, sizeof(map_attr));
-    // restore bank
-    SWITCH_ROM(__save);
-}
+UBYTE currentLevel = 0;
+UDWORD score = 0;
+UBYTE diamonds = 0;
 
-*/
+// currently loaded map
+unsigned char levelMap[150];
 
 struct MapInfo currentInMemoryLevel;
 unsigned char tileMap[768];
 
-void copyMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
+void copyTileMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
 	uint8_t __save = CURRENT_BANK;
 	SWITCH_ROM(levelToLoadBank);
 	// copy everything
@@ -72,12 +62,18 @@ void copyMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKE
 	SWITCH_ROM(__save);
 }
 
+void copyLevelMapToRam(unsigned char *mapToLoad[]) NONBANKED {
+	// uint8_t __save = CURRENT_BANK;
+	// SWITCH_ROM(mapToLoadBank);
+	memcpy(levelMap, mapToLoad, 150);
+	// SWITCH_ROM(__save);
+}
 
 void runMapSideEffects() {
 	const UBYTE column = (scroll_target->x - ((scroll_target->x - 8) % 16) - 8) / 16;
 	const UBYTE row = (scroll_target->y - ((scroll_target->y - 24) % 16) - 24) / 16;
 	const UBYTE currentCell = row * 15 + column;
-	const UBYTE currentMapValue = map[currentCell];
+	const UBYTE currentMapValue = levelMap[currentCell];
 
 	// we eat a gem
 	if (currentMapValue == 16) {
@@ -86,35 +82,35 @@ void runMapSideEffects() {
 		score += 50;
 		diamonds--;
 		if (direction == J_RIGHT) {
-			map[currentCell] = 8;
+			levelMap[currentCell] = 8;
 		}
 		if (direction == J_LEFT) {
-			map[currentCell] = 2;
+			levelMap[currentCell] = 2;
 		}
 		if (direction == J_UP) {
-			map[currentCell] = 4;
+			levelMap[currentCell] = 4;
 		}
 		if (direction == J_DOWN) {
-			map[currentCell] = 1;
+			levelMap[currentCell] = 1;
 		}
 	} else if (currentMapValue <= 15) {
 	// we modify a tunnel flagging the bit of the walkable direction
 		if (direction == J_RIGHT) {
-			map[currentCell] &= 8;
+			levelMap[currentCell] &= 8;
 		}
 		if (direction == J_LEFT) {
-			map[currentCell] &= 2;
+			levelMap[currentCell] &= 2;
 		}
 		if (direction == J_UP) {
-			map[currentCell] &= 4;
+			levelMap[currentCell] &= 4;
 		}
 		if (direction == J_DOWN) {
-			map[currentCell] &= 1;
+			levelMap[currentCell] &= 1;
 		}
 	}
 
 	// we are under a bag, we need to activate it
-	if (currentCell > 14 && map[currentCell - 15] == 17) {
+	if (currentCell > 14 && levelMap[currentCell - 15] == 17) {
 		// to be done
 	}
 }
@@ -125,13 +121,15 @@ void loadLevel(UBYTE level) {
 	switch (level) {
 		case 1:
 			IMPORT_MAP(level1);
-			copyMapToRam(BANK(level1), &level1);
+			copyTileMapToRam(BANK(level1), &level1);
+			copyLevelMapToRam(&level1Map);
 			InitScroll(BANK(level1), &currentInMemoryLevel, 0, 0);
 			diamonds = 30;
 		break;
 		case 2: 
 			IMPORT_MAP(level2);
-			copyMapToRam(BANK(level2), &level2);
+			copyTileMapToRam(BANK(level2), &level2);
+			copyLevelMapToRam(&level2Map);
 			InitScroll(BANK(level2), &currentInMemoryLevel, 0, 0);
 			diamonds = 30;
 		break;
