@@ -93,6 +93,19 @@ void copyLevelMapToRam(unsigned char *mapToLoad[]) NONBANKED {
 	// SWITCH_ROM(__save);
 }
 
+void activateBag(uint8_t bagcell) {
+	// remove the bag tiles and replace with grass.
+	// remove the bag from the map replace with grass
+	// activate bag sprite
+	levelMap[bagcell] = 0;
+	uint8_t column = bagcell % 15;
+	uint8_t row = (bagcell - column) / 15;
+	uint8_t positionX = 8 + column * 16;
+	uint8_t positionY = 24 + row * 16;
+	SpriteManagerAdd(SpriteBag, positionX, positionY);
+
+}
+
 void runMapSideEffects() {
 	const UBYTE column = (scroll_target->x - ((scroll_target->x - 8) % 16) - 8) / 16;
 	const UBYTE row = (scroll_target->y - ((scroll_target->y - 24) % 16) - 24) / 16;
@@ -135,7 +148,7 @@ void runMapSideEffects() {
 
 	// we are under a bag, we need to activate it
 	if (currentCell > 14 && levelMap[currentCell - 15] == 17) {
-		// to be done
+		activateBag(currentCell - 15);
 	}
 }
 
