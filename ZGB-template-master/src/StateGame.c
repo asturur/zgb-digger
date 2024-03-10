@@ -110,6 +110,9 @@ void loadLevel(UBYTE level) {
 			InitScroll(BANK(level2), &currentInMemoryLevel, 0, 0);
 			diamonds = 41;
 		break;
+		default:
+		  currentLevel = 1;
+		  loadLevel(currentLevel)
 	}
 }
 
