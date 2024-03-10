@@ -11,31 +11,8 @@
 
 extern const UBYTE direction;
 
-const unsigned char level1Map[] = {
-	4,  0,  0,  0, 17,  0,  0,  0,  0,  0, 14, 10, 10, 10,  8, // "S   B     HHHHS", 
-    5,  0,  0, 16, 16,  0,  0, 16,  0,  0,  5,  0, 17,  0,  0, // "V  CC  C  V B  "
-	5, 17,  0, 16, 16,  0,  0, 16,  0,  0,  5,  0,  0,  0,  0, // "VB CC  C  V    ",
-    5,  0,  0, 16, 16, 17,  0, 16, 17,  0,  5,  0, 16, 16, 16, // "V  CCB CB V CCC",
-    5,  0,  0, 16, 16,  0,  0, 16,  0,  0,  5,  0, 16, 16, 16, // "V  CC  C  V CCC",
-	3, 10,  0, 16, 16,  0,  0, 16,  0,  0,  5,  0, 16, 16, 16, // "HH CC  C  V CCC",
-	0,  5,  0,  0,  0,  0, 17,  0, 17,  0,  5,  0,  0,  0,  0, // " V    B B V    ",
-    0,  3, 10, 10, 12,  0,  0,  0,  0,  0,  5,  0,  0,  0,  0, // " HHHH     V    ",
-   16,  0,  0,  0,  5,  0,  0,  0,  0,  0,  5,  0,  0,  0, 16, // "C   V     V   C",
-   16, 16,  0,  0,  3, 10, 10, 10, 10, 10,  9,  0,  0, 16, 16, // "CC  HHHHHHH  CC",
-};
-
-const unsigned char level2Map[] = {
-	4,  0,  0,  0, 17,  0,  0,  0,  0,  0, 14, 10, 10, 10,  8, // "S   B     HHHHS", 
-    5,  0,  0, 16, 16,  0,  0, 16,  0,  0,  5,  0, 17,  0,  0, // "V  CC  C  V B  "
-	5, 17,  0, 16, 16,  0,  0, 16,  0,  0,  5,  0,  0,  0,  0, // "VB CC  C  V    ",
-    5,  0,  0, 16, 16, 17,  0, 16, 17,  0,  5,  0, 16, 16, 16, // "V  CCB CB V CCC",
-    5,  0,  0, 16, 16,  0,  0, 16,  0,  0,  5,  0, 16, 16, 16, // "V  CC  C  V CCC",
-	3, 10,  0, 16, 16,  0,  0, 16,  0,  0,  5,  0, 16, 16, 16, // "HH CC  C  V CCC",
-	0,  5,  0,  0,  0,  0, 17,  0, 17,  0,  5,  0,  0,  0,  0, // " V    B B V    ",
-    0,  3, 10, 10, 12,  0,  0,  0,  0,  0,  5,  0,  0,  0,  0, // " HHHH     V    ",
-   16,  0,  0,  0,  5,  0,  0,  0,  0,  0,  5,  0,  0,  0, 16, // "C   V     V   C",
-   16, 16,  0,  0,  3, 10, 10, 10, 10, 10,  9,  0,  0, 16, 16, // "CC  HHHHHHH  CC",
-};
+extern const unsigned char level1Map[150];
+extern const unsigned char level2Map[150];
 
 DECLARE_MUSIC(music);
 
@@ -131,7 +108,7 @@ void loadLevel(UBYTE level) {
 			copyTileMapToRam(BANK(level2), &level2);
 			copyLevelMapToRam(&level2Map);
 			InitScroll(BANK(level2), &currentInMemoryLevel, 0, 0);
-			diamonds = 30;
+			diamonds = 41;
 		break;
 	}
 }
