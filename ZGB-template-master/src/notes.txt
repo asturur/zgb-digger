@@ -1,0 +1,7 @@
+monsters:
+
+number of monsters on screen:
+lev1: 3
+lev2 to Lev7: 4
+lev8 to lev10: 5
+mongaptime=45-(levof10()<<1);
