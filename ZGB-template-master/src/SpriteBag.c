@@ -47,11 +47,26 @@ void UPDATE() {
     } else if (THIS->custom_data[0] == stateShaking && THIS->custom_data[1] == 0) {
         THIS->custom_data[0] = stateFalling;
         SetSpriteAnim(THIS, bag_fall, 15);
-        THIS->custom_data[2]++;
-        THIS->y++;
+    // else if is falling down
     } else if (THIS->custom_data[0] == stateFalling) {
-        THIS->custom_data[2]++;
-        THIS->y++;
+        if ((THIS->y - 8) % 16) {
+            THIS->custom_data[2]++;
+            THIS->y++;
+        }
+        if (THIS->y % 16 == 8) {
+            uint8_t row = THIS->y / 8;
+            uint8_t column = THIS->x / 8;
+            // we need to check what the next 4 tiles are doing
+            // if at leat one is 0, se the other to 0 and continue falling
+            if (get_bkg_tile_xy(column, row) == 0 || get_bkg_tile_xy(column + 1, row) == 0 || get_bkg_tile_xy(column, row + 1) == 0 || get_bkg_tile_xy(column + 1, row + 1) == 0) {
+                set_bkg_tile_xy(column, row, 0);
+                set_bkg_tile_xy(column + 1, row, 0);
+                set_bkg_tile_xy(column, row + 1, 0); 
+                set_bkg_tile_xy(column + 1, row + 1, 0);
+                THIS->custom_data[2]++;
+            THIS->y++;
+            }
+        }
     }
 }
 
