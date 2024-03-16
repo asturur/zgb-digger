@@ -12,6 +12,9 @@
 #define tilesPerRow 32
 #define maxEnimesCount 3
 #define enemySpawnTimer 300
+#define scoreFontOffset 1
+#define hudSize 64 // tilesPerRow * 2
+#define lifeFont 11
 
 extern const UBYTE direction;
 
@@ -22,10 +25,12 @@ extern const unsigned char level3Map[150];
 DECLARE_MUSIC(music);
 
 UBYTE currentLevel = 0;
-UDWORD score = 0;
+uint16_t score = 0;
+uint16_t lastScore = 0;
 UBYTE diamonds = 0;
 uint16_t spawnTimer = 0;
 uint8_t enemyCount = 0;
+uint8_t lives = 3;
 
 // currently loaded map
 unsigned char levelMap[150];
@@ -52,12 +57,12 @@ void copyLevelMapToRam(unsigned char *mapToLoad[]) NONBANKED {
 	// SWITCH_ROM(mapToLoadBank);
 	memcpy(levelMap, mapToLoad, 150);
 	int8_t i, j;
-	// fill up the first 3 lines of the map with 2 lines 0s and 1 of 1s
-	memset(tileMap, 0, tilesPerRow * 2);
-	memset(tileMap + tilesPerRow * 2, 1, tilesPerRow * 22);
+	// fill up the first lines of the map with 2 lines 0s and 1 of 1s
+	memset(tileMap, 0, hudSize);
+	memset(tileMap + hudSize, 1, tilesPerRow * 22);
 	uint8_t metaTile;
-	// third row start at 96, we skip the first tile
-	uint16_t offset = tilesPerRow * 3 + 1;
+	// third row start at hudS, we skip the first tile
+	uint16_t offset = hudSize + tilesPerRow + 1;
 
 	// loop the map
 	for (i = 0; i < 10; i++) {
@@ -190,13 +195,34 @@ void loadLevel(UBYTE level) {
 	}
 }
 
+void paintScore() {
+	// scores are multiple of 25 points.
+	// mod 2 = 1 draw a 5.
+	// then mod 4 for 2/5/7
+	// then >> 2 will give us the hundreds.
+	// then we need to loop again
+	uint8_t mod = 0;
+	lastScore = score;
+	for (uint8_t i = 6; i > 0; i--) {
+		mod = lastScore % 10;
+		UPDATE_HUD_TILE(i, 0, scoreFontOffset + mod);
+		lastScore = (lastScore - mod) / 10;
+	}
+	for (uint8_t i = 1; i <= lives; i++) {
+		UPDATE_HUD_TILE(7 + i, 0, lives >= i ? lifeFont : 0);
+	}
+}
+
 void START() {
 	NR52_REG = 0x80; //Enables sound, you should always setup this first
 	NR51_REG = 0xFF; //Enables all channels (left and right)
 	NR50_REG = 0x77; //Max volume
+	
 	currentLevel = 1;
 	loadLevel(currentLevel);
 	PlayMusic(music, 1);
+	IMPORT_MAP(hud);
+	INIT_HUD(hud);
 }
 
 void UPDATE() {
@@ -210,4 +236,8 @@ void UPDATE() {
 		SpriteManagerAdd(SpriteEnemy, 232, 24);
 		spawnTimer = 500;
 	}
+	if (lastScore != score) {
+		paintScore();
+		lastScore = score;
+	}	
 }
