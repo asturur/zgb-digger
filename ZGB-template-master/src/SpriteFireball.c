@@ -5,7 +5,7 @@
 #include "StateGame.h"
 
 // CUSTOM_DATA usage 0-7
-#define direction 0
+#define projectile_direction 0
 #define exploding 1
 #define despawnTimer 2
 
@@ -17,7 +17,7 @@ const UBYTE explosion_anim[] = {3, 3, 4, 5};
 
 void START() {
     SetSpriteAnim(THIS, fireball_anim, 15);
-    THIS->custom_data[direction] = 0;
+    THIS->custom_data[projectile_direction] = 0;
     THIS->custom_data[exploding] = FALSE;
     THIS->custom_data[despawnTimer] = 45;
     THIS->lim_x = 50;
@@ -37,7 +37,7 @@ void UPDATE() {
         return;
     }
 
-    switch ( THIS->custom_data[0]) {
+    switch ( THIS->custom_data[projectile_direction]) {
         case J_LEFT:
             THIS->x -= 2;
         break;
@@ -55,8 +55,8 @@ void UPDATE() {
 		if(spr->type == SpriteEnemy) {
 			if(CheckCollision(THIS, spr)) {
                 THIS->custom_data[exploding] = TRUE;
-                spr->custom_data[6] = TRUE;
-				SetSpriteAnim(spr, spr->custom_data[0] == nobMode ? nob_dies : hob_dies, 15);
+                spr->custom_data[dead] = TRUE;
+				SetSpriteAnim(spr, spr->custom_data[hobOrNob] == nobMode ? nob_dies : hob_dies, 15);
                 SetSpriteAnim(THIS, explosion_anim, 15);
                 updateScore(scoreKill);
 			}
