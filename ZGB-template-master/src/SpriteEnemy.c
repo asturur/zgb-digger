@@ -2,12 +2,13 @@
 #include "SpriteManager.h"
 #include "SpriteEnemy.h"
 
-#define nobMode 0
-#define hobMode 1
-#define changeTimer 255
+extern uint8_t enemyCount;
 
 const UBYTE nob_walk[] = {4, 0, 1, 2, 1};
 const UBYTE hob_walk[] = {4, 4, 5, 6, 5};
+const UBYTE nob_dies[] = {1, 3};
+const UBYTE hob_dies[] = {1, 7};
+
 
 
 // CUSTOM_DATA usage
@@ -17,6 +18,8 @@ const UBYTE hob_walk[] = {4, 4, 5, 6, 5};
 // 3 direction
 // 4 frigthned state
 // 5 has eaten gold
+// 6 dead
+// 7 death_timer
 
 void START() {
     SetSpriteAnim(THIS, nob_walk, 15);
@@ -24,11 +27,21 @@ void START() {
     THIS->custom_data[1] = changeTimer;
     THIS->custom_data[2] = 2;
     THIS->custom_data[3] = J_LEFT;
+    THIS->custom_data[6] = FALSE;
+    THIS->custom_data[7] = 45;
     THIS->lim_x = 256;
     THIS->lim_y = 256;
 }
 
 void UPDATE() {
+    if (THIS->custom_data[6]) {
+        if (THIS->custom_data[7] > 0) {
+            THIS->custom_data[7]--;
+        } else {
+            SpriteManagerRemoveSprite(THIS);
+        }
+        return;
+    }
     if (THIS->custom_data[1] > 0) {
         THIS->custom_data[1]--;
     }
@@ -73,4 +86,5 @@ void UPDATE() {
 }
 
 void DESTROY() {
+    enemyCount--;
 }

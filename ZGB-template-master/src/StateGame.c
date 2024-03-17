@@ -233,9 +233,9 @@ void UPDATE() {
 		loadLevel(currentLevel);
 	}
 	if (spawnTimer == 0 && enemyCount < maxEnimesCount) {
+		spawnTimer = 500;
 		enemyCount++;
 		SpriteManagerAdd(SpriteEnemy, 232, 24);
-		spawnTimer = 500;
 	}
 	if (lastScore != score) {
 		paintScore();
