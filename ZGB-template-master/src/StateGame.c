@@ -223,6 +223,7 @@ void START() {
 	PlayMusic(music, 1);
 	IMPORT_MAP(hud);
 	INIT_HUD(hud);
+	paintScore();
 }
 
 void UPDATE() {

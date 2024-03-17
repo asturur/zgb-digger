@@ -1,6 +1,7 @@
 #include "Banks/SetAutoBank.h"
 #include "Keys.h"
 #include "SpriteManager.h"
+#include "ZGBMain.h"
 
 extern unsigned char tileMap[768];
 extern void runMapSideEffects();
@@ -13,8 +14,12 @@ UBYTE direction;
 UBYTE column;
 UBYTE row;
 
+// CUSTOM_DATA usage
+// 0 rechargetime
+
 void START() {
     direction = J_RIGHT;
+    THIS->custom_data[0] = 0;
 }
 
 BOOLEAN isColumnDisaligned () {
@@ -176,6 +181,38 @@ void UPDATE() {
             direction = J_RIGHT;
         }
 	}
+    if(KEY_PRESSED(J_A)) {
+        if (THIS->custom_data[0] == 0) {
+            uint8_t spriteX = 0;
+            uint8_t spriteY = 0;
+            THIS->custom_data[0] = 255;
+            switch (direction) {
+                case J_UP:
+                    spriteX = THIS->x + 4;
+                    spriteY =  THIS->y - 4;
+                    break;
+                case J_DOWN:
+                    spriteX = THIS->x + 4;
+                    spriteY =  THIS->y + 12;
+                    break;
+                case J_LEFT:
+                    spriteX = THIS->x - 4;
+                    spriteY =  THIS->y + 4;
+                    break;
+                case J_RIGHT:
+                    spriteX = THIS->x + 12;
+                    spriteY =  THIS->y + 4;
+                    break;
+                default:
+                    break;
+            }
+            Sprite *fireball = SpriteManagerAdd(SpriteFireball, spriteX, spriteY);
+            fireball->custom_data[0] = direction;
+        }
+	}
+    if (THIS->custom_data[0] > 0) {
+        THIS->custom_data[0]--;
+    }
     if (moving) {
         switch (direction) {
             case J_UP:

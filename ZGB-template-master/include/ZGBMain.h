@@ -9,6 +9,7 @@ STATE_DEF_END
 _SPRITE_DMG(SpritePlayer, player)\
 _SPRITE_DMG(SpriteEnemy, hobnob)\
 _SPRITE_DMG(SpriteBag, bag)\
+_SPRITE_DMG(SpriteFireball, fireball)\
 SPRITE_DEF_END
 
 #include "ZGBMain_Init.h"
