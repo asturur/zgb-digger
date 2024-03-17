@@ -1,17 +1,35 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "gbrParser.h"
 using namespace GbrParser;
 
 int main(int argc, char* argv[]) {
-	if(argc != 3) {
-		printf("usage: gbr2c file_in.gbr export_folder");
+	int bpp = 2;
+
+	if((argc != 3) && (argc != 5)) {
+		printf("usage: gbr2c file_in.gbr export_folder [-bpp N]");
 		return 1;
 	}
 
 	GBRInfo gbrInfo;
 	if(!LoadGBR(argv[1], &gbrInfo)) {
 		return 1;
+	}
+
+	if(argc == 5) {
+		if (strcmp(argv[3], "-bpp") != 0) {
+			printf("unknown argument %s", argv[3]);
+			return 1;
+		}
+		if (strcmp(argv[4], "2") == 0) {
+			bpp = 2;
+		} else if (strcmp(argv[4], "4") == 0) {
+			bpp = 4;
+		} else {
+			printf("unsupported bpp depth not in [2, 4]: %s", argv[4]);
+			return 1;
+		}
 	}
 
 	TileSet& tile_set = gbrInfo.tile_set;
@@ -65,28 +83,44 @@ int main(int argc, char* argv[]) {
 	
 	fprintf(file, "#pragma bank %d\n", bank);
 
-	fprintf(file, "#include <gb/gb.h>\n");
-	fprintf(file, "#include <gb/cgb.h>\n");
-	fprintf(file, "\n");
+	fprintf(file, "#include <gbdk/platform.h>\n");
 
 	if(tile_export.include_colors){
 		//Export palettes
 		fprintf(file, "\n");
-		fprintf(file, "const UINT16 %s_palettes[%d] = {\n", tile_export.label_name, num_palettes * 4);
-		for(int p = 0; p < palettes.count; ++p) 
-		{
-			if(palette_order[p] != -1)
+		fprintf(file, "const palette_color_t %s_palettes[] = {\n", tile_export.label_name);
+		if (bpp == 2) {
+			for(int p = 0; p < palettes.count; ++p) 
 			{
-				if(palette_order[p] != 0)
-					fprintf(file, ",\n");
-				fprintf(file, "\t");
+				if(palette_order[p] != -1)
+				{
+					if(palette_order[p] != 0)
+						fprintf(file, ",\n");
+					fprintf(file, "\t");
 			
-				for(int c = 0; c < 4; ++c) {
-					Color color = palettes.colors[p].colors[c];
-					fprintf(file, "RGB(%d, %d, %d)", color.r >> 3, color.g >> 3, color.b >> 3);
-					if(c != 3)
-						fprintf(file, ", ");
+					for(int c = 0; c < 4; ++c) {
+						Color color = palettes.colors[p].colors[c];
+						fprintf(file, "RGB8(%d, %d, %d)", color.r, color.g, color.b);
+						if(c != 3)
+							fprintf(file, ", ");
+					}
 				}
+			}
+		} else {
+			fprintf(file, "\t");
+			for(int p = 0; p < 4; ++p) {
+				if (p < palettes.count) {
+					for(int c = 0; c < 4; ++c) {
+						Color color = palettes.colors[p].colors[c];
+						fprintf(file, "RGB8(%d, %d, %d)", color.r, color.g, color.b);
+						if(c != 3)
+							fprintf(file, ", ");
+					}
+				} else {
+					fprintf(file, "RGB8(0, 0, 0), RGB8(0, 0, 0), RGB8(0, 0, 0), RGB8(0, 0, 0)");
+				}
+				if(p != 3)
+					fprintf(file, ", ");
 			}
 		}
 		fprintf(file, "\n};\n");
@@ -94,11 +128,14 @@ int main(int argc, char* argv[]) {
 		//Export palette per tile
 		fprintf(file, "\n");
 		fprintf(file, "const unsigned char %sCGB[] = {\n\t", tile_export.label_name);
-		for(int tile = tile_export.from; tile <= tile_export.up_to; ++ tile) {
+		for(int tile = tile_export.from, cnt = 0; tile <= tile_export.up_to; ++ tile, ++ cnt) {
 			if(tile != tile_export.from)
 				fprintf(file, ",");
 
-			fprintf(file, "0x%02x", palette_order[tile_pal.color_set[tile]]);
+			if((cnt) && (cnt % 8 == 0))
+				fprintf(file, "\n\t");
+
+			fprintf(file, "0x%02x", (bpp == 2) ? palette_order[tile_pal.color_set[tile]] : 0);
 		}
 		fprintf(file, "\n};\n");
 	}
@@ -107,19 +144,39 @@ int main(int argc, char* argv[]) {
 	fprintf(file, "const unsigned char %s_tiles[] = {", tile_export.label_name);
 	int line_h = tile_set.info.height == 8 ? 8 : 16;
 	for(int tile = tile_export.from; tile <= tile_export.up_to; ++ tile) {
+		unsigned char pal = (tile_export.include_colors) ? tile_pal.color_set[tile] * 4 : 0;
 		for(int y = 0; y < tile_set.info.height; y += line_h) {
 			for(int x = 0; x < tile_set.info.width; x += 8) {
 				unsigned char* data_ptr = &tile_set.data[(tile_set.info.width * tile_set.info.height) * tile +  tile_set.info.width * y + x];
 				for(int line = 0; line < line_h; ++ line) {
-					unsigned char l = BYTE(
-						BIT(data_ptr[0], 1), BIT(data_ptr[1], 1), BIT(data_ptr[2], 1), BIT(data_ptr[3], 1), 
-						BIT(data_ptr[4], 1), BIT(data_ptr[5], 1), BIT(data_ptr[6], 1), BIT(data_ptr[7], 1)
-					);
-					unsigned char h = BYTE(
-						BIT(data_ptr[0], 0), BIT(data_ptr[1], 0), BIT(data_ptr[2], 0), BIT(data_ptr[3], 0), 
-						BIT(data_ptr[4], 0), BIT(data_ptr[5], 0), BIT(data_ptr[6], 0), BIT(data_ptr[7], 0)
-					);
-
+					unsigned char l, h, L, H;
+					if(bpp == 2) {
+						l = BYTE(
+							BIT(data_ptr[0], 1), BIT(data_ptr[1], 1), BIT(data_ptr[2], 1), BIT(data_ptr[3], 1), 
+							BIT(data_ptr[4], 1), BIT(data_ptr[5], 1), BIT(data_ptr[6], 1), BIT(data_ptr[7], 1)
+						);
+						h = BYTE(
+							BIT(data_ptr[0], 0), BIT(data_ptr[1], 0), BIT(data_ptr[2], 0), BIT(data_ptr[3], 0), 
+							BIT(data_ptr[4], 0), BIT(data_ptr[5], 0), BIT(data_ptr[6], 0), BIT(data_ptr[7], 0)
+						);
+					} else {
+						L = BYTE(
+							BIT(data_ptr[0] + pal, 3), BIT(data_ptr[1] + pal, 3), BIT(data_ptr[2] + pal, 3), BIT(data_ptr[3] + pal, 3), 
+							BIT(data_ptr[4] + pal, 3), BIT(data_ptr[5] + pal, 3), BIT(data_ptr[6] + pal, 3), BIT(data_ptr[7] + pal, 3)
+						);                                                                                                        
+						H = BYTE(                                                                                                 
+							BIT(data_ptr[0] + pal, 2), BIT(data_ptr[1] + pal, 2), BIT(data_ptr[2] + pal, 2), BIT(data_ptr[3] + pal, 2), 
+							BIT(data_ptr[4] + pal, 2), BIT(data_ptr[5] + pal, 2), BIT(data_ptr[6] + pal, 2), BIT(data_ptr[7] + pal, 2)
+						);                                                                                                        
+						l = BYTE(                                                                                                 
+							BIT(data_ptr[0] + pal, 1), BIT(data_ptr[1] + pal, 1), BIT(data_ptr[2] + pal, 1), BIT(data_ptr[3] + pal, 1), 
+							BIT(data_ptr[4] + pal, 1), BIT(data_ptr[5] + pal, 1), BIT(data_ptr[6] + pal, 1), BIT(data_ptr[7] + pal, 1)
+						);                                                                                                        
+						h = BYTE(                                                                                                 
+							BIT(data_ptr[0] + pal, 0), BIT(data_ptr[1] + pal, 0), BIT(data_ptr[2] + pal, 0), BIT(data_ptr[3] + pal, 0), 
+							BIT(data_ptr[4] + pal, 0), BIT(data_ptr[5] + pal, 0), BIT(data_ptr[6] + pal, 0), BIT(data_ptr[7] + pal, 0)
+						);
+					}
 					if(data_ptr != tile_set.data)
 						fprintf(file, ",");
 					if((line % 4) == 0)
@@ -130,7 +187,10 @@ int main(int argc, char* argv[]) {
 						fprintf(file, "//Frame %d\n\t", tile);
 					}
 
-					fprintf(file, "0x%02x,0x%02x", h, l);
+					if(bpp == 2) 
+						fprintf(file, "0x%02x,0x%02x", h, l);
+					else
+						fprintf(file, "0x%02x,0x%02x,0x%02x,0x%02x", h, l, H, L);
 					data_ptr += tile_set.info.width;
 				}
 			}
@@ -141,15 +201,12 @@ int main(int argc, char* argv[]) {
 	fprintf(file, "\n#include \"TilesInfo.h\"\n");
 	fprintf(file, "const void __at(%d) __bank_%s;\n", bank, tile_export.label_name);
 	fprintf(file, "const struct TilesInfo %s = {\n", tile_export.label_name);
-	fprintf(file, "\t%d, //num_tiles\n", tile_export.up_to - tile_export.from + 1);
-	fprintf(file, "\t%s_tiles, //tiles\n", tile_export.label_name);
-	fprintf(file, "\t%d, //num_palettes\n", num_palettes);
+	fprintf(file, "\t.num_frames = %d, //num_tiles\n", tile_export.up_to - tile_export.from + 1);
+	fprintf(file, "\t.data = %s_tiles, //tiles\n", tile_export.label_name);
+	fprintf(file, "\t.num_pals = %d, //num_palettes\n", (bpp==2) ? num_palettes : (num_palettes + 4 - 1) / 4);
 	if(tile_export.include_colors) {
-		fprintf(file, "\t%s_palettes, //palettes\n", tile_export.label_name);
-		fprintf(file, "\t%sCGB, //CGB palette\n", tile_export.label_name);
-	} else {
-		fprintf(file, "\t0, //palettes\n");
-		fprintf(file, "\t0, //CGB palette\n");
+		fprintf(file, "\t.pals = %s_palettes, //palettes\n", tile_export.label_name);
+		fprintf(file, "\t.color_data = %sCGB //CGB palette\n", tile_export.label_name);
 	}
 	fprintf(file, "};");
 	

@@ -16,14 +16,14 @@ extern const unsigned char level1Map[150];
 extern const unsigned char level2Map[150];
 extern const unsigned char level3Map[150];
 
-DECLARE_MUSIC(music);
-
 UBYTE currentLevel = 0;
 uint16_t score = 0;
 UBYTE diamonds = 0;
 uint16_t spawnTimer = 0;
 uint8_t enemyCount = 0;
 uint8_t lives = 3;
+
+DECLARE_MUSIC(music);
 
 // currently loaded map
 unsigned char levelMap[150];

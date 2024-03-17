@@ -37,6 +37,7 @@ int main(int argc, char* argv[]) {
 	TileExport& tile_export = gbrInfo.tile_export;
 	Palettes& palettes = gbrInfo.palettes;
 	TilePal& tile_pal = gbrInfo.tile_pal;
+	TileSettings& tile_settings = gbrInfo.tile_settings;
 	int& bank = gbrInfo.bank;
 	char* palette_order = gbrInfo.palette_order;
 	int& num_palettes = gbrInfo.num_palettes;
@@ -84,11 +85,11 @@ int main(int argc, char* argv[]) {
 		ADD_PALETTE(  0,   0,   0, 255);
 	}
 
-  state.info_png.color.colortype = LCT_PALETTE; 
-  state.info_png.color.bitdepth = 8;
-  state.info_raw.colortype = LCT_PALETTE;
-  state.info_raw.bitdepth = 8;
-  state.encoder.auto_convert = 0; //we specify ourselves exactly what output PNG color mode we want
+	state.info_png.color.colortype = LCT_PALETTE; 
+	state.info_png.color.bitdepth = 8;
+	state.info_raw.colortype = LCT_PALETTE;
+	state.info_raw.bitdepth = 8;
+	state.encoder.auto_convert = 0; //we specify ourselves exactly what output PNG color mode we want
 
 	std::vector<unsigned char> buffer;
 	unsigned error = lodepng::encode(buffer, png_data, tile_set.info.width, tile_set.info.height * num_tiles_to_export, state);
