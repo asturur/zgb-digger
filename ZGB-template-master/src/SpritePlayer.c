@@ -197,11 +197,11 @@ void UPDATE() {
                     break;
                 case J_LEFT:
                     spriteX = THIS->x - 4;
-                    spriteY =  THIS->y + 4;
+                    spriteY =  THIS->y + 6;
                     break;
                 case J_RIGHT:
                     spriteX = THIS->x + 12;
-                    spriteY =  THIS->y + 4;
+                    spriteY =  THIS->y + 6;
                     break;
                 default:
                     break;
