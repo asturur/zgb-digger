@@ -2,6 +2,7 @@
 #include "SpriteManager.h"
 #include "SpriteEnemy.h"
 #include "ZGBMain.h"
+#include "StateGame.h"
 
 // CUSTOM_DATA usage 0-7
 #define direction 0
@@ -57,6 +58,7 @@ void UPDATE() {
                 spr->custom_data[6] = TRUE;
 				SetSpriteAnim(spr, spr->custom_data[0] == nobMode ? nob_dies : hob_dies, 15);
                 SetSpriteAnim(THIS, explosion_anim, 15);
+                updateScore(scoreKill);
 			}
 		}
 	}

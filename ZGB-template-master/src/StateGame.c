@@ -8,6 +8,7 @@
 #include <string.h>
 #include <Sound.h>
 #include "Music.h"
+#include "StateGame.h"
 
 #define tilesPerRow 32
 #define maxEnimesCount 3
@@ -26,7 +27,6 @@ DECLARE_MUSIC(music);
 
 UBYTE currentLevel = 0;
 uint16_t score = 0;
-uint16_t lastScore = 0;
 UBYTE diamonds = 0;
 uint16_t spawnTimer = 0;
 uint8_t enemyCount = 0;
@@ -37,6 +37,25 @@ unsigned char levelMap[150];
 
 struct MapInfo currentInMemoryLevel;
 unsigned char tileMap[768];
+
+void paintScore() {
+	// scores are multiple of 25 points.
+	// mod 2 = 1 draw a 5.
+	// then mod 4 for 2/5/7
+	// then >> 2 will give us the hundreds.
+	// then we need to loop again
+	uint8_t mod = 0;
+	uint16_t lastScore = score;
+	for (uint8_t i = 6; i > 0; i--) {
+		mod = lastScore % 10;
+		UPDATE_HUD_TILE(i, 0, scoreFontOffset + mod);
+		lastScore = (lastScore - mod) / 10;
+	}
+	for (uint8_t i = 1; i <= lives; i++) {
+		UPDATE_HUD_TILE(7 + i, 0, lives >= i ? lifeFont : 0);
+	}
+	UPDATE_HUD_TILE(14, 0, scoreFontOffset + enemyCount);
+}
 
 void copyTileMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
 	uint8_t __save = CURRENT_BANK;
@@ -111,6 +130,11 @@ void activateBag(uint8_t bagcell) {
 
 }
 
+void updateScore(uint16_t addScore) {
+	score += addScore;
+	paintScore();
+}
+
 void runMapSideEffects() {
 	const UBYTE column = (scroll_target->x - ((scroll_target->x - 8) % 16) - 8) / 16;
 	const UBYTE row = (scroll_target->y - ((scroll_target->y - 24) % 16) - 24) / 16;
@@ -121,7 +145,7 @@ void runMapSideEffects() {
 	if (currentMapValue == 16) {
 		// took from a tutorial
 		PlayFx(CHANNEL_1, 10, 0x4f, 0xc7, 0xf3, 0x73, 0x86);
-		score += 50;
+		updateScore(scoreEmerald);
 		diamonds--;
 		if (direction == J_RIGHT) {
 			levelMap[currentCell] = 8;
@@ -195,24 +219,6 @@ void loadLevel(UBYTE level) {
 	}
 }
 
-void paintScore() {
-	// scores are multiple of 25 points.
-	// mod 2 = 1 draw a 5.
-	// then mod 4 for 2/5/7
-	// then >> 2 will give us the hundreds.
-	// then we need to loop again
-	uint8_t mod = 0;
-	lastScore = score;
-	for (uint8_t i = 6; i > 0; i--) {
-		mod = lastScore % 10;
-		UPDATE_HUD_TILE(i, 0, scoreFontOffset + mod);
-		lastScore = (lastScore - mod) / 10;
-	}
-	for (uint8_t i = 1; i <= lives; i++) {
-		UPDATE_HUD_TILE(7 + i, 0, lives >= i ? lifeFont : 0);
-	}
-}
-
 void START() {
 	NR52_REG = 0x80; //Enables sound, you should always setup this first
 	NR51_REG = 0xFF; //Enables all channels (left and right)
@@ -236,9 +242,7 @@ void UPDATE() {
 		spawnTimer = 500;
 		enemyCount++;
 		SpriteManagerAdd(SpriteEnemy, 232, 24);
-	}
-	if (lastScore != score) {
 		paintScore();
-		lastScore = score;
-	}	
+	}
 }
+
