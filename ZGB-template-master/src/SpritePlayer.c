@@ -64,8 +64,8 @@ void updateMapTiles() {
     // this check runs AFTER the digger has moved
     UBYTE modRight = THIS->x % tileSize;
     UBYTE modDown = THIS->y % tileSize;
-    UBYTE nextColumn = (THIS->x - modRight) << tileSizeBitShift;
-    UBYTE nextRow = (THIS->y - modDown) << tileSizeBitShift;
+    UBYTE nextColumn = (THIS->x - modRight) >> tileSizeBitShift;
+    UBYTE nextRow = (THIS->y - modDown) >> tileSizeBitShift;
     UBYTE tile, tileNext, target;
     // TODO optimization: can i run this if only when necessary?
     // if (nextColumn != column || nextRow != row || changeDirection) {
