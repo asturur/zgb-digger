@@ -10,13 +10,6 @@
 #include "Music.h"
 #include "StateGame.h"
 
-#define tilesPerRow 32
-#define maxEnimesCount 3
-#define enemySpawnTimer 300
-#define scoreFontOffset 1
-#define hudSize 64 // tilesPerRow * 2
-#define lifeFont 11
-
 extern const UBYTE direction;
 
 extern const unsigned char level1Map[150];
@@ -233,13 +226,15 @@ void START() {
 }
 
 void UPDATE() {
-	spawnTimer--;
+	if (spawnTimer > 0) {
+		spawnTimer--;
+	}
 	if (diamonds == 0) {
 		currentLevel++;
 		loadLevel(currentLevel);
 	}
 	if (spawnTimer == 0 && enemyCount < maxEnimesCount) {
-		spawnTimer = 500;
+		spawnTimer = enemySpawnTimer;
 		enemyCount++;
 		SpriteManagerAdd(SpriteEnemy, 232, 24);
 		paintScore();

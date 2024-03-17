@@ -2,6 +2,7 @@
 #include "Keys.h"
 #include "SpriteManager.h"
 #include "ZGBMain.h"
+#include "StateGame.h"
 
 extern unsigned char tileMap[768];
 extern void runMapSideEffects();
@@ -23,36 +24,36 @@ void START() {
 }
 
 BOOLEAN isColumnDisaligned () {
-    return (THIS->x - 8) % 16;
+    return (THIS->x - mapBoundLeft) % 16;
 }
 
 BOOLEAN isRowDisaligned () {
-    return (THIS->y - 8) % 16;
+    return (THIS->y - mapBoundLeft) % 16;
 }
 
 void updateForRight() {
-    if (THIS->x < 232) { // 31 * 8
+    if (THIS->x < mapBoundRight) { // 31 * 8
         THIS->x ++;
         SetSpriteAnim(THIS, anim_walk_right, 15);
     }
 }
 
 void updateForLeft() {
-    if (THIS->x > 8) { // 1 * 8
-        THIS->x --;
+    if (THIS->x > mapBoundLeft) { // 1 * 8
+        THIS->x--;
         SetSpriteAnim(THIS, anim_walk_left, 15);
     }
 }
 
 void updateForUp() {
-    if (THIS->y > 24) { // 3 * 8
+    if (THIS->y > mapBoundUp) { // 3 * 8
         THIS->y --;
         SetSpriteAnim(THIS, anim_walk_up, 15);
     }
 }
 
 void updateForDown() {
-    if (THIS->y < 168) { // 22 * 8
+    if (THIS->y < mapBoundDown) { // 22 * 8
         THIS->y ++;
         SetSpriteAnim(THIS, anim_walk_down, 15);
     }
@@ -61,10 +62,10 @@ void updateForDown() {
 void updateMapTiles() {
     // position of digger is the TOP LEFT first pixel of the sprite.
     // this check runs AFTER the digger has moved
-    UBYTE modRight = THIS->x % 8;
-    UBYTE modDown = THIS->y % 8;
-    UBYTE nextColumn = (THIS->x - modRight) / 8;
-    UBYTE nextRow = (THIS->y - modDown) / 8;
+    UBYTE modRight = THIS->x % tileSize;
+    UBYTE modDown = THIS->y % tileSize;
+    UBYTE nextColumn = (THIS->x - modRight) << tileSizeBitShift;
+    UBYTE nextRow = (THIS->y - modDown) << tileSizeBitShift;
     UBYTE tile, tileNext, target;
     // TODO optimization: can i run this if only when necessary?
     // if (nextColumn != column || nextRow != row || changeDirection) {
@@ -131,7 +132,7 @@ void UPDATE() {
     BOOLEAN changeDirection = FALSE;
     if (KEY_PRESSED(J_UP)) {
         moving = TRUE;
-        if (isColumnDisaligned() && THIS->y > 24) {
+        if (isColumnDisaligned() && THIS->y > mapBoundUp) {
             if (direction == J_RIGHT) {
                 direction = J_RIGHT;
             } else {
@@ -144,7 +145,7 @@ void UPDATE() {
 	} 
 	if(KEY_PRESSED(J_DOWN)) {
         moving = TRUE;
-        if (isColumnDisaligned() && THIS->y < 168) {
+        if (isColumnDisaligned() && THIS->y < mapBoundDown) {
             if (direction == J_RIGHT) {
                 direction = J_RIGHT;
             } else {
@@ -157,7 +158,7 @@ void UPDATE() {
 	}
 	if(KEY_PRESSED(J_LEFT)) {
         moving = TRUE;
-        if (isRowDisaligned() && THIS->x > 8) {
+        if (isRowDisaligned() && THIS->x > mapBoundLeft) {
             if (direction == J_UP) {
                 direction = J_UP;
             } else {
@@ -170,7 +171,7 @@ void UPDATE() {
 	}
 	if(KEY_PRESSED(J_RIGHT)) {
         moving = TRUE;
-        if (isRowDisaligned() && THIS->x < 232) {
+        if (isRowDisaligned() && THIS->x < mapBoundRight) {
             if (direction == J_UP) {
                 direction = J_UP;
             } else {

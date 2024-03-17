@@ -17,6 +17,8 @@
         "music.h": "c",
         "levels.h": "c",
         "sound.h": "c",
-        "tilesinfo.h": "c"
+        "tilesinfo.h": "c",
+        "spriteenemy.h": "c",
+        "stategame.h": "c"
     }
 }
