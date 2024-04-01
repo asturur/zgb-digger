@@ -68,6 +68,8 @@ void copyTileMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONB
 	// memcpy(tileMap, levelToLoad->data, currentInMemoryLevel.width * currentInMemoryLevel.height);
 	// redefine the pointer to my in memory array
 	currentInMemoryLevel.data = tileMap;
+	currentInMemoryLevel.width = 32;
+	currentInMemoryLevel.height = 23;
 	// if (levelToLoad->attributes) memcpy(map_attr, levelToLoad->attributes, current_level.width * current_level.height); else memset(map_attr, 0, sizeof(map_attr));
 	SWITCH_ROM(__save);
 }
