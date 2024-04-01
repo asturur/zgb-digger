@@ -19,6 +19,7 @@
         "sound.h": "c",
         "tilesinfo.h": "c",
         "spriteenemy.h": "c",
-        "stategame.h": "c"
+        "stategame.h": "c",
+        "spritefireball.h": "c"
     }
 }

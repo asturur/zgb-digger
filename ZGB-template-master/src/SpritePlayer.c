@@ -3,24 +3,31 @@
 #include "SpriteManager.h"
 #include "ZGBMain.h"
 #include "StateGame.h"
+#include "SpriteFireball.h"
 
 extern unsigned char tileMap[736];
 extern void runMapSideEffects(void);
 
 const UBYTE anim_walk_right[] = {4, 0, 1, 2, 1};
-const UBYTE anim_walk_left[] = {4, 9, 10, 11, 10};
-const UBYTE anim_walk_up[] = {4, 6, 7, 8, 7};
 const UBYTE anim_walk_down[] = {4, 3, 4, 5, 4};
+const UBYTE anim_walk_up[] = {4, 6, 7, 8, 7};
+const UBYTE anim_walk_left[] = {4, 9, 10, 11, 10};
+
+const UBYTE discharged_right[] = {4, 12, 13, 14, 13};
+const UBYTE discharged_down[] = {4, 15, 16, 17, 16};
+const UBYTE discharged_up[] = {4, 18, 19, 20, 19};
+const UBYTE discharged_left[] = {4, 21, 22, 23, 22};
+
 UBYTE direction;
 UBYTE column;
 UBYTE row;
 
 // CUSTOM_DATA usage
-// 0 rechargetime
+#define custom_data_recharge 0
 
 void START() {
     direction = J_RIGHT;
-    THIS->custom_data[0] = 0;
+    THIS->custom_data[custom_data_recharge] = 0;
 }
 
 BOOLEAN isColumnDisaligned() {
@@ -31,31 +38,45 @@ BOOLEAN isRowDisaligned() {
     return MOD_FOR_LARGE_TILE(THIS->y - mapBoundUp);
 }
 
-void updateForRight() {
-    if (THIS->x < mapBoundRight) {
-        THIS->x ++;
-        SetSpriteAnim(THIS, anim_walk_right, 15);
+void updatePosition() {
+    switch (direction) {
+        case J_UP:
+            if (THIS->y > mapBoundUp) {
+                THIS->y --;
+            }
+            break;
+        case J_DOWN:
+            if (THIS->y < mapBoundDown) {
+                THIS->y ++;
+            }
+            break;
+        case J_LEFT:
+            if (THIS->x > mapBoundLeft) {
+                THIS->x--;
+            }
+            break;
+        case J_RIGHT:
+            if (THIS->x < mapBoundRight) {
+                THIS->x ++;
+            }
+            break;
     }
 }
 
-void updateForLeft() {
-    if (THIS->x > mapBoundLeft) { // 1 * 8
-        THIS->x--;
-        SetSpriteAnim(THIS, anim_walk_left, 15);
-    }
-}
-
-void updateForUp() {
-    if (THIS->y > mapBoundUp) { // 3 * 8
-        THIS->y --;
-        SetSpriteAnim(THIS, anim_walk_up, 15);
-    }
-}
-
-void updateForDown() {
-    if (THIS->y < mapBoundDown) { // 22 * 8
-        THIS->y ++;
-        SetSpriteAnim(THIS, anim_walk_down, 15);
+void updateAnimation() {
+    switch (direction) {
+        case J_UP:
+            SetSpriteAnim(THIS, THIS->custom_data[custom_data_recharge] > 0 ? discharged_up : anim_walk_up, 15);
+            break;
+        case J_DOWN:
+            SetSpriteAnim(THIS, THIS->custom_data[custom_data_recharge] > 0 ? discharged_down : anim_walk_down, 15);
+            break;
+        case J_LEFT:
+            SetSpriteAnim(THIS, THIS->custom_data[custom_data_recharge] > 0 ? discharged_left : anim_walk_left, 15);
+            break;
+        case J_RIGHT:
+            SetSpriteAnim(THIS, THIS->custom_data[custom_data_recharge] > 0 ? discharged_right : anim_walk_right, 15);
+            break;
     }
 }
 
@@ -181,10 +202,10 @@ void UPDATE() {
         }
 	}
     if(KEY_PRESSED(J_A)) {
-        if (THIS->custom_data[0] == 0) {
+        if (THIS->custom_data[custom_data_recharge] == 0) {
             uint8_t spriteX = 0;
             uint8_t spriteY = 0;
-            THIS->custom_data[0] = 255;
+            THIS->custom_data[custom_data_recharge] = 255;
             switch (direction) {
                 case J_UP:
                     spriteX = THIS->x + 4;
@@ -206,32 +227,24 @@ void UPDATE() {
                     break;
             }
             Sprite *fireball = SpriteManagerAdd(SpriteFireball, spriteX, spriteY);
-            fireball->custom_data[0] = direction;
+            fireball->custom_data[projectile_direction] = direction;
+            if (!moving) {
+                updateAnimation();
+            }
         }
 	}
-    if (THIS->custom_data[0] > 0) {
-        THIS->custom_data[0]--;
+    if (THIS->custom_data[custom_data_recharge] > 0) {
+        THIS->custom_data[custom_data_recharge]--;
+        if (THIS->custom_data[custom_data_recharge] == 0) {
+            updateAnimation();
+        }
     }
     if (moving) {
-        switch (direction) {
-            case J_UP:
-                updateForUp();
-                break;
-            case J_DOWN:
-                updateForDown();
-                break;
-            case J_LEFT:
-                updateForLeft();
-                break;
-            case J_RIGHT:
-                updateForRight();
-                break;
-        }
+        updatePosition();
+        updateAnimation();
         updateMapTiles();
         runMapSideEffects();
     }
-    
-    
 }
 
 void DESTROY() {
