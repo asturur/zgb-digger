@@ -24,11 +24,11 @@ void START() {
 }
 
 BOOLEAN isColumnDisaligned () {
-    return (THIS->x - mapBoundLeft) % 16;
+    return (THIS->x - mapBoundLeft) % 16 != 0;
 }
 
 BOOLEAN isRowDisaligned () {
-    return (THIS->y - mapBoundLeft) % 16;
+    return (THIS->y - mapBoundUp) % 16 != 0;
 }
 
 void updateForRight() {
@@ -62,10 +62,8 @@ void updateForDown() {
 void updateMapTiles() {
     // position of digger is the TOP LEFT first pixel of the sprite.
     // this check runs AFTER the digger has moved
-    UBYTE modRight = THIS->x % tileSize;
-    UBYTE modDown = THIS->y % tileSize;
-    UBYTE nextColumn = (THIS->x - modRight) >> tileSizeBitShift;
-    UBYTE nextRow = (THIS->y - modDown) >> tileSizeBitShift;
+    uint8_t nextColumn = TILE_FROM_PIXEL(THIS->x);
+    uint8_t nextRow = TILE_FROM_PIXEL(THIS->y);
     UBYTE tile, tileNext, target;
     // TODO optimization: can i run this if only when necessary?
     // if (nextColumn != column || nextRow != row || changeDirection) {
@@ -77,24 +75,24 @@ void updateMapTiles() {
                 tileNext = get_bkg_tile_xy(column + 1, row);
                 if (tile != 0) {
                     set_bkg_tile_xy(column, row, 0);
-                    tileMap[row * 32 + column] = 0;
+                    tileMap[row * tilesPerRow + column] = 0;
                 }
                 if (tileNext != 0) {
                     set_bkg_tile_xy(column + 1, row, 0);
-                    tileMap[row * 32 + column + 1] = 0;
+                    tileMap[row * tilesPerRow + column + 1] = 0;
                 }
                 break;
             case J_DOWN:
-                target = row + (modDown ? 2 : 1);
+                target = row + (MOD_FOR_TILE(THIS->y) ? 2 : 1);
                 tile = get_bkg_tile_xy(column, target);
                 tileNext = get_bkg_tile_xy(column + 1, target);
                 if (tile != 0) {
                     set_bkg_tile_xy(column, target, 0);
-                    tileMap[target * 32 + column] = 0;
+                    tileMap[target * tilesPerRow + column] = 0;
                 }
                 if (tileNext != 0) {
                     set_bkg_tile_xy(column + 1, target, 0);
-                    tileMap[target * 32 + column + 1] = 0;
+                    tileMap[target * tilesPerRow + column + 1] = 0;
                 }
                 break;
             case J_LEFT:
@@ -103,24 +101,24 @@ void updateMapTiles() {
                 tileNext = get_bkg_tile_xy(column, row + 1);
                 if (tile != 0) {
                     set_bkg_tile_xy(column, row, 0);
-                    tileMap[row * 32 + column] = 0;
+                    tileMap[row * tilesPerRow + column] = 0;
                 }
                 if (tileNext != 0) {
                     set_bkg_tile_xy(column, row + 1, 0);
-                    tileMap[(row + 1) * 32 + column] = 0;
+                    tileMap[(row + 1) * tilesPerRow + column] = 0;
                 }
                 break;
             case J_RIGHT:
-                target = column + (modRight ? 2 : 1);
+                target = column + (MOD_FOR_TILE(THIS->x) ? 2 : 1);
                 tile = get_bkg_tile_xy(target, row);
                 tileNext = get_bkg_tile_xy(target, row + 1);
                 if (tile != 0) {
                     set_bkg_tile_xy(target, row, 0);
-                    tileMap[row * 32 + target] = 0;
+                    tileMap[row * tilesPerRow + target] = 0;
                 }
                 if (tileNext != 0) {
                     set_bkg_tile_xy(target, row + 1, 0);
-                    tileMap[(row + 1) * 32 + target] = 0;
+                    tileMap[(row + 1) * tilesPerRow + target] = 0;
                 }
                 break;
         }

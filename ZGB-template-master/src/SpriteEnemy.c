@@ -1,6 +1,7 @@
 #include "Banks/SetAutoBank.h"
 #include "SpriteManager.h"
 #include "SpriteEnemy.h"
+#include "StateGame.h"
 
 extern uint8_t enemyCount;
 extern uint16_t spawnTimer;
@@ -44,28 +45,28 @@ void UPDATE() {
     }
     switch (THIS->custom_data[enemy_direction]) {
         case J_LEFT:
-            if (THIS->x > 8) {
+            if (THIS->x > mapBoundLeft) {
                 THIS->x--;
             } else {
                 THIS->custom_data[enemy_direction] = J_DOWN;
             }
         break;
         case J_RIGHT:
-            if (THIS->x < 232) {
+            if (THIS->x < mapBoundRight) {
                 THIS->x++;
             } else {
                 THIS->custom_data[enemy_direction] = J_UP;
             }
         break;
         case J_UP:
-            if (THIS->y > 24) {
+            if (THIS->y > mapBoundUp) {
                 THIS->y--;
             } else {
                 THIS->custom_data[enemy_direction] = J_LEFT;
             }
         break;
         case J_DOWN:
-            if (THIS->y < 168) {
+            if (THIS->y < mapBoundDown) {
                 THIS->y++;
             } else {
                 THIS->custom_data[enemy_direction] = J_RIGHT;

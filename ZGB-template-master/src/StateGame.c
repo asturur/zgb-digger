@@ -35,6 +35,10 @@ unsigned char levelMap[150];
 struct MapInfo currentInMemoryLevel;
 unsigned char tileMap[768];
 
+uint8_t getTilefromPosition(uint8_t posX) {
+    return (posX - (posX % tileSize)) >> tileSizeBitShift;
+}
+
 void paintScore() {
 	// scores are multiple of 25 points.
 	// mod 2 = 1 draw a 5.
@@ -121,10 +125,9 @@ void activateBag(uint8_t bagcell) {
 	levelMap[bagcell] = 0;
 	uint8_t column = bagcell % 15;
 	uint8_t row = (bagcell - column) / 15;
-	uint8_t positionX = 8 + column * 16;
-	uint8_t positionY = 24 + row * 16;
+	uint8_t positionX = mapBoundLeft + column * 16;
+	uint8_t positionY = mapBoundUp + row * 16;
 	SpriteManagerAdd(SpriteBag, positionX, positionY);
-
 }
 
 void updateScore(uint16_t addScore) {
@@ -147,8 +150,8 @@ void playEmeraldSound() {
 }
 
 void runMapSideEffects() {
-	const UBYTE column = (scroll_target->x - ((scroll_target->x - 8) % 16) - 8) / 16;
-	const UBYTE row = (scroll_target->y - ((scroll_target->y - 24) % 16) - 24) / 16;
+	const UBYTE column = (scroll_target->x - ((scroll_target->x - mapBoundLeft) % 16) - 8) / 16;
+	const UBYTE row = (scroll_target->y - ((scroll_target->y - mapBoundUp) % 16) - 16) / 16;
 	const UBYTE currentCell = row * 15 + column;
 	const UBYTE currentMapValue = levelMap[currentCell];
 
@@ -203,7 +206,7 @@ void resetLevelState() {
 void loadLevel(UBYTE level) {
 	resetLevelState();
 	// add first the spriteManager only then load the level
-	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 168);
+	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 160);
 	switch (level) {
 		case 1:
 			IMPORT_MAP(level1);
@@ -256,7 +259,7 @@ void UPDATE() {
 	if (spawnTimer == 0 && enemyCount < maxEnimesCount) {
 		spawnTimer = enemySpawnTimer;
 		enemyCount++;
-		SpriteManagerAdd(SpriteEnemy, 232, 24);
+		SpriteManagerAdd(SpriteEnemy, 232, 16);
 		paintScore();
 	}
 	// playEmeraldSound();
