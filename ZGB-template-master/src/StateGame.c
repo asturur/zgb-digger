@@ -23,6 +23,10 @@ uint16_t spawnTimer = 0;
 uint8_t enemyCount = 0;
 uint8_t lives = 3;
 
+uint8_t emeraldLoop = 0;
+uint8_t emeraldDuration = 0;
+uint8_t emeraldFreq[] = { 0x95, 0x95, 0x95, 0x95, 0x95, 0x95, 0x95, 0x95 };
+
 DECLARE_MUSIC(music);
 
 // currently loaded map
@@ -128,6 +132,20 @@ void updateScore(uint16_t addScore) {
 	paintScore();
 }
 
+void playEmeraldSound() {
+	if (emeraldDuration > 0) {
+		if (emeraldDuration == 7 || emeraldDuration == 6) {
+			PlayFx(CHANNEL_1, 10, 0x00, 0x81, 0x84, 0x95, 0xc6);
+		}
+		emeraldDuration--;
+	} else {
+		if (emeraldLoop > 0) {
+			emeraldDuration = 7;
+			emeraldLoop--;
+		}
+	}
+}
+
 void runMapSideEffects() {
 	const UBYTE column = (scroll_target->x - ((scroll_target->x - 8) % 16) - 8) / 16;
 	const UBYTE row = (scroll_target->y - ((scroll_target->y - 24) % 16) - 24) / 16;
@@ -138,6 +156,8 @@ void runMapSideEffects() {
 	if (currentMapValue == 16) {
 		// took from a tutorial
 		PlayFx(CHANNEL_1, 10, 0x4f, 0xc7, 0xf3, 0x73, 0x86);
+		emeraldDuration = 7;
+		emeraldLoop = 7;
 		updateScore(scoreEmerald);
 		diamonds--;
 		if (direction == J_RIGHT) {
@@ -239,5 +259,6 @@ void UPDATE() {
 		SpriteManagerAdd(SpriteEnemy, 232, 24);
 		paintScore();
 	}
+	// playEmeraldSound();
 }
 
