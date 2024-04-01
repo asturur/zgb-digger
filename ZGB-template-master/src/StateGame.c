@@ -33,7 +33,7 @@ DECLARE_MUSIC(music);
 unsigned char levelMap[150];
 
 struct MapInfo currentInMemoryLevel;
-unsigned char tileMap[768];
+unsigned char tileMap[736];
 
 uint8_t getTilefromPosition(uint8_t posX) {
     return (posX - (posX % tileSize)) >> tileSizeBitShift;
@@ -91,23 +91,23 @@ void copyLevelMapToRam(unsigned char *mapToLoad[]) NONBANKED {
 			if (metaTile > 0 && metaTile < 16) {
 				// fill in four 0 tiles, the black gallery
 				// at current row
-				tileMap[offset] = 0;
-				tileMap[offset + 1] = 0;
+				tileMap[offset] = tileBlack;
+				tileMap[offset + 1] = tileBlack;
 				// at next row
-				tileMap[offset + tilesPerRow] = 0;
-				tileMap[offset + tilesPerRow + 1] = 0;
-			} else if (metaTile == 16) {
-				tileMap[offset] = 2;
-				tileMap[offset + 1] = 3;
+				tileMap[offset + tilesPerRow] = tileBlack;
+				tileMap[offset + tilesPerRow + 1] = tileBlack;
+			} else if (metaTile == metaTileEmerald) {
+				tileMap[offset] = tileEmeraldTL;
+				tileMap[offset + 1] = tileEmeraldTR;
 				// at next row
-				tileMap[offset + tilesPerRow] = 4;
-				tileMap[offset + tilesPerRow + 1] = 5;
-			} else if (metaTile == 17) {
-				tileMap[offset] = 6;
-				tileMap[offset + 1] = 7;
+				tileMap[offset + tilesPerRow] = tileEmeraldBL;
+				tileMap[offset + tilesPerRow + 1] = tileEmeraldBR;
+			} else if (metaTile == metaTileBag) {
+				tileMap[offset] = tileBagTL;
+				tileMap[offset + 1] = tileBagTR;
 				// at next row
-				tileMap[offset + tilesPerRow] = 8;
-				tileMap[offset + tilesPerRow + 1] = 9;
+				tileMap[offset + tilesPerRow] = tileBagBL;
+				tileMap[offset + tilesPerRow + 1] = tileBagBR;
 			}
 			offset += 2;
 		}

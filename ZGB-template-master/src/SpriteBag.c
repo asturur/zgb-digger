@@ -48,7 +48,7 @@ void UPDATE() {
         SetSpriteAnim(THIS, bag_fall, 15);
     // else if is falling down
     } else if (THIS->custom_data[0] == stateFalling) {
-        if (THIS->y % 16) {
+        if (MOD_FOR_LARGE_TILE(THIS->y)) {
             THIS->custom_data[2]++;
             THIS->y++;
         } else {

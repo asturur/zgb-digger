@@ -4,8 +4,8 @@
 #include "ZGBMain.h"
 #include "StateGame.h"
 
-extern unsigned char tileMap[768];
-extern void runMapSideEffects();
+extern unsigned char tileMap[736];
+extern void runMapSideEffects(void);
 
 const UBYTE anim_walk_right[] = {4, 0, 1, 2, 1};
 const UBYTE anim_walk_left[] = {4, 9, 10, 11, 10};
@@ -23,16 +23,16 @@ void START() {
     THIS->custom_data[0] = 0;
 }
 
-BOOLEAN isColumnDisaligned () {
-    return (THIS->x - mapBoundLeft) % 16 != 0;
+BOOLEAN isColumnDisaligned() {
+    return MOD_FOR_LARGE_TILE(THIS->x - mapBoundLeft);
 }
 
-BOOLEAN isRowDisaligned () {
-    return (THIS->y - mapBoundUp) % 16 != 0;
+BOOLEAN isRowDisaligned() {
+    return MOD_FOR_LARGE_TILE(THIS->y - mapBoundUp);
 }
 
 void updateForRight() {
-    if (THIS->x < mapBoundRight) { // 31 * 8
+    if (THIS->x < mapBoundRight) {
         THIS->x ++;
         SetSpriteAnim(THIS, anim_walk_right, 15);
     }

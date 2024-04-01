@@ -21,6 +21,21 @@
 #define mapBoundRight 232
 #define mapBoundDown 160
 
+// tiles and metatiles codes
+#define tileBlack 0
+#define tileGrass 1
+#define tileEmeraldTL 2
+#define tileEmeraldTR 3
+#define tileEmeraldBL 4
+#define tileEmeraldBR 5
+#define tileBagTL 6
+#define tileBagTR 7
+#define tileBagBL 8
+#define tileBagBR 9
+
+#define metaTileEmerald 16
+#define metaTileBag 17
+
 // game timers and behaviour
 #define maxEnimesCount 3
 #define enemySpawnTimer 300
@@ -30,6 +45,6 @@
 #define MOD_FOR_TILE(X) X & 0x07
 
 #define LARGE_TILE_FROM_PIXEL(X) X >> largetTileSizeBitShift
-#define MOD_FOR_LARGE_TILE(X) X & 0x15
+#define MOD_FOR_LARGE_TILE(X) X & 0x0F
 // utility functions
 void updateScore(uint16_t addScore);
