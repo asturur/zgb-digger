@@ -1,42 +1,86 @@
-CXX      := -c++
-CXXFLAGS := -pedantic-errors -Wall -Wextra
-LDFLAGS  := -L/usr/lib -lstdc++ -lm
-BUILD    := ./build
-OBJ_DIR  := $(BUILD)/objects
-APP_DIR  := ./
-TARGET   := gbr2c
-INCLUDE  := -Iinclude/
-SRC      :=                      \
-   $(wildcard *.cpp)         \
+# NAME	:= gbr2c
 
-OBJECTS  := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
-DEPENDENCIES \
-         := $(OBJECTS:.o=.d)
+# SOURCES	:= gbr2c.cpp gbrParser.cpp
 
-all: build $(APP_DIR)/$(TARGET)
+# OBJS	:= $(SOURCES:%.cpp=%.o)
 
-$(OBJ_DIR)/%.o: %.cpp
-	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -MMD -o $@
+# CC	:= g++
+# CFLAGS	:= -static
 
-$(APP_DIR)/$(TARGET): $(OBJECTS)
-	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -o $(APP_DIR)/$(TARGET) $^ $(LDFLAGS)
+# all:	$(NAME)
 
--include $(DEPENDENCIES)
+# $(NAME):
+# 	$(CC) $(CFLAGS) -o $@ $(SOURCES)
 
-.PHONY: all build clean debug release info
+# clean:
+# 	rm -f $(OBJS) $(NAME)
 
-build:
-	@mkdir -p $(APP_DIR)
-	@mkdir -p $(OBJ_DIR)
 
-debug: CXXFLAGS += -DDEBUG -g
-debug: all
+# *****************************************************
+# Variables to control Makefile operation
 
-release: CXXFLAGS += -O2
-release: all
+# Might want when doing linux -> win cross build
+# LFLAGS = -s -static
+
+# Prefix to add to the standard tools.  Usefull for a standard gcc
+# cross-compile.
+TOOLSPREFIX =
+ifeq ($(OS_TARGET),Win_x32)
+	TOOLSPREFIX = i686-w64-mingw32-
+endif
+ifeq ($(OS_TARGET),Win_x64)
+	TOOLSPREFIX = x86_64-w64-mingw32-
+endif
+
+
+CXX = $(TOOLSPREFIX)g++
+CXXFLAGS = -Os -g -I../gbr2c -Wno-unused-result # -Wall  -Wextra -pedantic
+LFLAGS = -g
+
+ifeq ($(OS),Windows_NT)
+	BUILD_OS := Windows_NT
+else
+	BUILD_OS := $(shell uname -s)
+endif
+
+# Target older macOS version than whatever build OS is for better compatibility
+ifeq ($(BUILD_OS),Darwin)
+	export MACOSX_DEPLOYMENT_TARGET=10.10
+endif
+
+
+# Static flag for windows cross and native builds
+ifeq ($(TOOLSPREFIX),i686-w64-mingw32-)
+#   prefix will automatically be .exe for cross build
+	EXT = .exe
+	LFLAGS += -static 
+endif
+
+ifeq ($(OS),Windows_NT)
+	EXT = .exe
+	LFLAGS += -static 
+endif
+
+
+# ****************************************************
+# Targets needed to bring the executable up to date
+
+TARGET = gbr2c
+
+
+SRCS := gbr2c.cpp gbrParser.cpp
+OBJS := $(SRCS:%.cpp=%.o)
+
+$(TARGET): $(OBJS)
+	$(CXX) $(LFLAGS) -o $(TARGET) $(OBJS)
+	strip $@$(EXT)
+
+# The main.o target can be written more simply
+
+%.cpp.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	-@rm -rvf $(OBJ_DIR)/*
-	-@rm -rvf $(APP_DIR)/$(TARGET)
+	rm -f *.o
+	rm -f *.exe
+	rm -f $(TARGET)

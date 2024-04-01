@@ -16,8 +16,6 @@ extern const unsigned char level1Map[150];
 extern const unsigned char level2Map[150];
 extern const unsigned char level3Map[150];
 
-DECLARE_MUSIC(music);
-
 UBYTE currentLevel = 0;
 uint16_t score = 0;
 UBYTE diamonds = 0;
@@ -25,11 +23,21 @@ uint16_t spawnTimer = 0;
 uint8_t enemyCount = 0;
 uint8_t lives = 3;
 
+uint8_t emeraldLoop = 0;
+uint8_t emeraldDuration = 0;
+uint8_t emeraldFreq[] = { 0x95, 0x95, 0x95, 0x95, 0x95, 0x95, 0x95, 0x95 };
+
+DECLARE_MUSIC(music);
+
 // currently loaded map
 unsigned char levelMap[150];
 
 struct MapInfo currentInMemoryLevel;
 unsigned char tileMap[768];
+
+uint8_t getTilefromPosition(uint8_t posX) {
+    return (posX - (posX % tileSize)) >> tileSizeBitShift;
+}
 
 void paintScore() {
 	// scores are multiple of 25 points.
@@ -117,10 +125,9 @@ void activateBag(uint8_t bagcell) {
 	levelMap[bagcell] = 0;
 	uint8_t column = bagcell % 15;
 	uint8_t row = (bagcell - column) / 15;
-	uint8_t positionX = 8 + column * 16;
-	uint8_t positionY = 24 + row * 16;
+	uint8_t positionX = mapBoundLeft + column * 16;
+	uint8_t positionY = mapBoundUp + row * 16;
 	SpriteManagerAdd(SpriteBag, positionX, positionY);
-
 }
 
 void updateScore(uint16_t addScore) {
@@ -128,9 +135,23 @@ void updateScore(uint16_t addScore) {
 	paintScore();
 }
 
+void playEmeraldSound() {
+	if (emeraldDuration > 0) {
+		if (emeraldDuration == 7 || emeraldDuration == 6) {
+			PlayFx(CHANNEL_1, 10, 0x00, 0x81, 0x84, 0x95, 0xc6);
+		}
+		emeraldDuration--;
+	} else {
+		if (emeraldLoop > 0) {
+			emeraldDuration = 7;
+			emeraldLoop--;
+		}
+	}
+}
+
 void runMapSideEffects() {
-	const UBYTE column = (scroll_target->x - ((scroll_target->x - 8) % 16) - 8) / 16;
-	const UBYTE row = (scroll_target->y - ((scroll_target->y - 24) % 16) - 24) / 16;
+	const UBYTE column = (scroll_target->x - ((scroll_target->x - mapBoundLeft) % 16) - 8) / 16;
+	const UBYTE row = (scroll_target->y - ((scroll_target->y - mapBoundUp) % 16) - 16) / 16;
 	const UBYTE currentCell = row * 15 + column;
 	const UBYTE currentMapValue = levelMap[currentCell];
 
@@ -138,6 +159,8 @@ void runMapSideEffects() {
 	if (currentMapValue == 16) {
 		// took from a tutorial
 		PlayFx(CHANNEL_1, 10, 0x4f, 0xc7, 0xf3, 0x73, 0x86);
+		emeraldDuration = 7;
+		emeraldLoop = 7;
 		updateScore(scoreEmerald);
 		diamonds--;
 		if (direction == J_RIGHT) {
@@ -183,7 +206,7 @@ void resetLevelState() {
 void loadLevel(UBYTE level) {
 	resetLevelState();
 	// add first the spriteManager only then load the level
-	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 168);
+	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 160);
 	switch (level) {
 		case 1:
 			IMPORT_MAP(level1);
@@ -221,7 +244,7 @@ void START() {
 	loadLevel(currentLevel);
 	PlayMusic(music, 1);
 	IMPORT_MAP(hud);
-	INIT_HUD(hud);
+	INIT_HUD_EX(hud, 0, 8);
 	paintScore();
 }
 
@@ -236,8 +259,9 @@ void UPDATE() {
 	if (spawnTimer == 0 && enemyCount < maxEnimesCount) {
 		spawnTimer = enemySpawnTimer;
 		enemyCount++;
-		SpriteManagerAdd(SpriteEnemy, 232, 24);
+		SpriteManagerAdd(SpriteEnemy, 232, 16);
 		paintScore();
 	}
+	// playEmeraldSound();
 }
 

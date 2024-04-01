@@ -105,13 +105,13 @@ void GetGBRPath(char* gbm_path, char* tile_file, char* gbr_path)
 int main(int argc, char* argv[])
 {
 	if(argc != 3) {
-		printf("usage: gbm2c file_in.gbm export_folder");
+		printf("usage: gbm2c file_in.gbm export_folder\n");
 		return 1;
 	}
 
 	FILE* file = fopen(argv[1], "rb");
 	if(!file) {
-		printf("Error reading file %s", argv[1]);
+		printf("Error reading file %s\n", argv[1]);
 		return 1;
 	}
 
@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
 		char gbr_path[256];
 		GetGBRPath(argv[1], map.tile_file, gbr_path);
 		if(!GbrParser::LoadGBR(gbr_path, &gbrInfo)) {
-			printf("Error reading gbr file %s", map.tile_file);
+			printf("Error reading gbr file %s\n", map.tile_file);
 			return 1;
 		}
 	}
@@ -223,7 +223,7 @@ int main(int argc, char* argv[])
 	sprintf(export_file, "%s/%s.h", argv[2], export_file_name);
 	file = fopen(export_file, "w");
 	if(!file) {
-		printf("Error writing file");
+		printf("Error writing file\n");
 		return 1;
 	}
 
@@ -245,13 +245,13 @@ int main(int argc, char* argv[])
 	sprintf(export_file, "%s/%s.gbm.c", argv[2], export_file_name);
 	file = fopen(export_file, "w");
 	if(!file) {
-		printf("Error writing file");
+		printf("Error writing file\n");
 		return 1;
 	}
 	
 	fprintf(file, "#pragma bank %d\n", bank);
 
-	fprintf(file, "#include <gb/gb.h>\n");
+	fprintf(file, "#include <gbdk/platform.h>\n");
 
 	fprintf(file, "const unsigned char %s_map[] = {", map_export_settings.label_name);
 	for(INTEGER i = 0; i < map.width * map.height; ++i) {
@@ -292,16 +292,16 @@ int main(int argc, char* argv[])
 
 	fprintf(file, "const void __at(%d) __bank_%s;\n", bank, map_export_settings.label_name);
 	fprintf(file, "const struct MapInfo %s = {\n", map_export_settings.label_name);
-	fprintf(file, "\t%s_map, //map\n", map_export_settings.label_name);
-	fprintf(file, "\t%d, //width\n", map.width);
-	fprintf(file, "\t%d, //height\n", map.height);
-	if(export_attributes) {
-		fprintf(file, "\t%s_attributes, //attributes\n", map_export_settings.label_name);
+	fprintf(file, "\t.data = %s_map, //map\n", map_export_settings.label_name);
+	fprintf(file, "\t.width = %d, //width\n", map.width);
+	fprintf(file, "\t.height = %d, //height\n", map.height);
+	if (export_attributes) { 
+		fprintf(file, "\t.attributes = %s_attributes, //attributes\n", map_export_settings.label_name);
 	} else {
-		fprintf(file, "\t%s, //attributes\n", "0");
+		fprintf(file, "\t.attributes = 0, //attributes\n");
 	}
-	fprintf(file, "\tBANK(%s), //tiles bank\n", tile_file);
-	fprintf(file, "\t&%s, //tiles info\n", tile_file);
+	fprintf(file, "\t.tiles_bank = BANK(%s), //tiles bank\n", tile_file);
+	fprintf(file, "\t.tiles = &%s, //tiles info\n", tile_file);
 	fprintf(file, "};");
 
 	return 0;

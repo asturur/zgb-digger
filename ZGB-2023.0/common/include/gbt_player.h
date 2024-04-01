@@ -9,7 +9,7 @@
 #ifndef _GBT_PLAYER_
 #define _GBT_PLAYER_
 
-#include <gb/gb.h>
+#include <gbdk/platform.h>
 
 // Plays the song pointed by data (pointer array to patterns) in given bank at
 // given initial speed.
@@ -40,5 +40,12 @@ void gbt_enable_channels(UINT8 channel_flags) OLDCALL;
 #define GBT_CHAN_2 (1<<1)
 #define GBT_CHAN_3 (1<<2)
 #define GBT_CHAN_4 (1<<3)
+
+extern volatile UINT8 _gbt_channel3_loaded_instrument;
+
+// resets channel3 instrument; forces reloading of waveform
+inline void gbt_reset_ch3_instrument(void) {
+    _gbt_channel3_loaded_instrument = 0xffu;
+}
 
 #endif //_GBT_PLAYER_

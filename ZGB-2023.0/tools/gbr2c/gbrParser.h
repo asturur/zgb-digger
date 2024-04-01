@@ -81,11 +81,29 @@ struct TilePal {
 	LONG* sgb_color_set;
 };
 
+struct TileSettings {
+	WORD tile_id;
+	bool simple;
+	BYTE flags;
+	BYTE left_color;
+	BYTE right_color;
+
+	WORD split_width;
+	WORD split_height;
+	BYTE split_order;
+
+	BYTE color_set;
+	WORD bookmarks[2];
+
+	bool auto_update;
+};
+
 struct GBRInfo {
 	TileSet tile_set;
 	TileExport tile_export;
 	Palettes palettes;
 	TilePal tile_pal;
+	TileSettings tile_settings;
 	int bank;
 
 	char palette_order[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
@@ -98,7 +116,7 @@ bool LoadGBR(const char* path, GBRInfo* info);
 
 };
 
-#define BIT(V, B) (1 & (V >> B))
-#define BYTE(B0, B1, B2, B3, B4, B5, B6, B7) ((B0 << 7) | (B1 << 6) | (B2 << 5) | (B3 << 4) | (B4 << 3) | (B5 << 2) | (B6 << 1) | B7)
+#define BIT(V, B) (1 & ((V) >> (B)))
+#define BYTE(B0, B1, B2, B3, B4, B5, B6, B7) (((B0) << 7) | ((B1) << 6) | ((B2) << 5) | ((B3) << 4) | ((B4) << 3) | ((B5) << 2) | ((B6) << 1) | (B7))
 
 #endif

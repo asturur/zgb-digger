@@ -1,9 +1,7 @@
 #ifndef MATH_H
 #define MATH_H
 
-#include "asm/types.h"
-
-INT16 DespRight(INT16 a, INT16 b);
+#include <gbdk/platform.h>
 
 #define U_LESS_THAN(A, B) ((A) - (B) & 0x8000u)
 
@@ -16,5 +14,9 @@ INT16 DespRight(INT16 a, INT16 b);
 #define SET_BIT_MASK(N, MASK) N |= MASK
 #define UNSET_BIT_MASK(N, MASK) N &= ~MASK
 #define GET_BIT_MASK(N, MASK) (N & MASK)
+
+inline INT16 DespRight(INT16 a, UINT8 b) {
+	return a >> b;
+}
 
 #endif

@@ -1,8 +1,24 @@
 #include <stdio.h>
+#include <limits.h>
+
 #include "gbrParser.h"
 #include "lodepng/lodepng.h"
 
 using namespace GbrParser;
+
+Color nearest_sms(Color col) {
+	Color res = col;
+	int distance = INT_MAX;
+	for (int i = 0; i < 64; i++) {
+		int r = (i & 0b00000011) << 6, g = (i & 0b00001100) << 4, b = (i & 0b00110000) << 2;
+		int dist = (r - col.r) * (r - col.r) + (g - col.g) * (g - col.g) + (b - col.b) * (b - col.b);
+		if (dist < distance) {
+			res.r = r, res.g = g, res.b = b;
+			distance = dist;
+		}
+	}
+	return res;
+}
 
 void ExtractFileName(char* path, char* file_name, bool include_bank) {
 	char* slash_pos = strrchr(path, '/');
@@ -23,10 +39,22 @@ void ExtractFileName(char* path, char* file_name, bool include_bank) {
 }
 
 int main(int argc, char* argv[]) {
-	if(argc != 3) {
-		printf("usage: gbr2png file_in.gbr export_folder");
+	int sms = 0;
+
+	if (argc < 3) {
+		printf("usage: gbr2png file_in.gbr export_folder [-sms]");
 		return 1;
 	}
+
+	for (int arg = 3; arg < argc; arg++) {
+		if (strcmp(argv[arg], "-sms") == 0) {
+			sms = 1;
+		} else {
+			printf("unknown argument %s\n", argv[3]);
+			return 1;
+        	}
+    	}
+
 
 	GBRInfo gbrInfo;
 	if(!LoadGBR(argv[1], &gbrInfo)) {
@@ -37,6 +65,7 @@ int main(int argc, char* argv[]) {
 	TileExport& tile_export = gbrInfo.tile_export;
 	Palettes& palettes = gbrInfo.palettes;
 	TilePal& tile_pal = gbrInfo.tile_pal;
+	TileSettings& tile_settings = gbrInfo.tile_settings;
 	int& bank = gbrInfo.bank;
 	char* palette_order = gbrInfo.palette_order;
 	int& num_palettes = gbrInfo.num_palettes;
@@ -72,7 +101,7 @@ int main(int argc, char* argv[]) {
 			if(palette_order[p] != -1)
 			{
 				for(int c = 0; c < 4; ++c) {
-					Color color = palettes.colors[p].colors[c];
+					Color color = (sms) ? nearest_sms(palettes.colors[p].colors[c]) : palettes.colors[p].colors[c];
 					ADD_PALETTE(color.r, color.g, color.b, c == 0 ? 0 : 255);
 				}
 			}
@@ -84,11 +113,11 @@ int main(int argc, char* argv[]) {
 		ADD_PALETTE(  0,   0,   0, 255);
 	}
 
-  state.info_png.color.colortype = LCT_PALETTE; 
-  state.info_png.color.bitdepth = 8;
-  state.info_raw.colortype = LCT_PALETTE;
-  state.info_raw.bitdepth = 8;
-  state.encoder.auto_convert = 0; //we specify ourselves exactly what output PNG color mode we want
+	state.info_png.color.colortype = LCT_PALETTE; 
+	state.info_png.color.bitdepth = 8;
+	state.info_raw.colortype = LCT_PALETTE;
+	state.info_raw.bitdepth = 8;
+	state.encoder.auto_convert = 0; //we specify ourselves exactly what output PNG color mode we want
 
 	std::vector<unsigned char> buffer;
 	unsigned error = lodepng::encode(buffer, png_data, tile_set.info.width, tile_set.info.height * num_tiles_to_export, state);
