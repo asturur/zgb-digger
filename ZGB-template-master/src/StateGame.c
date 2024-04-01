@@ -241,7 +241,7 @@ void START() {
 	loadLevel(currentLevel);
 	PlayMusic(music, 1);
 	IMPORT_MAP(hud);
-	INIT_HUD(hud);
+	INIT_HUD_EX(hud, 0, 8);
 	paintScore();
 }
 
