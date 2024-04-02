@@ -4,6 +4,7 @@
 // scores
 #define scoreEmerald 25
 #define scoreKill 250
+#define maxLives 5
 
 // maps and tiles
 #define tilesPerRow 32

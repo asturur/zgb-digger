@@ -48,6 +48,9 @@ void killPlayer(void) {
 	lives--;
 	isDying = 128;
 	scroll_target->custom_data[death_animation] = death_sequence_length;
+	if (lives == 0) {
+		SetState(StateGame);
+	}
 }
 
 void paintScore(void) {
@@ -63,7 +66,7 @@ void paintScore(void) {
 		UPDATE_HUD_TILE(i, 0, scoreFontOffset + mod);
 		lastScore = (lastScore - mod) / 10;
 	}
-	for (uint8_t i = 1; i <= lives; i++) {
+	for (uint8_t i = 1; i <= maxLives; i++) {
 		UPDATE_HUD_TILE(7 + i, 0, lives >= i ? lifeFont : 0);
 	}
 	UPDATE_HUD_TILE(14, 0, scoreFontOffset + enemyCount);
@@ -216,6 +219,7 @@ void resetLevelState(void) {
 	spawnTimer = enemySpawnTimer;
 	SpriteManagerReset();
 	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 160);
+	paintScore();
 }
 
 void loadLevel(UBYTE level) {
@@ -253,13 +257,13 @@ void START(void) {
 	NR52_REG = 0x80; //Enables sound, you should always setup this first
 	NR51_REG = 0xFF; //Enables all channels (left and right)
 	NR50_REG = 0x77; //Max volume
-	
+	lives = 3;
 	currentLevel = 1;
 	loadLevel(currentLevel);
 	PlayMusic(music, 1);
 	IMPORT_MAP(hud);
 	INIT_HUD_EX(hud, 0, 8);
-	paintScore();
+	updateScore(0);
 }
 
 void UPDATE(void) {

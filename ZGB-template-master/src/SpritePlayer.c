@@ -11,8 +11,6 @@ extern void runMapSideEffects(void);
 extern void killPlayer(void);
 extern uint8_t isDying;
 
-const int8_t displacement_death[] = {4, 8, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1 };
-
 const UBYTE anim_walk_right[] = {4, 0, 1, 2, 1};
 const UBYTE anim_walk_down[] = {4, 3, 4, 5, 4};
 const UBYTE anim_walk_up[] = {4, 6, 7, 8, 7};
@@ -152,11 +150,18 @@ void updateMapTiles(void) {
 }
 
 void UPDATE(void) {
-    if (THIS->custom_data[death_animation] > 0) {
-        THIS->y = THIS->y + displacement_death[death_sequence_length - THIS->custom_data[death_animation]];
+    uint8_t d = THIS->custom_data[death_animation];
+    if (d > 0) {
+        if (d == 26) {
+            THIS->y -= 8;
+        } else if (d == 25) {
+            THIS->y -= 4;
+        } else if (d & 0x01) {
+            THIS->y += 1;
+        }
         THIS->custom_data[death_animation]--;
         SetSpriteAnim(THIS, anim_dead, 15);
-        if (THIS->custom_data[death_animation] == 0) {
+        if (d == 1) {
             SpriteManagerRemoveSprite(THIS);
         }
         return;
