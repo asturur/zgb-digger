@@ -9,6 +9,7 @@
 #include <Sound.h>
 #include "Music.h"
 #include "StateGame.h"
+#include "SpritePlayer.h"
 
 extern const UBYTE direction;
 
@@ -27,6 +28,10 @@ uint8_t emeraldLoop = 0;
 uint8_t emeraldDuration = 0;
 uint8_t emeraldFreq[] = { 0x95, 0x95, 0x95, 0x95, 0x95, 0x95, 0x95, 0x95 };
 
+// handles the death state.
+// sprites do not move, a music plays
+uint8_t isDying = 0;
+
 DECLARE_MUSIC(music);
 
 // currently loaded map
@@ -37,6 +42,12 @@ unsigned char tileMap[736];
 
 uint8_t getTilefromPosition(uint8_t posX) {
     return (posX - (posX % tileSize)) >> tileSizeBitShift;
+}
+
+void killPlayer(void) {
+	lives--;
+	isDying = 128;
+	scroll_target->custom_data[death_animation] = death_sequence_length;
 }
 
 void paintScore() {
@@ -200,15 +211,16 @@ void runMapSideEffects() {
 }
 
 void resetLevelState() {
+	isDying = 0;
 	enemyCount = 0;
 	spawnTimer = enemySpawnTimer;
 	SpriteManagerReset();
+	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 160);
 }
 
 void loadLevel(UBYTE level) {
 	resetLevelState();
 	// add first the spriteManager only then load the level
-	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 160);
 	switch (level) {
 		case 1:
 			IMPORT_MAP(level1);
@@ -251,6 +263,13 @@ void START() {
 }
 
 void UPDATE() {
+	if (isDying > 0) {
+		isDying--;
+		if (isDying == 0) {
+			resetLevelState();
+		}
+		return;
+	}
 	if (spawnTimer > 0) {
 		spawnTimer--;
 	}

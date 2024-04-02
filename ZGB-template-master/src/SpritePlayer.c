@@ -4,9 +4,14 @@
 #include "ZGBMain.h"
 #include "StateGame.h"
 #include "SpriteFireball.h"
+#include "SpritePlayer.h"
 
 extern unsigned char tileMap[736];
 extern void runMapSideEffects(void);
+extern void killPlayer(void);
+extern uint8_t isDying;
+
+const int8_t displacement_death[] = {4, 8, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1 };
 
 const UBYTE anim_walk_right[] = {4, 0, 1, 2, 1};
 const UBYTE anim_walk_down[] = {4, 3, 4, 5, 4};
@@ -18,16 +23,16 @@ const UBYTE discharged_down[] = {4, 15, 16, 17, 16};
 const UBYTE discharged_up[] = {4, 18, 19, 20, 19};
 const UBYTE discharged_left[] = {4, 21, 22, 23, 22};
 
+const UBYTE anim_dead[] = {1, 24};
+
 UBYTE direction;
 UBYTE column;
 UBYTE row;
 
-// CUSTOM_DATA usage
-#define custom_data_recharge 0
-
 void START() {
     direction = J_RIGHT;
     THIS->custom_data[custom_data_recharge] = 0;
+    THIS->custom_data[death_animation] = 0;
 }
 
 BOOLEAN isColumnDisaligned() {
@@ -147,6 +152,23 @@ void updateMapTiles() {
 }
 
 void UPDATE() {
+    if (THIS->custom_data[death_animation] > 0) {
+        THIS->y = THIS->y + displacement_death[death_sequence_length - THIS->custom_data[death_animation]];
+        THIS->custom_data[death_animation]--;
+        SetSpriteAnim(THIS, anim_dead, 15);
+        if (THIS->custom_data[death_animation] == 0) {
+            SpriteManagerRemoveSprite(THIS);
+        }
+        return;
+    }
+    // DEBUG FOR DEATH ANIMATION
+    if(KEY_PRESSED(J_B)) {
+        killPlayer();
+        THIS->custom_data[death_animation] = 8;
+    }
+    if (isDying == 1) {
+		return;
+	}
     BOOLEAN moving = FALSE;
     BOOLEAN changeDirection = FALSE;
     if (KEY_PRESSED(J_UP)) {

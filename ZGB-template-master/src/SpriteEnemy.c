@@ -5,6 +5,7 @@
 
 extern uint8_t enemyCount;
 extern uint16_t spawnTimer;
+extern uint8_t isDying;
 
 const UBYTE nob_walk[] = {4, 0, 1, 2, 1};
 const UBYTE hob_walk[] = {4, 4, 5, 6, 5};
@@ -24,6 +25,9 @@ void START() {
 }
 
 void UPDATE() {
+    if (isDying == 1) {
+        return;
+    }
     if (THIS->custom_data[6]) {
         if (THIS->custom_data[7] > 0) {
             THIS->custom_data[7]--;
