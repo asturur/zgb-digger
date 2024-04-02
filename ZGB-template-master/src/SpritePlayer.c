@@ -29,21 +29,21 @@ UBYTE direction;
 UBYTE column;
 UBYTE row;
 
-void START() {
+void START(void) {
     direction = J_RIGHT;
     THIS->custom_data[custom_data_recharge] = 0;
     THIS->custom_data[death_animation] = 0;
 }
 
-BOOLEAN isColumnDisaligned() {
+BOOLEAN isColumnDisaligned(void) {
     return MOD_FOR_LARGE_TILE(THIS->x - mapBoundLeft);
 }
 
-BOOLEAN isRowDisaligned() {
+BOOLEAN isRowDisaligned(void) {
     return MOD_FOR_LARGE_TILE(THIS->y - mapBoundUp);
 }
 
-void updatePosition() {
+void updatePosition(void) {
     switch (direction) {
         case J_UP:
             if (THIS->y > mapBoundUp) {
@@ -68,7 +68,7 @@ void updatePosition() {
     }
 }
 
-void updateAnimation() {
+void updateAnimation(void) {
     switch (direction) {
         case J_UP:
             SetSpriteAnim(THIS, THIS->custom_data[custom_data_recharge] > 0 ? discharged_up : anim_walk_up, 15);
@@ -85,7 +85,7 @@ void updateAnimation() {
     }
 }
 
-void updateMapTiles() {
+void updateMapTiles(void) {
     // position of digger is the TOP LEFT first pixel of the sprite.
     // this check runs AFTER the digger has moved
     uint8_t nextColumn = TILE_FROM_PIXEL(THIS->x);
@@ -151,7 +151,7 @@ void updateMapTiles() {
     // }
 }
 
-void UPDATE() {
+void UPDATE(void) {
     if (THIS->custom_data[death_animation] > 0) {
         THIS->y = THIS->y + displacement_death[death_sequence_length - THIS->custom_data[death_animation]];
         THIS->custom_data[death_animation]--;
@@ -269,5 +269,5 @@ void UPDATE() {
     }
 }
 
-void DESTROY() {
+void DESTROY(void) {
 }
