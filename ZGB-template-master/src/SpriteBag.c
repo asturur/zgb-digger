@@ -17,7 +17,7 @@ const UBYTE bag_static[] = {1, 0};
 // 1 8bit timer
 // 2 fall counter
 
-void updateBagTiles() {
+void updateBagTiles(void) {
     UBYTE bagColumn = TILE_FROM_PIXEL(THIS->x);
     UBYTE bagRow = TILE_FROM_PIXEL(THIS->y);
     set_bkg_tile_xy(bagColumn, bagRow, 1);
@@ -28,7 +28,7 @@ void updateBagTiles() {
 
 
 
-void START() {
+void START(void) {
     SetSpriteAnim(THIS, bag_shake, 15);
     THIS->custom_data[0] = 2;
     THIS->custom_data[1] = shakeBeforeFall;
@@ -38,7 +38,7 @@ void START() {
     updateBagTiles();
 }
 
-void UPDATE() {
+void UPDATE(void) {
     // if is shaking continue to shake
     if (THIS->custom_data[0] == stateShaking && THIS->custom_data[1] > 0) {
          THIS->custom_data[1]--;
@@ -68,6 +68,6 @@ void UPDATE() {
     }
 }
 
-void DESTROY() {
+void DESTROY(void) {
     
 }

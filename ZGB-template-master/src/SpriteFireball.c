@@ -11,7 +11,7 @@ extern const UBYTE hob_dies[2];
 const UBYTE fireball_anim[] = {3, 0, 1, 2};
 const UBYTE explosion_anim[] = {3, 3, 4, 5};
 
-void START() {
+void START(void) {
     SetSpriteAnim(THIS, fireball_anim, 15);
     THIS->custom_data[projectile_direction] = 0;
     THIS->custom_data[exploding] = FALSE;
@@ -20,7 +20,7 @@ void START() {
     THIS->lim_y = 50;
 }
 
-void UPDATE() {
+void UPDATE(void) {
     uint8_t i;
 	Sprite* spr;
 
@@ -60,6 +60,6 @@ void UPDATE() {
 	}
 }
 
-void DESTROY() {
+void DESTROY(void) {
     
 }

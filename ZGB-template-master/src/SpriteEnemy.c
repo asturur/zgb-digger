@@ -12,7 +12,7 @@ const UBYTE hob_walk[] = {4, 4, 5, 6, 5};
 const UBYTE nob_dies[] = {1, 3};
 const UBYTE hob_dies[] = {1, 7};
 
-void START() {
+void START(void) {
     SetSpriteAnim(THIS, nob_walk, 15);
     THIS->custom_data[hobOrNob] = nobMode;
     THIS->custom_data[timer] = changeTimer;
@@ -24,7 +24,7 @@ void START() {
     THIS->lim_y = 256;
 }
 
-void UPDATE() {
+void UPDATE(void) {
     if (isDying == 1) {
         return;
     }
@@ -79,7 +79,7 @@ void UPDATE() {
     }
 }
 
-void DESTROY() {
+void DESTROY(void) {
     enemyCount--;
     if (spawnTimer == 0) {
         spawnTimer = 500;

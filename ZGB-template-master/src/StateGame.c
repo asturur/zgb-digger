@@ -50,7 +50,7 @@ void killPlayer(void) {
 	scroll_target->custom_data[death_animation] = death_sequence_length;
 }
 
-void paintScore() {
+void paintScore(void) {
 	// scores are multiple of 25 points.
 	// mod 2 = 1 draw a 5.
 	// then mod 4 for 2/5/7
@@ -148,7 +148,7 @@ void updateScore(uint16_t addScore) {
 	paintScore();
 }
 
-void playEmeraldSound() {
+void playEmeraldSound(void) {
 	if (emeraldDuration > 0) {
 		if (emeraldDuration == 7 || emeraldDuration == 6) {
 			PlayFx(CHANNEL_1, 10, 0x00, 0x81, 0x84, 0x95, 0xc6);
@@ -162,7 +162,7 @@ void playEmeraldSound() {
 	}
 }
 
-void runMapSideEffects() {
+void runMapSideEffects(void) {
 	const UBYTE column = (scroll_target->x - ((scroll_target->x - mapBoundLeft) % 16) - 8) / 16;
 	const UBYTE row = (scroll_target->y - ((scroll_target->y - mapBoundUp) % 16) - 16) / 16;
 	const UBYTE currentCell = row * 15 + column;
@@ -210,7 +210,7 @@ void runMapSideEffects() {
 	}
 }
 
-void resetLevelState() {
+void resetLevelState(void) {
 	isDying = 0;
 	enemyCount = 0;
 	spawnTimer = enemySpawnTimer;
@@ -249,7 +249,7 @@ void loadLevel(UBYTE level) {
 	}
 }
 
-void START() {
+void START(void) {
 	NR52_REG = 0x80; //Enables sound, you should always setup this first
 	NR51_REG = 0xFF; //Enables all channels (left and right)
 	NR50_REG = 0x77; //Max volume
@@ -262,7 +262,7 @@ void START() {
 	paintScore();
 }
 
-void UPDATE() {
+void UPDATE(void) {
 	if (isDying > 0) {
 		isDying--;
 		if (isDying == 0) {
