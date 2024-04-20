@@ -174,7 +174,7 @@ void runMapSideEffects(void) {
 	// we eat a gem
 	if (currentMapValue == 16) {
 		// took from a tutorial
-		PlayFx(CHANNEL_1, 10, 0x4f, 0xc7, 0xf3, 0x73, 0x86);
+		// ExecuteSFX(CURRENT_BANK, fx_00, SFX_MUTE_MASK(fx_00), SFX_PRIORITY_NORMAL);
 		emeraldDuration = 7;
 		emeraldLoop = 7;
 		updateScore(scoreEmerald);
