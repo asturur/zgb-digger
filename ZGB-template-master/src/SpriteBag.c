@@ -8,6 +8,10 @@
 #define stateStatic 1
 #define stateFalling 3
 
+#define bagStatus 0
+#define bagShakingTimer 1
+#define bagFallCounter 2
+
 const UBYTE bag_shake[] = {4, 0, 1, 0, 2};
 const UBYTE bag_fall[] = {1, 3};
 const UBYTE bag_static[] = {1, 0};
@@ -30,9 +34,9 @@ void updateBagTiles(void) {
 
 void START(void) {
     SetSpriteAnim(THIS, bag_shake, 15);
-    THIS->custom_data[0] = 2;
-    THIS->custom_data[1] = shakeBeforeFall;
-    THIS->custom_data[2] = 0;
+    THIS->custom_data[bagStatus] = 2;
+    THIS->custom_data[bagShakingTimer] = shakeBeforeFall;
+    THIS->custom_data[bagFallCounter] = 0;
     THIS->lim_x = 256;
     THIS->lim_y = 256;
     updateBagTiles();
@@ -40,20 +44,20 @@ void START(void) {
 
 void UPDATE(void) {
     // if is shaking continue to shake
-    if (THIS->custom_data[0] == stateShaking && THIS->custom_data[1] > 0) {
+    if (THIS->custom_data[bagStatus] == stateShaking && THIS->custom_data[bagShakingTimer] > 0) {
          THIS->custom_data[1]--;
     // else time to fall down
-    } else if (THIS->custom_data[0] == stateShaking && THIS->custom_data[1] == 0) {
+    } else if (THIS->custom_data[bagStatus] == stateShaking && THIS->custom_data[bagShakingTimer] == 0) {
         THIS->custom_data[0] = stateFalling;
         SetSpriteAnim(THIS, bag_fall, 15);
     // else if is falling down
-    } else if (THIS->custom_data[0] == stateFalling) {
+    } else if (THIS->custom_data[bagStatus] == stateFalling && THIS->y < mapBoundDown) {
         if (MOD_FOR_LARGE_TILE(THIS->y)) {
-            THIS->custom_data[2]++;
+            THIS->custom_data[bagFallCounter]++;
             THIS->y++;
         } else {
             uint8_t column = TILE_FROM_PIXEL(THIS->x);
-            uint8_t row = TILE_FROM_PIXEL(THIS->y);
+            uint8_t row = TILE_FROM_PIXEL(THIS->y) + 2;
             // we need to check what the next 4 tiles are doing
             // if at leat one is 0, se the other to 0 and continue falling
             if (get_bkg_tile_xy(column, row) == 0 || get_bkg_tile_xy(column + 1, row) == 0 || get_bkg_tile_xy(column, row + 1) == 0 || get_bkg_tile_xy(column + 1, row + 1) == 0) {
@@ -61,7 +65,7 @@ void UPDATE(void) {
                 set_bkg_tile_xy(column + 1, row, 0);
                 set_bkg_tile_xy(column, row + 1, 0); 
                 set_bkg_tile_xy(column + 1, row + 1, 0);
-                THIS->custom_data[2]++;
+                THIS->custom_data[bagFallCounter]++;
                 THIS->y++;
             }
         }

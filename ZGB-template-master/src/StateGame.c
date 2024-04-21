@@ -147,8 +147,8 @@ void activateBag(uint8_t bagcell) {
 	levelMap[bagcell] = 0;
 	uint8_t column = bagcell % mapMetaWidth;
 	uint8_t row = (bagcell - column) / mapMetaWidth;
-	uint8_t positionX = mapBoundLeft + column << largetTileSizeBitShift;
-	uint8_t positionY = mapBoundUp + row << largetTileSizeBitShift;
+	uint8_t positionX = mapBoundLeft + column * 16;
+	uint8_t positionY = mapBoundUp + row * 16;
 	SpriteManagerAdd(SpriteBag, positionX, positionY);
 }
 
