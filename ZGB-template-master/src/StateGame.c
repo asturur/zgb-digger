@@ -7,6 +7,7 @@
 #include <gb/gb.h> 
 #include <string.h>
 #include <Sound.h>
+#include "Sounds.h"
 #include "Music.h"
 #include "StateGame.h"
 #include "SpritePlayer.h"
@@ -17,6 +18,9 @@ extern const unsigned char level1Map[150];
 extern const unsigned char level2Map[150];
 extern const unsigned char level3Map[150];
 
+extern uint8_t fx_00[];
+extern void __mute_mask_fx_00;
+
 UBYTE currentLevel = 0;
 uint16_t score = 0;
 UBYTE diamonds = 0;
@@ -24,9 +28,11 @@ uint16_t spawnTimer = 0;
 uint8_t enemyCount = 0;
 uint8_t lives = 3;
 
-uint8_t emeraldLoop = 0;
-uint8_t emeraldDuration = 0;
-uint8_t emeraldFreq[] = { 0x95, 0x95, 0x95, 0x95, 0x95, 0x95, 0x95, 0x95 };
+uint8_t emeraldLoop = EMERALD_DING_QTY;
+uint8_t emeraldDuration = EMERALD_DING_GAP_DURATION;
+uint8_t emeraldScaleTimer = 0;
+uint8_t emeraldFreq[] = { fxC_4, fxD_4, fxE_4, fxF_4, fxG_4, fxA_4, fxB_4, fxC_5 };
+uint8_t emeraldFreqIndex = 0;
 
 // handles the death state.
 // sprites do not move, a music plays
@@ -101,10 +107,10 @@ void copyLevelMapToRam(unsigned char *mapToLoad[]) NONBANKED {
 	uint16_t offset = hudSize + tilesPerRow + 1;
 
 	// loop the map
-	for (i = 0; i < 10; i++) {
-		for (j = 0; j < 15; j++) {
-			metaTile = levelMap[i * 15 + j];
-			if (metaTile > 0 && metaTile < 16) {
+	for (i = 0; i < mapMetaHeight; i++) {
+		for (j = 0; j < mapMetaWidth; j++) {
+			metaTile = levelMap[i * mapMetaWidth + j];
+			if (metaTile > metaTileGallery && metaTile < metaTileEmerald) {
 				// fill in four 0 tiles, the black gallery
 				// at current row
 				tileMap[offset] = tileBlack;
@@ -139,10 +145,10 @@ void activateBag(uint8_t bagcell) {
 	// remove the bag from the map replace with grass
 	// activate bag sprite
 	levelMap[bagcell] = 0;
-	uint8_t column = bagcell % 15;
-	uint8_t row = (bagcell - column) / 15;
-	uint8_t positionX = mapBoundLeft + column * 16;
-	uint8_t positionY = mapBoundUp + row * 16;
+	uint8_t column = bagcell % mapMetaWidth;
+	uint8_t row = (bagcell - column) / mapMetaWidth;
+	uint8_t positionX = mapBoundLeft + column << largetTileSizeBitShift;
+	uint8_t positionY = mapBoundUp + row << largetTileSizeBitShift;
 	SpriteManagerAdd(SpriteBag, positionX, positionY);
 }
 
@@ -151,32 +157,49 @@ void updateScore(uint16_t addScore) {
 	paintScore();
 }
 
-void playEmeraldSound(void) {
-	if (emeraldDuration > 0) {
-		if (emeraldDuration == 7 || emeraldDuration == 6) {
-			PlayFx(CHANNEL_1, 10, 0x00, 0x81, 0x84, 0x95, 0xc6);
-		}
-		emeraldDuration--;
+void updateEmeraldSound(void) {
+	if (emeraldScaleTimer > 0) {
+		emeraldScaleTimer--;
 	} else {
-		if (emeraldLoop > 0) {
-			emeraldDuration = 7;
+		emeraldFreqIndex = 0;
+	}
+	if (emeraldLoop > 0) {
+		if (emeraldDuration > 0) {
+			if (emeraldDuration == EMERALD_DING_GAP_DURATION) {
+				ExecuteSFX(CURRENT_BANK, fx_00, SFX_MUTE_MASK(fx_00), SFX_PRIORITY_NORMAL);
+			}
+			emeraldDuration--;
+		} else {
+			emeraldDuration = EMERALD_DING_GAP_DURATION;
 			emeraldLoop--;
 		}
 	}
 }
 
 void runMapSideEffects(void) {
-	const UBYTE column = (scroll_target->x - ((scroll_target->x - mapBoundLeft) % 16) - 8) / 16;
-	const UBYTE row = (scroll_target->y - ((scroll_target->y - mapBoundUp) % 16) - 16) / 16;
-	const UBYTE currentCell = row * 15 + column;
+	const UBYTE column = LARGE_TILE_FROM_PIXEL(scroll_target->x - mapBoundLeft);
+	const UBYTE row = LARGE_TILE_FROM_PIXEL(scroll_target->y - mapBoundUp);
+	const UBYTE currentCell = row * mapMetaWidth + column;
 	const UBYTE currentMapValue = levelMap[currentCell];
 
 	// we eat a gem
-	if (currentMapValue == 16) {
-		// took from a tutorial
-		// ExecuteSFX(CURRENT_BANK, fx_00, SFX_MUTE_MASK(fx_00), SFX_PRIORITY_NORMAL);
-		emeraldDuration = 7;
-		emeraldLoop = 7;
+	if (currentMapValue == metaTileEmerald) {
+		// set current FX to correct note
+		fx_00[fxNotePos] = emeraldFreq[emeraldFreqIndex];
+		// if we are at the highest frequency, score extra points
+		if (emeraldFreqIndex == 7) {
+			// reset scale to start
+			updateScore(scoreEmerald * 10);
+			emeraldFreqIndex = 0;
+		} else {	
+			// advance one note in the scale for the next emerald
+			emeraldFreqIndex++;
+		}
+		// reset all the emerald timers
+		emeraldDuration = EMERALD_DING_GAP_DURATION;
+		emeraldScaleTimer = EMERALD_SCALE_TIMER;
+		emeraldLoop = EMERALD_DING_QTY;
+
 		updateScore(scoreEmerald);
 		diamonds--;
 		if (direction == J_RIGHT) {
@@ -208,8 +231,8 @@ void runMapSideEffects(void) {
 	}
 
 	// we are under a bag, we need to activate it
-	if (currentCell > 14 && levelMap[currentCell - 15] == 17) {
-		activateBag(currentCell - 15);
+	if (currentCell > 14 && levelMap[currentCell - mapMetaWidth] == metaTileBag) {
+		activateBag(currentCell - mapMetaWidth);
 	}
 }
 
@@ -287,6 +310,6 @@ void UPDATE(void) {
 		SpriteManagerAdd(SpriteEnemy, 232, 16);
 		paintScore();
 	}
-	// playEmeraldSound();
+	updateEmeraldSound();
 }
 

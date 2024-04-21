@@ -36,6 +36,9 @@
 
 #define metaTileEmerald 16
 #define metaTileBag 17
+#define mapMetaWidth 15
+#define mapMetaHeight 10
+#define metaTileGallery 0
 
 // game timers and behaviour
 #define maxEnimesCount 3

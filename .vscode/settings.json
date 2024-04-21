@@ -20,6 +20,8 @@
         "tilesinfo.h": "c",
         "spriteenemy.h": "c",
         "stategame.h": "c",
-        "spritefireball.h": "c"
+        "spritefireball.h": "c",
+        "platform.h": "c",
+        "stdint.h": "c"
     }
 }
