@@ -217,16 +217,16 @@ void runMapSideEffects(void) {
 	} else if (currentMapValue <= 15) {
 	// we modify a tunnel flagging the bit of the walkable direction
 		if (direction == J_RIGHT) {
-			levelMap[currentCell] &= 8;
+			levelMap[currentCell] |= 8;
 		}
 		if (direction == J_LEFT) {
-			levelMap[currentCell] &= 2;
+			levelMap[currentCell] |= 2;
 		}
 		if (direction == J_UP) {
-			levelMap[currentCell] &= 4;
+			levelMap[currentCell] |= 4;
 		}
 		if (direction == J_DOWN) {
-			levelMap[currentCell] &= 1;
+			levelMap[currentCell] |= 1;
 		}
 	}
 
