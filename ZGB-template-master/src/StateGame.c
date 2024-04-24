@@ -204,32 +204,16 @@ void runMapSideEffects(void) {
 
 		updateScore(scoreEmerald);
 		diamonds--;
-		if (direction == J_RIGHT) {
-			levelMap[currentCell] = 8;
-		}
-		if (direction == J_LEFT) {
-			levelMap[currentCell] = 2;
-		}
-		if (direction == J_UP) {
-			levelMap[currentCell] = 4;
-		}
-		if (direction == J_DOWN) {
-			levelMap[currentCell] = 1;
-		}
+		levelMap[currentCell] = direction;
 	} else if (currentMapValue <= 15) {
-	// we modify a tunnel flagging the bit of the walkable direction
-		if (direction == J_RIGHT) {
-			levelMap[currentCell] |= 8;
-		}
-		if (direction == J_LEFT) {
-			levelMap[currentCell] |= 2;
-		}
-		if (direction == J_UP) {
-			levelMap[currentCell] |= 4;
-		}
-		if (direction == J_DOWN) {
-			levelMap[currentCell] |= 1;
-		}
+		// we modify a tunnel flagging the bit of the walkable direction
+		// the direction bits have been chosen to match the gameboy const
+		// - 8 -   
+		// |   |
+		// 1   2
+		// |   |
+		// - 4 -
+		levelMap[currentCell] |= direction;
 	}
 
 	// we are under a bag, we need to activate it

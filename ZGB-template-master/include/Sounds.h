@@ -15,7 +15,7 @@
 #define fxC_5 0xc1
 
 #define EMERALD_DING_GAP_DURATION 13
-#define EMERALD_SCALE_TIMER 45
+#define EMERALD_SCALE_TIMER 60
 #define EMERALD_DING_QTY 7
 
 #define fxNotePos 11

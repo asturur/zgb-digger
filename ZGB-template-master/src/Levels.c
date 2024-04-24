@@ -89,17 +89,6 @@ const unsigned char level5Map[] = {
     10,  3,  3,  3,  3,  3,  3, 11,  3,  3,  3,  3,  3,  3,  9, // HHHHHHHHHHHHHHH
 };
 
-
-//  {"SHHHHHHHHHHHHHS",
-//   "VBCCCCBVCCCCCCV",
-//   "VCCCCCCV CCBC V",
-//   "V CCCC VCCBCCCV",
-//   "VCCCCCCV CCCC V",
-//   "V CCCC VBCCCCCV",
-//   "VCCBCCCV CCCC V",
-//   "V CCBC VCCCCCCV",
-//   "VCCCCCCVCCCCCCV",
-//   "HHHHHHHHHHHHHHH"},
 //  {"SHHHHHHHHHHHHHS",
 //   "VCBCCV V VCCBCV",
 //   "VCCC VBVBV CCCV",
