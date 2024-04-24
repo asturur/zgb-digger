@@ -48,10 +48,6 @@ unsigned char levelMap[150];
 struct MapInfo currentInMemoryLevel;
 unsigned char tileMap[736];
 
-uint8_t getTilefromPosition(uint8_t posX) {
-    return (posX - (posX % tileSize)) >> tileSizeBitShift;
-}
-
 void killPlayer(void) {
 	lives--;
 	isDying = 128;
@@ -254,7 +250,7 @@ void loadLevel(UBYTE level) {
 			copyLevelMapToRam(&level3Map);
 			copyTileMapToRam(BANK(level3), &level3);
 			InitScroll(BANK(level3), &currentInMemoryLevel, 0, 0);
-			diamonds = 55;
+			diamonds = 51;
 		break;
 		case 4: 
 			IMPORT_MAP(level4);
