@@ -17,6 +17,8 @@ extern const UBYTE direction;
 extern const unsigned char level1Map[150];
 extern const unsigned char level2Map[150];
 extern const unsigned char level3Map[150];
+extern const unsigned char level4Map[150];
+extern const unsigned char level5Map[150];
 
 extern uint8_t fx_00[];
 extern void __mute_mask_fx_00;
@@ -269,6 +271,20 @@ void loadLevel(UBYTE level) {
 			copyTileMapToRam(BANK(level3), &level3);
 			InitScroll(BANK(level3), &currentInMemoryLevel, 0, 0);
 			diamonds = 55;
+		break;
+		case 4: 
+			IMPORT_MAP(level4);
+			copyLevelMapToRam(&level4Map);
+			copyTileMapToRam(BANK(level4), &level4);
+			InitScroll(BANK(level4), &currentInMemoryLevel, 0, 0);
+			diamonds = 65;
+		break;
+		case 5: 
+			IMPORT_MAP(level5);
+			copyLevelMapToRam(&level5Map);
+			copyTileMapToRam(BANK(level5), &level5);
+			InitScroll(BANK(level5), &currentInMemoryLevel, 0, 0);
+			diamonds = 77;
 		break;
 		default:
 		  currentLevel = 1;
