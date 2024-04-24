@@ -24,11 +24,30 @@ const UBYTE discharged_left[] = {4, 21, 22, 23, 22};
 const UBYTE anim_dead[] = {1, 24};
 
 UBYTE direction;
+UBYTE oppositeDirection;
 UBYTE column;
 UBYTE row;
 
+void setDirection(UBYTE dir) {
+  direction = dir;
+  switch (dir) {
+    case J_DOWN:
+        oppositeDirection = J_UP;
+        break;
+    case J_UP:
+        oppositeDirection = J_DOWN;
+        break;
+    case J_LEFT:
+        oppositeDirection = J_RIGHT;
+        break;
+    case J_RIGHT:
+        oppositeDirection = J_LEFT;
+        break;
+  }
+}
+
 void START(void) {
-    direction = J_RIGHT;
+    setDirection(J_RIGHT);
     THIS->custom_data[custom_data_recharge] = 0;
     THIS->custom_data[death_animation] = 0;
 }
@@ -180,52 +199,52 @@ void UPDATE(void) {
         moving = TRUE;
         if (isColumnDisaligned() && THIS->y > mapBoundUp) {
             if (direction == J_RIGHT) {
-                direction = J_RIGHT;
+                setDirection(J_RIGHT);
             } else {
-                direction = J_LEFT;
+                setDirection(J_LEFT);
             }
         } else {
             changeDirection = direction != J_UP;
-            direction = J_UP;
+           setDirection(J_UP);
         }
 	} 
 	if(KEY_PRESSED(J_DOWN)) {
         moving = TRUE;
         if (isColumnDisaligned() && THIS->y < mapBoundDown) {
             if (direction == J_RIGHT) {
-                direction = J_RIGHT;
+               setDirection(J_RIGHT);
             } else {
-                direction = J_LEFT;
+               setDirection(J_LEFT);
             }
         } else {
             changeDirection = direction != J_DOWN;
-            direction = J_DOWN;
+           setDirection(J_DOWN);
         }
 	}
 	if(KEY_PRESSED(J_LEFT)) {
         moving = TRUE;
         if (isRowDisaligned() && THIS->x > mapBoundLeft) {
             if (direction == J_UP) {
-                direction = J_UP;
+               setDirection(J_UP);
             } else {
-                direction = J_DOWN;
+               setDirection(J_DOWN);
             }
         } else {
             changeDirection = direction != J_LEFT;
-            direction = J_LEFT;
+           setDirection(J_LEFT);
         }
 	}
 	if(KEY_PRESSED(J_RIGHT)) {
         moving = TRUE;
         if (isRowDisaligned() && THIS->x < mapBoundRight) {
             if (direction == J_UP) {
-                direction = J_UP;
+               setDirection(J_UP);
             } else {
-                direction = J_DOWN;
+               setDirection(J_DOWN);
             }
         } else {
             changeDirection = direction != J_RIGHT;
-            direction = J_RIGHT;
+           setDirection(J_RIGHT);
         }
 	}
     if(KEY_PRESSED(J_A)) {

@@ -13,6 +13,7 @@
 #include "SpritePlayer.h"
 
 extern const UBYTE direction;
+extern const UBYTE oppositeDirection;
 
 extern const unsigned char level1Map[150];
 extern const unsigned char level2Map[150];
@@ -35,6 +36,8 @@ uint8_t emeraldDuration = EMERALD_DING_GAP_DURATION;
 uint8_t emeraldScaleTimer = 0;
 uint8_t emeraldFreq[] = { fxC_4, fxD_4, fxE_4, fxF_4, fxG_4, fxA_4, fxB_4, fxC_5 };
 uint8_t emeraldFreqIndex = 0;
+
+uint8_t lastVisitedMetaCell = 0;
 
 // handles the death state.
 // sprites do not move, a music plays
@@ -92,7 +95,7 @@ void copyTileMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONB
 	SWITCH_ROM(__save);
 }
 
-void copyLevelMapToRam(unsigned char *mapToLoad[]) NONBANKED {
+void copyLevelMapToRam(unsigned char *mapToLoad[], uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
 	// uint8_t __save = CURRENT_BANK;
 	// SWITCH_ROM(mapToLoadBank);
 	memcpy(levelMap, mapToLoad, 150);
@@ -136,6 +139,8 @@ void copyLevelMapToRam(unsigned char *mapToLoad[]) NONBANKED {
 		offset = offset + tilesPerRow + 2;
 	}
 	// SWITCH_ROM(__save);
+	copyTileMapToRam(levelToLoadBank, levelToLoad);
+	InitScroll(levelToLoadBank, &currentInMemoryLevel, 0, 0);
 }
 
 void activateBag(uint8_t bagcell) {
@@ -180,6 +185,10 @@ void runMapSideEffects(void) {
 	const UBYTE currentCell = row * mapMetaWidth + column;
 	const UBYTE currentMapValue = levelMap[currentCell];
 
+	if (currentCell == lastVisitedMetaCell) {
+		return;
+	}
+
 	// we eat a gem
 	if (currentMapValue == metaTileEmerald) {
 		// set current FX to correct note
@@ -210,15 +219,20 @@ void runMapSideEffects(void) {
 		// |   |
 		// - 4 -
 		levelMap[currentCell] |= direction;
+		// we update the previous cell for the opposite direciton, so is a full tunnel
+		
+		levelMap[lastVisitedMetaCell] |= oppositeDirection;
 	}
 
 	// we are under a bag, we need to activate it
 	if (currentCell > 14 && levelMap[currentCell - mapMetaWidth] == metaTileBag) {
 		activateBag(currentCell - mapMetaWidth);
 	}
+	lastVisitedMetaCell = currentCell;
 }
 
 void resetLevelState(void) {
+	lastVisitedMetaCell = 0;
 	isDying = 0;
 	enemyCount = 0;
 	spawnTimer = enemySpawnTimer;
@@ -233,37 +247,27 @@ void loadLevel(UBYTE level) {
 	switch (level) {
 		case 1:
 			IMPORT_MAP(level1);
-			copyLevelMapToRam(&level1Map);
-			copyTileMapToRam(BANK(level1), &level1);
-			InitScroll(BANK(level1), &currentInMemoryLevel, 0, 0);
+			copyLevelMapToRam(&level1Map, BANK(level1), &level1);
 			diamonds = 30;
 		break;
 		case 2: 
 			IMPORT_MAP(level2);
-			copyLevelMapToRam(&level2Map);
-			copyTileMapToRam(BANK(level2), &level2);
-			InitScroll(BANK(level2), &currentInMemoryLevel, 0, 0);
+			copyLevelMapToRam(&level2Map, BANK(level2), &level2);
 			diamonds = 41;
 		break;
 		case 3: 
 			IMPORT_MAP(level3);
-			copyLevelMapToRam(&level3Map);
-			copyTileMapToRam(BANK(level3), &level3);
-			InitScroll(BANK(level3), &currentInMemoryLevel, 0, 0);
+			copyLevelMapToRam(&level3Map, BANK(level3), &level3);
 			diamonds = 51;
 		break;
 		case 4: 
 			IMPORT_MAP(level4);
-			copyLevelMapToRam(&level4Map);
-			copyTileMapToRam(BANK(level4), &level4);
-			InitScroll(BANK(level4), &currentInMemoryLevel, 0, 0);
+			copyLevelMapToRam(&level4Map, BANK(level4), &level4);
 			diamonds = 65;
 		break;
 		case 5: 
 			IMPORT_MAP(level5);
-			copyLevelMapToRam(&level5Map);
-			copyTileMapToRam(BANK(level5), &level5);
-			InitScroll(BANK(level5), &currentInMemoryLevel, 0, 0);
+			copyLevelMapToRam(&level5Map, BANK(level5), &level5);
 			diamonds = 77;
 		break;
 		default:
