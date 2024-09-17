@@ -6,7 +6,6 @@
 #include "SpriteFireball.h"
 #include "SpritePlayer.h"
 
-extern unsigned char tileMap[736];
 extern void runMapSideEffects(void);
 extern void killPlayer(void);
 extern uint8_t isDying;
@@ -116,52 +115,44 @@ void updateMapTiles(void) {
             case J_UP:
                 tile = get_bkg_tile_xy(column, row);
                 tileNext = get_bkg_tile_xy(column + 1, row);
-                if (tile != 0) {
-                    set_bkg_tile_xy(column, row, 0);
-                    tileMap[row * tilesPerRow + column] = 0;
+                if (tile != tileBlack) {
+                    updateVideoMemAndMap(column, row, tileBlack);
                 }
                 if (tileNext != 0) {
-                    set_bkg_tile_xy(column + 1, row, 0);
-                    tileMap[row * tilesPerRow + column + 1] = 0;
+                    updateVideoMemAndMap(column + 1, row, tileBlack);
                 }
                 break;
             case J_DOWN:
                 target = row + (MOD_FOR_TILE(THIS->y) ? 2 : 1);
                 tile = get_bkg_tile_xy(column, target);
                 tileNext = get_bkg_tile_xy(column + 1, target);
-                if (tile != 0) {
-                    set_bkg_tile_xy(column, target, 0);
-                    tileMap[target * tilesPerRow + column] = 0;
+                if (tile != tileBlack) {
+                    updateVideoMemAndMap(column, target, tileBlack);
                 }
-                if (tileNext != 0) {
-                    set_bkg_tile_xy(column + 1, target, 0);
-                    tileMap[target * tilesPerRow + column + 1] = 0;
+                if (tileNext != tileBlack) {
+                    updateVideoMemAndMap(column + 1, target, tileBlack);
                 }
                 break;
             case J_LEFT:
                 // left is a good case, first pixel we cross we can clean up
                 tile = get_bkg_tile_xy(column, row);
                 tileNext = get_bkg_tile_xy(column, row + 1);
-                if (tile != 0) {
-                    set_bkg_tile_xy(column, row, 0);
-                    tileMap[row * tilesPerRow + column] = 0;
+                if (tile != tileBlack) {
+                    updateVideoMemAndMap(column, row, tileBlack);
                 }
                 if (tileNext != 0) {
-                    set_bkg_tile_xy(column, row + 1, 0);
-                    tileMap[(row + 1) * tilesPerRow + column] = 0;
+                    updateVideoMemAndMap(column, row + 1, tileBlack);
                 }
                 break;
             case J_RIGHT:
                 target = column + (MOD_FOR_TILE(THIS->x) ? 2 : 1);
                 tile = get_bkg_tile_xy(target, row);
                 tileNext = get_bkg_tile_xy(target, row + 1);
-                if (tile != 0) {
-                    set_bkg_tile_xy(target, row, 0);
-                    tileMap[row * tilesPerRow + target] = 0;
+                if (tile != tileBlack) {
+                    updateVideoMemAndMap(target, row, tileBlack);
                 }
-                if (tileNext != 0) {
-                    set_bkg_tile_xy(target, row + 1, 0);
-                    tileMap[(row + 1) * tilesPerRow + target] = 0;
+                if (tileNext != tileBlack) {
+                    updateVideoMemAndMap(target, row + 1, tileBlack);
                 }
                 break;
         }

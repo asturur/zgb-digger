@@ -15,8 +15,8 @@
 #define crumblingTimer 1
 
 #define goldTL 18
-#define goldTR 19
-#define goldBL 20
+#define goldBL 19
+#define goldTR 20
 #define goldBR 21
 
 
@@ -32,10 +32,10 @@ const UBYTE gold_static[] = {1, 2};
 void createGoldBackground(void) {
     UBYTE column = TILE_FROM_PIXEL(THIS->x);
     UBYTE row = TILE_FROM_PIXEL(THIS->y);
-    set_bkg_tile_xy(column, row, goldTL);
-    set_bkg_tile_xy(column + 1, row, goldBL);
-    set_bkg_tile_xy(column, row + 1, goldTR);
-    set_bkg_tile_xy(column + 1, row + 1, goldBR);
+    updateVideoMemAndMap(column, row, goldTL);
+    updateVideoMemAndMap(column + 1, row, goldTR);
+    updateVideoMemAndMap(column, row + 1, goldBL);
+    updateVideoMemAndMap(column + 1, row + 1, goldBR);
 }
 
 void START(void) {
@@ -53,7 +53,7 @@ void UPDATE(void) {
         uint8_t column = TILE_FROM_PIXEL(THIS->x);
         // precedence of bitshift is low compared to addition
         uint8_t row = (TILE_FROM_PIXEL(THIS->y)) + 2;
-        if (checkTilesFor(column, row, tileBlack)) {
+        if (checkTilesFor(column, row, tileBlack) && THIS->y < mapBoundDown -1) {
             THIS->custom_data[goldStatus] = stateFalling;
             SetSpriteAnim(THIS, gold_falling, 10);
         } else {
@@ -67,6 +67,7 @@ void UPDATE(void) {
             // precedence of bitshift is low compared to addition
             uint8_t row = (TILE_FROM_PIXEL(THIS->y)) + 2;
             createGoldBackground();
+            addOnMap(THIS->x, THIS->y, metaTileGold);
             SpriteManagerRemoveSprite(THIS);
         } else {
             THIS->custom_data[crumblingTimer]--;

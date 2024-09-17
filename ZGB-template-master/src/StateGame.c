@@ -60,6 +60,11 @@ void killPlayer(void) {
 	}
 }
 
+void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) {
+	set_bkg_tile_xy(column, row, type);
+    tileMap[row * tilesPerRow + column] = type;
+}
+
 BOOLEAN checkTilesFor(UBYTE column, UBYTE row, UBYTE type) {
     return get_bkg_tile_xy(column, row) == type ||
         get_bkg_tile_xy(column + 1, row) == type || 

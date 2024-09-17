@@ -14,6 +14,12 @@
 #define bagShakingTimer 1
 #define bagFallCounter 2
 
+// tiles numbers for bag on black
+#define bagTL 22
+#define bagTR 23
+#define bagBL 24
+#define bagBR 25
+
 const UBYTE bag_shake[] = {4, 0, 1, 0, 2};
 const UBYTE bag_fall[] = {1, 3};
 const UBYTE bag_static[] = {1, 0};
@@ -24,17 +30,26 @@ const UBYTE bag_static[] = {1, 0};
 // 1 8bit timer
 // 2 fall counter
 
-void setBagTiles(UBYTE column, UBYTE row, UBYTE type) {
-    set_bkg_tile_xy(column, row, type);
-    set_bkg_tile_xy(column + 1, row, type);
-    set_bkg_tile_xy(column, row + 1, type);
-    set_bkg_tile_xy(column + 1, row + 1, type);
+void createBagBackground(void) {
+    UBYTE column = TILE_FROM_PIXEL(THIS->x);
+    UBYTE row = TILE_FROM_PIXEL(THIS->y);
+    updateVideoMemAndMap(column, row, bagTL);
+    updateVideoMemAndMap(column + 1, row, bagTR);
+    updateVideoMemAndMap(column, row + 1, bagBL);
+    updateVideoMemAndMap(column + 1, row + 1, bagBR);
 }
 
-void updateBagTiles(void) {
+void setBagTiles(UBYTE column, UBYTE row, UBYTE type) {
+    updateVideoMemAndMap(column, row, type);
+    updateVideoMemAndMap(column + 1, row, type);
+    updateVideoMemAndMap(column, row + 1, type);
+    updateVideoMemAndMap(column + 1, row + 1, type);
+}
+
+void updateBagTiles(uint8_t tileType) {
     UBYTE bagColumn = TILE_FROM_PIXEL(THIS->x);
     UBYTE bagRow = TILE_FROM_PIXEL(THIS->y);
-    setBagTiles(bagColumn, bagRow, tileGrass);
+    setBagTiles(bagColumn, bagRow, tileType);
 }
 
 void START(void) {
@@ -44,7 +59,13 @@ void START(void) {
     THIS->custom_data[bagFallCounter] = 0;
     THIS->lim_x = 256;
     THIS->lim_y = 256;
-    updateBagTiles();
+    UBYTE bagColumn = TILE_FROM_PIXEL(THIS->x);
+    UBYTE bagRow = TILE_FROM_PIXEL(THIS->y);
+    if (get_bkg_tile_xy(bagColumn, bagRow) >= bagTL) {
+        updateBagTiles(tileBlack);
+    } else {
+        updateBagTiles(tileGrass);
+    }
 }
 
 void UPDATE(void) {
@@ -57,43 +78,33 @@ void UPDATE(void) {
         SetSpriteAnim(THIS, bag_fall, 15);
     // else if is falling down as a bag or as a pile of gold
     } else if (THIS->custom_data[bagStatus] == stateFalling && THIS->y <= mapBoundDown) {
-            if (MOD_FOR_LARGE_TILE(THIS->y)) {
+        if (MOD_FOR_LARGE_TILE(THIS->y)) {
+            THIS->custom_data[bagFallCounter]++;
+            THIS->y++;
+        } else {
+            uint8_t column = TILE_FROM_PIXEL(THIS->x);
+            // precedence of bitshift is low compared to addition
+            uint8_t row = (TILE_FROM_PIXEL(THIS->y)) + 2;
+            // we need to check what the next 4 tiles are doing
+            // if at leat one is 0, se the other to 0 and continue falling
+            if (checkTilesFor(column, row, tileBlack) && THIS->y < mapBoundDown) {
+                setBagTiles(column, row, tileBlack);
                 THIS->custom_data[bagFallCounter]++;
                 THIS->y++;
             } else {
-                uint8_t column = TILE_FROM_PIXEL(THIS->x);
-                // precedence of bitshift is low compared to addition
-                uint8_t row = (TILE_FROM_PIXEL(THIS->y)) + 2;
-                // we need to check what the next 4 tiles are doing
-                // if at leat one is 0, se the other to 0 and continue falling
-                if (checkTilesFor(column, row, tileBlack) && THIS->y < mapBoundDown) {
-                    setBagTiles(column, row, tileBlack);
-                    THIS->custom_data[bagFallCounter]++;
-                    THIS->y++;
-                } else {
-                    // solid ground or reach end of map
-                    if (THIS->custom_data[bagFallCounter] > 40 && THIS->custom_data[bagStatus] == stateFalling) {
-                        SpriteManagerAdd(SpriteGold, THIS->x, THIS->y);
-                        SpriteManagerRemoveSprite(THIS);
-                    } 
-                    else {
-                        THIS->custom_data[bagStatus] = stateStatic;
-                        THIS->custom_data[bagFallCounter] = 0;
-                        SetSpriteAnim(THIS, bag_static, 15);
-                    }
-                    THIS->custom_data[bagFallCounter]=0;
+                // solid ground or reach end of map
+                if (THIS->custom_data[bagFallCounter] > 40 && THIS->custom_data[bagStatus] == stateFalling) {
+                    SpriteManagerAdd(SpriteGold, THIS->x, THIS->y);
+                    SpriteManagerRemoveSprite(THIS);
+                } 
+                else {
+                    THIS->custom_data[bagStatus] = stateStatic;
+                    THIS->custom_data[bagFallCounter] = 0;
+                    createBagBackground();
+                    addOnMap(THIS->x, THIS->y, metaTileBag);
                 }
+                SpriteManagerRemoveSprite(THIS);
             }
-    } else if (THIS->custom_data[bagStatus] == stateStatic && THIS->y < mapBoundDown - 1) {
-        // start shaking again if the below tiles are digged
-        uint8_t column = TILE_FROM_PIXEL(THIS->x);
-        // precedence of bitshift is low compared to addition
-        uint8_t row = (TILE_FROM_PIXEL(THIS->y)) + 2;
-        if (checkTilesFor(column, row, tileBlack)) {
-            THIS->custom_data[bagStatus] = stateShaking;
-            THIS->custom_data[bagShakingTimer] = shakeBeforeFall;
-            THIS->custom_data[bagFallCounter] = 0;
-            SetSpriteAnim(THIS, bag_shake, 15);
         }
     }
 }
