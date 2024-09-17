@@ -159,7 +159,7 @@ void activateBag(uint8_t bagcell) {
 	// remove the bag tiles and replace with grass.
 	// remove the bag from the map replace with grass
 	// activate bag sprite
-	levelMap[bagcell] = 0;
+	levelMap[bagcell] -= metaTileBag;
 	uint8_t column = bagcell % mapMetaWidth;
 	uint8_t row = (bagcell - column) / mapMetaWidth;
 	uint8_t positionX = mapBoundLeft + column * 16;
@@ -199,7 +199,7 @@ UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y) {
 
 void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) {
 	const UBYTE currentCell = getMapMetaTileArrayPosition(x, y);
-	levelMap[currentCell] = metaTile;
+	levelMap[currentCell] += metaTile;
 }
 
 void runMapSideEffects(void) {
@@ -234,7 +234,7 @@ void runMapSideEffects(void) {
 		updateScore(scoreEmerald);
 		diamonds--;
 		levelMap[currentCell] = direction;
-	} else if (currentMapValue <= 15) {
+	} else if ((currentMapValue & tunnelMask) <= 15) {
 		// we modify a tunnel flagging the bit of the walkable direction
 		// the direction bits have been chosen to match the gameboy const
 		// - 8 -   
@@ -249,7 +249,7 @@ void runMapSideEffects(void) {
 	}
 
 	// we are under a bag, we need to activate it
-	if (currentCell > 14 && levelMap[currentCell - mapMetaWidth] == metaTileBag) {
+	if (currentCell > 14 && (levelMap[currentCell - mapMetaWidth] & metaTileBag)) {
 		activateBag(currentCell - mapMetaWidth);
 	}
 	lastVisitedMetaCell = currentCell;

@@ -35,6 +35,8 @@
 #define tileBagBL 8
 #define tileBagBR 9
 
+#define tunnelMask 0x0F
+
 #define metaTileEmerald 16
 #define metaTileBag 32
 #define metaTileGold 64
