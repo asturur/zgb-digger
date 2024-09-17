@@ -22,6 +22,11 @@
         "stategame.h": "c",
         "spritefireball.h": "c",
         "platform.h": "c",
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "sounds.h": "c",
+        "type_traits": "c",
+        "limits": "c",
+        "ratio": "c",
+        "tuple": "c"
     }
 }

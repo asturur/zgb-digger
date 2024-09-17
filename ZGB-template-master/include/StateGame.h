@@ -3,6 +3,7 @@
 
 // scores
 #define scoreEmerald 25
+#define scoreGold 500
 #define scoreKill 250
 #define maxLives 5
 
@@ -35,7 +36,10 @@
 #define tileBagBR 9
 
 #define metaTileEmerald 16
-#define metaTileBag 17
+#define metaTileBag 32
+#define metaTileGold 64
+#define EM metaTileEmerald
+#define BG metaTileBag
 #define mapMetaWidth 15
 #define mapMetaHeight 10
 #define metaTileGallery 0
@@ -52,3 +56,5 @@
 #define MOD_FOR_LARGE_TILE(X) X & 0x0F
 // utility functions
 void updateScore(uint16_t addScore);
+BOOLEAN checkTilesFor(UBYTE column, UBYTE row, UBYTE type);
+void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile);

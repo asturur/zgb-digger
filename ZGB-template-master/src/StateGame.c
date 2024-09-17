@@ -60,6 +60,13 @@ void killPlayer(void) {
 	}
 }
 
+BOOLEAN checkTilesFor(UBYTE column, UBYTE row, UBYTE type) {
+    return get_bkg_tile_xy(column, row) == type ||
+        get_bkg_tile_xy(column + 1, row) == type || 
+        get_bkg_tile_xy(column, row + 1) == type || 
+        get_bkg_tile_xy(column + 1, row + 1) == type;
+}
+
 void paintScore(void) {
 	// scores are multiple of 25 points.
 	// mod 2 = 1 draw a 5.
@@ -179,16 +186,28 @@ void updateEmeraldSound(void) {
 	}
 }
 
+UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y) {
+	const UBYTE column = LARGE_TILE_FROM_PIXEL(x - mapBoundLeft);
+	const UBYTE row = LARGE_TILE_FROM_PIXEL(y - mapBoundUp);
+	return row * mapMetaWidth + column;
+}
+
+void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) {
+	const UBYTE currentCell = getMapMetaTileArrayPosition(x, y);
+	levelMap[currentCell] = metaTile;
+}
+
 void runMapSideEffects(void) {
-	const UBYTE column = LARGE_TILE_FROM_PIXEL(scroll_target->x - mapBoundLeft);
-	const UBYTE row = LARGE_TILE_FROM_PIXEL(scroll_target->y - mapBoundUp);
-	const UBYTE currentCell = row * mapMetaWidth + column;
+	const UBYTE currentCell = getMapMetaTileArrayPosition(scroll_target->x, scroll_target->y);
 	const UBYTE currentMapValue = levelMap[currentCell];
 
 	if (currentCell == lastVisitedMetaCell) {
 		return;
 	}
-
+	if (currentMapValue == metaTileGold) {
+		updateScore(scoreGold);
+		levelMap[currentCell] |= direction;
+	}
 	// we eat a gem
 	if (currentMapValue == metaTileEmerald) {
 		// set current FX to correct note
