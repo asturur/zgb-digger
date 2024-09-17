@@ -304,12 +304,12 @@ void UPDATE(void) {
 		currentLevel++;
 		loadLevel(currentLevel);
 	}
-	if (spawnTimer == 0 && enemyCount < maxEnimesCount) {
-		spawnTimer = enemySpawnTimer;
-		enemyCount++;
-		SpriteManagerAdd(SpriteEnemy, 232, 16);
-		paintScore();
-	}
+	// if (spawnTimer == 0 && enemyCount < maxEnimesCount) {
+	// 	spawnTimer = enemySpawnTimer;
+	// 	enemyCount++;
+	// 	SpriteManagerAdd(SpriteEnemy, 232, 16);
+	// 	paintScore();
+	// }
 	updateEmeraldSound();
 }
 
