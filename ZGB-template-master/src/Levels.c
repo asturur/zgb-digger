@@ -89,33 +89,47 @@ const unsigned char level5Map[] = {
     10,  3,  3,  3,  3,  3,  3, 11,  3,  3,  3,  3,  3,  3,  9, // HHHHHHHHHHHHHHH
 };
 
-//  {"SHHHHHHHHHHHHHS",
-//   "VCBCCV V VCCBCV",
-//   "VCCC VBVBV CCCV",
-//   "VCCCHH V HHCCCV",
-//   "VCC V CVC V CCV",
-//   "VCCHH CVC HHCCV",
-//   "VC V CCVCC V CV",
-//   "VCHHBCCVCCBHHCV",
-//   "VCVCCCCVCCCCVCV",
-//   "HHHHHHHHHHHHHHH"},
-//  {"SHCCCCCVCCCCCHS",
-//   " VCBCBCVCBCBCV ",
-//   "BVCCCCCVCCCCCVB",
-//   "CHHCCCCVCCCCHHC",
-//   "CCV CCCVCCC VCC",
-//   "CCHHHCCVCCHHHCC",
-//   "CCCCV CVC VCCCC",
-//   "CCCCHH V HHCCCC",
-//   "CCCCCV V VCCCCC",
-//   "CCCCCHHHHHCCCCC"},
-//  {"HHHHHHHHHHHHHHS",
-//   "V CCBCCCCCBCC V",
-//   "HHHCCCCBCCCCHHH",
-//   "VBV CCCCCCC VBV",
-//   "VCHHHCCCCCHHHCV",
-//   "VCCBV CCC VBCCV",
-//   "VCCCHHHCHHHCCCV",
-//   "VCCCC V V CCCCV",
-//   "VCCCCCV VCCCCCV",
-//   "HHHHHHHHHHHHHHH"}
+const void __at(255) __bank_level6Map;
+
+const unsigned char level6Map[] = {
+     6,  3,  3,  3,  3,  7,  3,  7,  3,  7,  3,  3,  3,  3,  5, // SHHHHHHHHHHHHHS
+    12, EM, BG, EM, EM, 12,  0, 12,  0, 12, EM, EM, BG, EM, 12, // VCBCCV V VCCBCV
+    12, EM, EM, EM,  0, 12, BG, 12, BG, 12,  0, EM, EM, EM, 12, // VCCC VBVBV CCCV
+    12, EM, EM, EM,  6,  9,  0, 12,  0, 10,  5, EM, EM, EM, 12, // VCCCHH V HHCCCV
+    12, EM, EM,  0, 12,  0, EM, 12, EM,  0, 12,  0, EM, EM, 12, // VCC V CVC V CCV
+    12, EM, EM,  6,  9,  0, EM, 12, EM,  0, 10,  5, EM, EM, 12, // VCCHH CVC HHCCV
+    12, EM,  0, 12,  0, EM, EM, 12, EM, EM,  0, 12,  0, EM, 12, // VC V CCVCC V CV
+    12, EM,  6,  9, BG, EM, EM, 12, EM, EM, BG, 10,  5, EM, 12, // VCHHBCCVCCBHHCV
+    12, EM, 12, EM, EM, EM, EM, 12, EM, EM, EM, EM, 12, EM, 12, // VCVCCCCVCCCCVCV
+    10,  3, 11,  3,  3,  3,  3, 11,  3,  3,  3,  3, 11,  3,  9, // HHHHHHHHHHHHHHH
+};
+
+const void __at(255) __bank_level7Map;
+
+const unsigned char level7Map[] = {
+     2,  5, EM, EM, EM, EM, EM,  4, EM, EM, EM, EM, EM,  6,  1, // SHCCCCCVCCCCCHS
+     0, 12, EM, BG, EM, BG, EM, 12, EM, BG, EM, BG, EM, 12,  0, //  VCBCBCVCBCBCV
+    BG, 12, EM, EM, EM, EM, EM, 12, EM, EM, EM, EM, EM, 12, BG, // BVCCCCCVCCCCCVB
+    EM, 10,  5, EM, EM, EM, EM, 12, EM, EM, EM, EM,  6,  9, EM, // CHHCCCCVCCCCHHC
+    EM, EM, 12,  0, EM, EM, EM, 12, EM, EM, EM,  0, 12, EM, EM, // CCV CCCVCCC VCC
+    EM, EM, 10,  3,  5, EM, EM, 12, EM, EM,  6,  3,  9, EM, EM, // CCHHHCCVCCHHHCC
+    EM, EM, EM, EM, 12,  0, EM, 12, EM,  0, 12, EM, EM, EM, EM, // CCCCV CVC VCCCC
+    EM, EM, EM, EM, 10,  5,  0, 12,  0,  6,  9, EM, EM, EM, EM, // CCCCHH V HHCCCC
+    EM, EM, EM, EM, EM, 12,  0, 12,  0, 12, EM, EM, EM, EM, EM, // CCCCCV V VCCCCC
+    EM, EM, EM, EM, EM, 10,  3, 11,  3,  9, EM, EM, EM, EM, EM, // CCCCCHHHHHCCCCC
+};
+
+const void __at(255) __bank_level8Map;
+
+const unsigned char level8Map[] = {
+     6,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  5, // HHHHHHHHHHHHHHS
+    12,  0, EM, EM, BG, EM, EM, EM, EM, EM, BG, EM, EM,  0, 12, // V CCBCCCCCBCC V
+    14,  3,  5, EM, EM, EM, EM, BG, EM, EM, EM, EM,  6,  3, 13, // HHHCCCCBCCCCHHH
+    12, BG, 12,  0, EM, EM, EM, EM, EM, EM, EM,  0, 12, BG, 12, // VBV CCCCCCC VBV
+    12, EM, 10,  3,  5, EM, EM, EM, EM, EM,  6,  3,  9, EM, 12, // VCHHHCCCCCHHHCV
+    12, EM, EM, BG, 12,  0, EM, EM, EM,  0, 12, BG, EM, EM, 12, // VCCBV CCC VBCCV
+    12, EM, EM, EM, 10,  3,  5, EM,  6,  3,  9, EM, EM, EM, 12, // VCCCHHHCHHHCCCV
+    12, EM, EM, EM, EM,  0, 12,  0, 12,  0, EM, EM, EM, EM, 12, // VCCCC V V CCCCV
+    12, EM, EM, EM, EM, EM, 12,  0, 12, EM, EM, EM, EM, EM, 12, // VCCCCCV VCCCCCV
+    10,  3,  3,  3,  3,  3, 11,  3, 11,  3,  3,  3,  3,  3,  9, // HHHHHHHHHHHHHHH
+};

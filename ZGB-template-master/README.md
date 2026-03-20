@@ -24,5 +24,5 @@ in the tools/gbm2c folder: g++ -o gbm2c -I../gbr2c gbm2c.cpp ../gbr2c/gbrParser.
 in the tools/gbr2png folder: g++ -o gbr2png -I../gbr2c -I./lodepng gbr2png.cpp ./lodepng/lodepng.cpp ../gbr2c/gbrParser.cpp
 
 
-wine ~/gb-zgb/ZGB-2023.0/env/tools/gbtd22/GBTD.EXE
-wine ~/gb-zgb/ZGB-2023.0/env/tools/gbmb18/GBMB.EXE
+wine ~/develop/zgb-digger/ZGB-2023.0/tools/gbtd22/GBTD.EXE
+wine ~/develop/zgb-digger/ZGB-2023.0/tools/gbmb18/GBMB.EXE
