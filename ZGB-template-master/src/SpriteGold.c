@@ -20,10 +20,10 @@
 #define goldBR 21
 
 
-const UBYTE gold_crumbling[] = {4, 0, 1, 2};
-const UBYTE gold_start_falling[] = {4, 2, 1, 0};
-const UBYTE gold_falling[] = {1, 2};
-const UBYTE gold_static[] = {1, 2};
+const UBYTE gold_crumbling[] = {1, 0};
+const UBYTE gold_start_falling[] = {1, 0};
+const UBYTE gold_falling[] = {1, 0};
+const UBYTE gold_static[] = {1, 0};
 
 // CUSTOM_DATA usage
 // 0 state 1 static, 2: shaking: 3: falling
