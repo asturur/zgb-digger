@@ -20,6 +20,9 @@ extern const unsigned char level2Map[150];
 extern const unsigned char level3Map[150];
 extern const unsigned char level4Map[150];
 extern const unsigned char level5Map[150];
+extern const unsigned char level6Map[150];
+extern const unsigned char level7Map[150];
+extern const unsigned char level8Map[150];
 
 extern uint8_t fx_00[];
 extern void __mute_mask_fx_00;
@@ -289,11 +292,28 @@ void loadLevel(UBYTE level) {
 			copyLevelMapToRam(&level4Map, BANK(level4), &level4);
 			diamonds = 65;
 		break;
-		case 5: 
+		case 5: {
 			IMPORT_MAP(level5);
 			copyLevelMapToRam(&level5Map, BANK(level5), &level5);
 			diamonds = 77;
-		break;
+		} break;
+		case 6: {
+			// Level tilemaps are synthesized from levelMap, so later levels can
+			// reuse the same MapInfo metadata as long as the dimensions match.
+			IMPORT_MAP(level6);
+			copyLevelMapToRam(&level6Map, BANK(level6), &level6);
+			diamonds = 52;
+		} break;
+		case 7: {
+			IMPORT_MAP(level7);
+			copyLevelMapToRam(&level7Map, BANK(level7), &level7);
+			diamonds = 92;
+		} break;
+		case 8: {
+			IMPORT_MAP(level8);
+			copyLevelMapToRam(&level8Map, BANK(level8), &level8);
+			diamonds = 63;
+		} break;
 		default:
 		  currentLevel = 1;
 		  loadLevel(currentLevel);
@@ -336,4 +356,3 @@ void UPDATE(void) {
 	// }
 	updateEmeraldSound();
 }
-
