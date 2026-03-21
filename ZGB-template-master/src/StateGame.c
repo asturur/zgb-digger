@@ -300,18 +300,18 @@ void loadLevel(UBYTE level) {
 		case 6: {
 			// Level tilemaps are synthesized from levelMap, so later levels can
 			// reuse the same MapInfo metadata as long as the dimensions match.
-			IMPORT_MAP(level5);
-			copyLevelMapToRam(&level6Map, BANK(level5), &level5);
+			IMPORT_MAP(level6);
+			copyLevelMapToRam(&level6Map, BANK(level6), &level6);
 			diamonds = 52;
 		} break;
 		case 7: {
-			IMPORT_MAP(level5);
-			copyLevelMapToRam(&level7Map, BANK(level5), &level5);
+			IMPORT_MAP(level7);
+			copyLevelMapToRam(&level7Map, BANK(level7), &level7);
 			diamonds = 92;
 		} break;
 		case 8: {
-			IMPORT_MAP(level5);
-			copyLevelMapToRam(&level8Map, BANK(level5), &level5);
+			IMPORT_MAP(level8);
+			copyLevelMapToRam(&level8Map, BANK(level8), &level8);
 			diamonds = 63;
 		} break;
 		default:

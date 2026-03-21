@@ -15,7 +15,7 @@
 // |   |
 // - 4 -
 const void __at(255) __bank_level1Map;
-
+// emerald count 30
 const unsigned char level1Map[] = {
 	4,  0,  0,  0, BG,  0,  0,  0,  0,  0,  6,  3,  3,  3,  1, // "S   B     HHHHS", 
    12,  0,  0, EM, EM,  0,  0, EM,  0,  0, 12,  0, BG,  0,  0, // "V  CC  C  V B  "
@@ -30,7 +30,7 @@ const unsigned char level1Map[] = {
 };
 
 const void __at(255) __bank_level2Map;
-
+// emerald count 41
 const unsigned char level2Map[] = {
 	2,  3,  3,  3,  3,  5,  0,  0, BG,  0, BG,  0,  0,  6,  1, // "SHHHHH  B B  HS", 
    0, EM, EM,  0,  0, 12,  0,  0,  0,  0,  0,  0,  0, 12,  0, // " CC  V       V "
@@ -45,7 +45,7 @@ const unsigned char level2Map[] = {
 };
 
 const void __at(255) __bank_level3Map;
-
+// emerald count 51
 const unsigned char level3Map[] = {
 	2,  3,  3,  3,  5, BG,  0, BG,  0, BG,  6,  3,  3,  3,  1, // "SHHHHB B BHHHHS",
    EM, EM,  0,  0, 12,  0, EM,  0, EM,  0, 12,  0, BG, BG,  0, // "CC  V C C V BB ",
@@ -60,7 +60,7 @@ const unsigned char level3Map[] = {
 };
 
 const void __at(255) __bank_level4Map;
-
+// emerald count 65
 const unsigned char level4Map[] = {
 	2,  5, BG, EM, EM, EM, EM, BG, EM, EM, EM, EM, BG,  6,  1, // "SHBCCCCBCCCCBHS"
    EM, 12,  0,  0, EM, EM, EM, EM, EM, EM, EM,  0,  0, 12, EM, // "CV  CCCCCCC  VC"
@@ -75,7 +75,7 @@ const unsigned char level4Map[] = {
 };
 
 const void __at(255) __bank_level5Map;
-
+// emerald count 77
 const unsigned char level5Map[] = {
      6,  3,  3,  3,  3,  3,  3,  7,  3,  3,  3,  3,  3,  3,  5, // SHHHHHHHHHHHHHS
     12, BG, EM, EM, EM, EM, BG, 12, EM, EM, EM, EM, EM, EM, 12, // VBCCCCBVCCCCCCV
@@ -90,7 +90,7 @@ const unsigned char level5Map[] = {
 };
 
 const void __at(255) __bank_level6Map;
-
+// emerald count 52
 const unsigned char level6Map[] = {
      6,  3,  3,  3,  3,  7,  3,  7,  3,  7,  3,  3,  3,  3,  5, // SHHHHHHHHHHHHHS
     12, EM, BG, EM, EM, 12,  0, 12,  0, 12, EM, EM, BG, EM, 12, // VCBCCV V VCCBCV
@@ -105,7 +105,7 @@ const unsigned char level6Map[] = {
 };
 
 const void __at(255) __bank_level7Map;
-
+// emerald count 92
 const unsigned char level7Map[] = {
      2,  5, EM, EM, EM, EM, EM,  4, EM, EM, EM, EM, EM,  6,  1, // SHCCCCCVCCCCCHS
      0, 12, EM, BG, EM, BG, EM, 12, EM, BG, EM, BG, EM, 12,  0, //  VCBCBCVCBCBCV
@@ -120,7 +120,7 @@ const unsigned char level7Map[] = {
 };
 
 const void __at(255) __bank_level8Map;
-
+// emerald count 63
 const unsigned char level8Map[] = {
      6,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  5, // HHHHHHHHHHHHHHS
     12,  0, EM, EM, BG, EM, EM, EM, EM, EM, BG, EM, EM,  0, 12, // V CCBCCCCCBCC V
