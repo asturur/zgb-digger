@@ -18,7 +18,7 @@ void START(void) {
     THIS->custom_data[timer] = changeTimer;
     THIS->custom_data[timerQty] = 2;
     THIS->custom_data[enemy_direction] = J_LEFT;
-    THIS->custom_data[movAccumulator] = FALSE;
+    THIS->custom_data[movement_accumulator] = 0;
     THIS->custom_data[deathTimer] = 45;
     THIS->lim_x = 256;
     THIS->lim_y = 256;
@@ -49,6 +49,11 @@ void UPDATE(void) {
         THIS->custom_data[hobOrNobOrDead] = hobMode;
         SetSpriteAnim(THIS, hob_walk, 15);
     }
+    THIS->custom_data[movement_accumulator] += 4;
+    if (THIS->custom_data[movement_accumulator] < 5) {
+        return;
+    }
+    THIS->custom_data[movement_accumulator] -= 5;
     switch (THIS->custom_data[enemy_direction]) {
         case J_LEFT:
             if (THIS->x > mapBoundLeft) {
@@ -84,6 +89,6 @@ void UPDATE(void) {
 void DESTROY(void) {
     enemyCountOnScreen--;
     if (spawnTimer == 0) {
-        spawnTimer = 500;
+        spawnTimer = getEnemySpawnGapTimer();
     }
 }

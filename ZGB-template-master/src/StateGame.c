@@ -179,6 +179,10 @@ void updateScore(uint16_t addScore) {
 	paintScore();
 }
 
+uint8_t getEnemySpawnGapTimer(void) {
+	return enemySpawnGapBaseTimer - (difficultyLevel * enemySpawnGapDifficultyStep);
+}
+
 void updateEmeraldSound(void) {
 	if (emeraldScaleTimer > 0) {
 		emeraldScaleTimer--;
@@ -369,8 +373,7 @@ void UPDATE(void) {
 		loadLevel(currentLevel);
 	}
 	if (spawnTimer == 0 && enemyCountOnScreen < enemyMaxOnScreen && enemySpawned < enemyMaxTotal) {
-		// todo make this a function so that we call it on sprite death
-		spawnTimer = enemySpawnGapBaseTimer - (difficultyLevel * enemySpawnGapDifficultyStep);
+		spawnTimer = getEnemySpawnGapTimer();
 		enemyCountOnScreen++;
 		enemySpawned++;
 		SpriteManagerAdd(SpriteEnemy, 232, 16);

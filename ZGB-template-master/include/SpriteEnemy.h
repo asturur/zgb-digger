@@ -11,6 +11,6 @@
 #define enemy_direction 3
 #define frightned 4
 #define hasEatenGold 5
-#define movAccumulator 6
+#define movement_accumulator 6
 #define deathTimer 7
 
