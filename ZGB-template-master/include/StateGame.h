@@ -59,11 +59,11 @@
 #define enemySpawnTimer 300
 
 // useful macros
-#define TILE_FROM_PIXEL(X) X >> tileSizeBitShift
-#define MOD_FOR_TILE(X) X & 0x07
+#define TILE_FROM_PIXEL(X) ((X) >> tileSizeBitShift)
+#define MOD_FOR_TILE(X) ((X) & 0x07)
 
-#define LARGE_TILE_FROM_PIXEL(X) X >> largetTileSizeBitShift
-#define MOD_FOR_LARGE_TILE(X) X & 0x0F
+#define LARGE_TILE_FROM_PIXEL(X) ((X) >> largetTileSizeBitShift)
+#define MOD_FOR_LARGE_TILE(X) ((X) & 0x0F)
 // utility functions
 void updateScore(uint16_t addScore);
 BOOLEAN checkTilesFor(UBYTE column, UBYTE row, UBYTE type);
