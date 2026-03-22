@@ -15,14 +15,14 @@ Use this skill when the user asks to build the ROM and run it in SameBoy.
 
 ## Digger Defaults
 
-- Build directory: `/Users/andreabogazzi/develop/zgb-digger/ZGB-template-master/src`
+- Build directory: `~/develop/zgb-digger/ZGB-template-master/src`
 - Build command: `make gb`
-- ROM path: `/Users/andreabogazzi/develop/zgb-digger/ZGB-template-master/bin/gb/Digger.gb`
+- ROM path: `~/develop/zgb-digger/ZGB-template-master/bin/gb/Digger.gb`
 - SameBoy app: `/Applications/SameBoy.app`
 - Launch command:
 
 ```bash
-open -a /Applications/SameBoy.app /Users/andreabogazzi/develop/zgb-digger/ZGB-template-master/bin/gb/Digger.gb
+open -a /Applications/SameBoy.app ~/develop/zgb-digger/ZGB-template-master/bin/gb/Digger.gb
 ```
 
 ## Notes
