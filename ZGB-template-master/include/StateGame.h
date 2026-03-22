@@ -47,6 +47,15 @@
 #define metaTileGallery 0
 
 // game timers and behaviour
+#define originalTickToGameBoyFrameRatio 4 // Keep the original 4:1 ratio in mind, but don't derive timings from it here.
+#define enemyFirstSpawnTimer 40 // 10 original * 4
+#define enemySpawnGapBaseTimer 180
+#define enemySpawnGapDifficultyStep 8
+#define maxDifficultyLevel 10
+#define totalEnemiesBaseCount 5
+#define maxEnemiesOnScreenLevel1 3
+#define maxEnemiesOnScreenLevel2To7 4
+#define maxEnemiesOnScreenLevel8To10 5
 #define maxEnimesCount 3
 #define enemySpawnTimer 300
 
@@ -61,3 +70,5 @@ void updateScore(uint16_t addScore);
 BOOLEAN checkTilesFor(UBYTE column, UBYTE row, UBYTE type);
 void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile);
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type);
+
+extern UBYTE difficultyLevel;

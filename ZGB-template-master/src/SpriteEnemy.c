@@ -3,7 +3,7 @@
 #include "SpriteEnemy.h"
 #include "StateGame.h"
 
-extern uint8_t enemyCount;
+extern uint8_t enemyCountOnScreen;
 extern uint16_t spawnTimer;
 extern uint8_t isDying;
 
@@ -80,7 +80,7 @@ void UPDATE(void) {
 }
 
 void DESTROY(void) {
-    enemyCount--;
+    enemyCountOnScreen--;
     if (spawnTimer == 0) {
         spawnTimer = 500;
     }
