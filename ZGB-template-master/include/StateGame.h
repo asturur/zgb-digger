@@ -56,7 +56,6 @@
 #define maxEnemiesOnScreenLevel1 3
 #define maxEnemiesOnScreenLevel2To7 4
 #define maxEnemiesOnScreenLevel8To10 5
-#define maxEnimesCount 3
 #define enemySpawnTimer 300
 
 // useful macros

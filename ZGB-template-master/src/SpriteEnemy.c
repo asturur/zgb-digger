@@ -4,7 +4,7 @@
 #include "StateGame.h"
 
 extern uint8_t enemyCountOnScreen;
-extern uint16_t spawnTimer;
+extern uint8_t spawnTimer;
 extern uint8_t isDying;
 
 const UBYTE nob_walk[] = {4, 0, 1, 2, 1};
@@ -14,23 +14,25 @@ const UBYTE hob_dies[] = {1, 7};
 
 void START(void) {
     SetSpriteAnim(THIS, nob_walk, 15);
-    THIS->custom_data[hobOrNob] = nobMode;
+    THIS->custom_data[hobOrNobOrDead] = nobMode;
     THIS->custom_data[timer] = changeTimer;
     THIS->custom_data[timerQty] = 2;
     THIS->custom_data[enemy_direction] = J_LEFT;
-    THIS->custom_data[dead] = FALSE;
+    THIS->custom_data[movAccumulator] = FALSE;
     THIS->custom_data[deathTimer] = 45;
     THIS->lim_x = 256;
     THIS->lim_y = 256;
 }
 
+
+
 void UPDATE(void) {
     if (isDying == 1) {
         return;
     }
-    if (THIS->custom_data[6]) {
-        if (THIS->custom_data[7] > 0) {
-            THIS->custom_data[7]--;
+    if (THIS->custom_data[hobOrNobOrDead] == deadMode) {
+        if (THIS->custom_data[deathTimer] > 0) {
+            THIS->custom_data[deathTimer]--;
         } else {
             SpriteManagerRemoveSprite(THIS);
         }
@@ -44,7 +46,7 @@ void UPDATE(void) {
         THIS->custom_data[timerQty]--;
     }
     if (THIS->custom_data[timer] == 0 && THIS->custom_data[timerQty] == 0) {
-        THIS->custom_data[hobOrNob] = hobMode;
+        THIS->custom_data[hobOrNobOrDead] = hobMode;
         SetSpriteAnim(THIS, hob_walk, 15);
     }
     switch (THIS->custom_data[enemy_direction]) {

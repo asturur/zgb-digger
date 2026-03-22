@@ -51,8 +51,8 @@ void UPDATE(void) {
 		if(spr->type == SpriteEnemy) {
 			if(CheckCollision(THIS, spr)) {
                 THIS->custom_data[exploding] = TRUE;
-                spr->custom_data[dead] = TRUE;
-				SetSpriteAnim(spr, spr->custom_data[hobOrNob] == nobMode ? nob_dies : hob_dies, 15);
+                spr->custom_data[hobOrNobOrDead] = deadMode;
+				SetSpriteAnim(spr, spr->custom_data[hobOrNobOrDead] == nobMode ? nob_dies : hob_dies, 15);
                 SetSpriteAnim(THIS, explosion_anim, 15);
                 updateScore(scoreKill);
 			}

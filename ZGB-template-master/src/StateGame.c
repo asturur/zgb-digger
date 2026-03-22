@@ -31,7 +31,7 @@ UBYTE currentLevel = 0;
 UBYTE difficultyLevel = 0;
 uint16_t score = 0;
 UBYTE diamonds = 0;
-int16_t spawnTimer = -1;
+uint8_t spawnTimer = 0;
 uint8_t enemyCountOnScreen = 0;
 uint8_t enemyMaxOnScreen = 0;
 uint8_t enemyMaxTotal = 0;
@@ -267,7 +267,7 @@ void resetLevelState(void) {
 	isDying = 0;
 	enemyCountOnScreen = 0;
 	enemySpawned = 0;
-	spawnTimer = -1;
+	spawnTimer = 0;
 	SpriteManagerReset();
 	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 160);
 	paintScore();
@@ -290,7 +290,6 @@ void loadLevel(UBYTE level) {
 		enemyMaxOnScreen = maxEnemiesOnScreenLevel8To10;
 	}
 	enemyMaxTotal = totalEnemiesBaseCount + difficultyLevel;
-	spawnTimer = enemyFirstSpawnTimer;
 	// add first the spriteManager only then load the level
 	switch (level) {
 		case 1:
@@ -338,6 +337,7 @@ void loadLevel(UBYTE level) {
 		default:
 		break;
 	}
+	spawnTimer = enemyFirstSpawnTimer;
 }
 
 void START(void) {
@@ -369,6 +369,7 @@ void UPDATE(void) {
 		loadLevel(currentLevel);
 	}
 	if (spawnTimer == 0 && enemyCountOnScreen < enemyMaxOnScreen && enemySpawned < enemyMaxTotal) {
+		// todo make this a function so that we call it on sprite death
 		spawnTimer = enemySpawnGapBaseTimer - (difficultyLevel * enemySpawnGapDifficultyStep);
 		enemyCountOnScreen++;
 		enemySpawned++;
