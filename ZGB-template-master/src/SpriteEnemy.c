@@ -14,6 +14,28 @@ const UBYTE hob_walk[] = {4, 4, 5, 6, 5};
 const UBYTE nob_dies[] = {1, 3};
 const UBYTE hob_dies[] = {1, 7};
 
+static void setEnemyMode(UBYTE enemyMode) {
+    THIS->custom_data[mode] = enemyMode;
+
+    switch (enemyMode) {
+        case nobMode:
+            THIS->custom_data[mode_timer] = 0;
+            SetSpriteAnim(THIS, nob_walk, 15);
+        break;
+        case hobMode:
+            THIS->custom_data[mode_timer] = 0;
+            SetSpriteAnim(THIS, hob_walk, 15);
+        break;
+        case deadMode:
+            THIS->custom_data[mode_timer] = deathTimer;
+            SetSpriteAnim(THIS, nob_dies, 15);
+        break;
+        case waitMode:
+            THIS->custom_data[mode_timer] = initialWaitTime;
+        break;
+    }
+}
+
 static UBYTE oppositeDirectionBit(UBYTE direction) {
     switch (direction) {
         case J_LEFT:
@@ -46,7 +68,22 @@ static UBYTE getEnemyCurrentTunnel(void) {
 }
 
 static BOOLEAN enemyCanMove(UBYTE direction, UBYTE tunnel) {
-    return (tunnel & oppositeDirectionBit(direction)) != 0;
+    if ((tunnel & oppositeDirectionBit(direction)) == 0) {
+        return FALSE;
+    }
+
+    switch (direction) {
+        case J_LEFT:
+            return THIS->x > mapBoundLeft;
+        case J_RIGHT:
+            return THIS->x < mapBoundRight;
+        case J_UP:
+            return THIS->y > mapBoundUp;
+        case J_DOWN:
+            return THIS->y < mapBoundDown;
+        default:
+            return FALSE;
+    }
 }
 
 static void chooseEnemyDirection(void) {
@@ -73,15 +110,24 @@ static void chooseEnemyDirection(void) {
         if (enemyCanMove(priorities[idx], tunnel)) {
             THIS->custom_data[enemy_direction] = priorities[idx];
             THIS->custom_data[movement_accumulator] = 0;
-            return;
+            break;
+        }
+    }
+
+    // idx == 2 means reverse was the only legal fallback, idx == 3 means blocked.
+    if (THIS->custom_data[mode] == nobMode &&
+        THIS->custom_data[mode_timer] < 255 &&
+        // idx bigger than 1 means the nob had to change direction or is completely stuck
+        idx > 1) {
+        THIS->custom_data[mode_timer]++;
+        if (THIS->custom_data[mode_timer] > (10 - difficultyLevel)) {
+            setEnemyMode(hobMode);
         }
     }
 }
 
 void START(void) {
-    SetSpriteAnim(THIS, nob_walk, 15);
-    THIS->custom_data[hobOrNobOrDead] = waitMode;
-    THIS->custom_data[timer] = initialWaitTime;
+    setEnemyMode(waitMode);
     THIS->custom_data[enemy_direction] = J_LEFT;
     THIS->custom_data[movement_accumulator] = 20;
     THIS->lim_x = 256;
@@ -94,30 +140,32 @@ void UPDATE(void) {
     if (isDying == 1) {
         return;
     }
-    if (THIS->custom_data[hobOrNobOrDead] == deadMode) {
-        if (THIS->custom_data[timer] > 0) {
-            THIS->custom_data[timer]--;
+    if (THIS->custom_data[mode] == deadMode) {
+        if (THIS->custom_data[mode_timer] > 0) {
+            THIS->custom_data[mode_timer]--;
         } else {
             SpriteManagerRemoveSprite(THIS);
         }
         return;
     }
-    if (THIS->custom_data[hobOrNobOrDead] == waitMode) {
-        if (THIS->custom_data[timer] > 0) {
-            THIS->custom_data[timer]--;
+    if (THIS->custom_data[mode] == waitMode) {
+        if (THIS->custom_data[mode_timer] > 0) {
+            THIS->custom_data[mode_timer]--;
         } else {
-           THIS->custom_data[hobOrNobOrDead] = nobMode;
+            setEnemyMode(nobMode);
         }
     }
 
-    // if (THIS->custom_data[timer] == 0 && THIS->custom_data[timerQty] == 0) {
-    //     THIS->custom_data[hobOrNobOrDead] = hobMode;
-    //     SetSpriteAnim(THIS, hob_walk, 15);
-    // }
-    if (THIS->custom_data[hobOrNobOrDead] != nobMode && THIS->custom_data[hobOrNobOrDead] != hobMode) {
+    if (THIS->custom_data[mode] != nobMode && THIS->custom_data[mode] != hobMode) {
         return;
     }
+    if (THIS->custom_data[mode] == hobMode && THIS->custom_data[mode_timer] < 255) {
+        THIS->custom_data[mode_timer]++;
+    }
     if (isEnemyAligned()) {
+        if (THIS->custom_data[mode] == hobMode && THIS->custom_data[mode_timer] > (30 + (difficultyLevel << 1))) {
+            setEnemyMode(nobMode);
+        }
         chooseEnemyDirection();
     }
     THIS->custom_data[movement_accumulator] += 4;
@@ -127,16 +175,24 @@ void UPDATE(void) {
     THIS->custom_data[movement_accumulator] -= 5;
     switch (THIS->custom_data[enemy_direction]) {
         case J_LEFT:
-            THIS->x--;
+            if (THIS->x > mapBoundLeft) {
+                THIS->x--;
+            }
         break;
         case J_RIGHT:
-            THIS->x++;
+            if (THIS->x < mapBoundRight) {
+                THIS->x++;
+            }
         break;
         case J_UP:
-            THIS->y--;
+            if (THIS->y > mapBoundUp) {
+                THIS->y--;
+            }
         break;
         case J_DOWN:
-            THIS->y++;
+            if (THIS->y < mapBoundDown) {
+                THIS->y++;
+            }
         break;
     }
 }

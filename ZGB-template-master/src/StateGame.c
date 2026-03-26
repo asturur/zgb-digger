@@ -368,7 +368,7 @@ void UPDATE(void) {
 	if (spawnTimer > 0) {
 		spawnTimer--;
 	}
-	if (diamonds == 0) {
+	if (diamonds == 0 || (enemySpawned == enemyMaxTotal && enemyCountOnScreen == 0)) {
 		currentLevel++;
 		loadLevel(currentLevel);
 	}

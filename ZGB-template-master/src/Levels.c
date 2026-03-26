@@ -19,12 +19,12 @@ const void __at(255) __bank_level1Map;
 const unsigned char level1Map[] = {
 	4,  0,  0,  0, BG,  0,  0,  0,  0,  0,  6,  3,  3,  3,  1, // "S   B     HHHHS", 
    12,  0,  0, EM, EM,  0,  0, EM,  0,  0, 12,  0, BG,  0,  0, // "V  CC  C  V B  "
-	5, BG,  0, EM, EM,  0,  0, EM,  0,  0, 12,  0,  0,  0,  0, // "VB CC  C  V    ",
+	12, BG,  0, EM, EM,  0,  0, EM,  0,  0, 12,  0,  0,  0,  0, // "VB CC  C  V    ",
    12,  0,  0, EM, EM, BG,  0, EM, BG,  0, 12,  0, EM, EM, EM, // "V  CCB CB V CCC",
    12,  0,  0, EM, EM,  0,  0, EM,  0,  0, 12,  0, EM, EM, EM, // "V  CC  C  V CCC",
-	3,  5,  0, EM, EM,  0,  0, EM,  0,  0, 12,  0, EM, EM, EM, // "HH CC  C  V CCC",
-	0, 12,  0,  0,  0,  0, BG,  0, BG,  0, 12,  0,  0,  0,  0, // " V    B B V    ",
-   0, 10,  3,  3,  5,  0,  0,  0,  0,  0, 12,  0,  0,  0,  0, // " HHHH     V    ",
+	10,  5,  0, EM, EM,  0,  0, EM,  0,  0, 12,  0, EM, EM, EM, // "HH CC  C  V CCC",
+	0, 12,  0,  0,  0,  0, BG,  0, BG,  0, 12,  0,  0,  0,  0, //  " V    B B V    ",
+   0, 10,  3,  3,  5,  0,  0,  0,  0,  0, 12,  0,  0,  0,  0, //  " HHHH     V    ",
    EM,  0,  0,  0, 12,  0,  0,  0,  0,  0, 12,  0,  0,  0, EM, // "C   V     V   C",
    EM, EM,  0,  0, 10,  3,  3,  3,  3,  3,  9,  0,  0, EM, EM, // "CC  HHHHHHH  CC",
 };
