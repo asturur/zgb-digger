@@ -30,15 +30,6 @@ const UBYTE bag_static[] = {1, 0};
 // 1 8bit timer
 // 2 fall counter
 
-void createBagBackground(void) {
-    UBYTE column = TILE_FROM_PIXEL(THIS->x);
-    UBYTE row = TILE_FROM_PIXEL(THIS->y);
-    updateVideoMemAndMap(column, row, bagTL);
-    updateVideoMemAndMap(column + 1, row, bagTR);
-    updateVideoMemAndMap(column, row + 1, bagBL);
-    updateVideoMemAndMap(column + 1, row + 1, bagBR);
-}
-
 void setBagTiles(UBYTE column, UBYTE row, UBYTE type) {
     updateVideoMemAndMap(column, row, type);
     updateVideoMemAndMap(column + 1, row, type);
@@ -100,9 +91,7 @@ void UPDATE(void) {
                 else {
                     THIS->custom_data[bagStatus] = stateStatic;
                     THIS->custom_data[bagFallCounter] = 0;
-                    createBagBackground();
-                    addOnMap(THIS->x, THIS->y, metaTileBag);
-                    SpriteManagerRemoveSprite(THIS);
+                    deactivateBag(THIS);
                 }
             }
         }
