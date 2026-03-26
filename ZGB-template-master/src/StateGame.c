@@ -28,10 +28,14 @@ extern uint8_t fx_00[];
 extern void __mute_mask_fx_00;
 
 UBYTE currentLevel = 0;
+UBYTE difficultyLevel = 0;
 uint16_t score = 0;
 UBYTE diamonds = 0;
-uint16_t spawnTimer = 0;
-uint8_t enemyCount = 0;
+uint8_t spawnTimer = 0;
+uint8_t enemyCountOnScreen = 0;
+uint8_t enemyMaxOnScreen = 0;
+uint8_t enemyMaxTotal = 0;
+uint8_t enemySpawned = 0;
 uint8_t lives = 3;
 
 uint8_t emeraldLoop = EMERALD_DING_QTY;
@@ -91,7 +95,7 @@ void paintScore(void) {
 	for (uint8_t i = 1; i <= maxLives; i++) {
 		UPDATE_HUD_TILE(7 + i, 0, lives >= i ? lifeFont : 0);
 	}
-	UPDATE_HUD_TILE(14, 0, scoreFontOffset + enemyCount);
+	UPDATE_HUD_TILE(14, 0, scoreFontOffset + enemyCountOnScreen);
 }
 
 void copyTileMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
@@ -173,6 +177,10 @@ void activateBag(uint8_t bagcell) {
 void updateScore(uint16_t addScore) {
 	score += addScore;
 	paintScore();
+}
+
+uint8_t getEnemySpawnGapTimer(void) {
+	return enemySpawnGapBaseTimer - (difficultyLevel * enemySpawnGapDifficultyStep);
 }
 
 void updateEmeraldSound(void) {
@@ -261,15 +269,31 @@ void runMapSideEffects(void) {
 void resetLevelState(void) {
 	lastVisitedMetaCell = 0;
 	isDying = 0;
-	enemyCount = 0;
-	spawnTimer = enemySpawnTimer;
+	enemyCountOnScreen = 0;
+	enemySpawned = 0;
+	spawnTimer = 0;
 	SpriteManagerReset();
 	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 160);
 	paintScore();
 }
 
 void loadLevel(UBYTE level) {
+	if (level > 8) {
+		currentLevel = 1;
+		level = 1;
+	}
 	resetLevelState();
+	if (difficultyLevel < maxDifficultyLevel) {
+		difficultyLevel++;
+	}
+	if (difficultyLevel == 1) {
+		enemyMaxOnScreen = maxEnemiesOnScreenLevel1;
+	} else if (difficultyLevel < 8) {
+		enemyMaxOnScreen = maxEnemiesOnScreenLevel2To7;
+	} else {
+		enemyMaxOnScreen = maxEnemiesOnScreenLevel8To10;
+	}
+	enemyMaxTotal = totalEnemiesBaseCount + difficultyLevel;
 	// add first the spriteManager only then load the level
 	switch (level) {
 		case 1:
@@ -315,9 +339,9 @@ void loadLevel(UBYTE level) {
 			diamonds = 63;
 		} break;
 		default:
-		  currentLevel = 1;
-		  loadLevel(currentLevel);
+		break;
 	}
+	spawnTimer = enemyFirstSpawnTimer;
 }
 
 void START(void) {
@@ -344,15 +368,16 @@ void UPDATE(void) {
 	if (spawnTimer > 0) {
 		spawnTimer--;
 	}
-	if (diamonds == 0) {
+	if (diamonds == 0 || (enemySpawned == enemyMaxTotal && enemyCountOnScreen == 0)) {
 		currentLevel++;
 		loadLevel(currentLevel);
 	}
-	// if (spawnTimer == 0 && enemyCount < maxEnimesCount) {
-	// 	spawnTimer = enemySpawnTimer;
-	// 	enemyCount++;
-	// 	SpriteManagerAdd(SpriteEnemy, 232, 16);
-	// 	paintScore();
-	// }
+	if (spawnTimer == 0 && enemyCountOnScreen < enemyMaxOnScreen && enemySpawned < enemyMaxTotal) {
+		spawnTimer = getEnemySpawnGapTimer();
+		enemyCountOnScreen++;
+		enemySpawned++;
+		SpriteManagerAdd(SpriteEnemy, 232, 16);
+		paintScore();
+	}
 	updateEmeraldSound();
 }

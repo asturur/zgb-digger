@@ -49,6 +49,7 @@ void START(void) {
     setDirection(J_RIGHT);
     THIS->custom_data[custom_data_recharge] = 0;
     THIS->custom_data[death_animation] = 0;
+    THIS->custom_data[movement_accumulator] = 0;
 }
 
 BOOLEAN isColumnDisaligned(void) {
@@ -60,6 +61,11 @@ BOOLEAN isRowDisaligned(void) {
 }
 
 void updatePosition(void) {
+    THIS->custom_data[movement_accumulator] += 4;
+    if (THIS->custom_data[movement_accumulator] < 5) {
+        return;
+    }
+    THIS->custom_data[movement_accumulator] -= 5;
     switch (direction) {
         case J_UP:
             if (THIS->y > mapBoundUp) {
@@ -281,6 +287,8 @@ void UPDATE(void) {
         updateAnimation();
         updateMapTiles();
         runMapSideEffects();
+    } else {
+        THIS->custom_data[movement_accumulator] = 0;
     }
 }
 

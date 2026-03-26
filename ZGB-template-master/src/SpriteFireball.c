@@ -48,15 +48,17 @@ void UPDATE(void) {
         break;
     }
     SPRITEMANAGER_ITERATE(i, spr) {
-		if(spr->type == SpriteEnemy) {
-			if(CheckCollision(THIS, spr)) {
-                THIS->custom_data[exploding] = TRUE;
-                spr->custom_data[dead] = TRUE;
-				SetSpriteAnim(spr, spr->custom_data[hobOrNob] == nobMode ? nob_dies : hob_dies, 15);
-                SetSpriteAnim(THIS, explosion_anim, 15);
-                updateScore(scoreKill);
+			if(spr->type == SpriteEnemy) {
+				if(CheckCollision(THIS, spr)) {
+	                UBYTE enemyMode = spr->custom_data[mode];
+	                THIS->custom_data[exploding] = TRUE;
+	                spr->custom_data[mode] = deadMode;
+	                spr->custom_data[mode_timer] = deathTimer;
+					SetSpriteAnim(spr, enemyMode == nobMode ? nob_dies : hob_dies, 15);
+	                SetSpriteAnim(THIS, explosion_anim, 15);
+	                updateScore(scoreKill);
+				}
 			}
-		}
 	}
 }
 
