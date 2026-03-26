@@ -146,6 +146,35 @@ When implementing missing mechanics, compare against the PC source for:
 - level completion rules
 - death and respawn flow
 
+## Enemy Porting Notes
+
+- The original PC game runs at about 15 Hz, while the Game Boy game loop is about 60 Hz. For rough timing ports, `1` original game tick is approximately `4` GB frames.
+- The current port uses a compact tunnel encoding in `levelMap`:
+  - `1` left
+  - `2` right
+  - `4` down
+  - `8` up
+- Do not mix the tunnel bit encoding with GBDK joypad direction constants (`J_LEFT`, `J_RIGHT`, `J_UP`, `J_DOWN`). They are different domains even when some values happen to overlap.
+- Macro arguments in `StateGame.h` must stay fully parenthesized. Unparenthesized pixel/tile macros caused SDCC optimizer warnings and broke alignment checks in enemy movement work.
+- In `SpriteEnemy.c`, movement legality must account for both:
+  - tunnel openness from `levelMap`
+  - map bounds
+  If only tunnel bits are checked, enemies can freeze or try to leave the map at corners and edges.
+- Keep direction-choice legality and actual movement behavior aligned. If one layer allows a direction that the movement step later refuses, enemies can stall at cell boundaries.
+- `Sprite.custom_data` only has `8` bytes in this setup. Prefer mode-dependent reuse of slots before adding new enemy state:
+  - current enemy work uses `mode` and `mode_timer`
+  - `mode_timer` is currently reused for wait/death/Nobbin-Hobbin timing
+  - if original monster time-penalty `t` is ported later, it should use a separate slot
+- Current `SpriteEnemy.c` behavior is still a simplified port:
+  - spawn wait is implemented
+  - tunnel-following is implemented
+  - Nobbin/Hobbin timing thresholds are partially implemented
+  - full chase logic toward Digger is not implemented yet
+  - Hobbin digging-through-dirt and original bag interactions are not implemented yet
+- The original level completion rule is `all emeralds collected OR all enemies cleared`. In this port, that currently maps to:
+  - `diamonds == 0`
+  - or `enemySpawned == enemyMaxTotal && enemyCountOnScreen == 0`
+
 ## Where Agents Should Be Careful
 
 - The repository contains vendored upstream code and reference dumps; not every directory is meant to be edited.
