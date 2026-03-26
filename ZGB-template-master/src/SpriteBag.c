@@ -102,8 +102,8 @@ void UPDATE(void) {
                     THIS->custom_data[bagFallCounter] = 0;
                     createBagBackground();
                     addOnMap(THIS->x, THIS->y, metaTileBag);
+                    SpriteManagerRemoveSprite(THIS);
                 }
-                SpriteManagerRemoveSprite(THIS);
             }
         }
     }
