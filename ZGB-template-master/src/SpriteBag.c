@@ -9,7 +9,7 @@
 #define stateStatic 1
 #define stateShaking 2
 #define stateFalling 3
-// #define statePushing 4
+#define statePushing 4
 
 #define bagStatus 0
 #define bagStateTimer 1
@@ -55,30 +55,30 @@ static void deactivateBag(Sprite* bag) {
 	SpriteManagerRemoveSprite(bag);
 }
 
-// void setBagState(UBYTE bagState) {
-//     // THIS->custom_data[bagStatus] = bagState;
+void setBagState(UBYTE bagState) {
+    THIS->custom_data[bagStatus] = bagState;
 
-//     // switch (bagState) {
-//     //     // case stateStatic:
-//     //     //     THIS->custom_data[bagStateTimer] = 0;
-//     //     //     THIS->custom_data[bagFallCounter] = 0;
-//     //     //     SetSpriteAnim(THIS, bag_static, 15);
-//     //     //     break;
-//     //     // case stateShaking:
-//     //     //     THIS->custom_data[bagStateTimer] = shakeBeforeFall;
-//     //     //     THIS->custom_data[bagFallCounter] = 0;
-//     //     //     SetSpriteAnim(THIS, bag_shake, 15);
-//     //     //     break;
-//     //     // case stateFalling:
-//     //     //     THIS->custom_data[bagStateTimer] = 0;
-//     //     //     SetSpriteAnim(THIS, bag_fall, 15);
-//     //     //     break;
-//     //     // case statePushing:
-//     //     //     THIS->custom_data[bagStateTimer] = largeTileSize;
-//     //     //     SetSpriteAnim(THIS, bag_static, 15);
-//     //     //     break;
-//     // }
-// }
+    switch (bagState) {
+        case stateStatic:
+            THIS->custom_data[bagStateTimer] = 0;
+            THIS->custom_data[bagFallCounter] = 0;
+            SetSpriteAnim(THIS, bag_static, 15);
+            break;
+        case stateShaking:
+            THIS->custom_data[bagStateTimer] = shakeBeforeFall;
+            THIS->custom_data[bagFallCounter] = 0;
+            SetSpriteAnim(THIS, bag_shake, 15);
+            break;
+        case stateFalling:
+            THIS->custom_data[bagStateTimer] = 0;
+            SetSpriteAnim(THIS, bag_fall, 15);
+            break;
+        case statePushing:
+            THIS->custom_data[bagStateTimer] = largeTileSize;
+            SetSpriteAnim(THIS, bag_static, 15);
+            break;
+    }
+}
 
 void START(void) {
     SetSpriteAnim(THIS, bag_shake, 15);
