@@ -29,7 +29,7 @@ const UBYTE gold_static[] = {1, 0};
 // 0 state 1 static, 2: shaking: 3: falling
 // 1 8bit timer
 
-void createGoldBackground(void) {
+static void createGoldBackground(void) {
     UBYTE column = TILE_FROM_PIXEL(THIS->x);
     UBYTE row = TILE_FROM_PIXEL(THIS->y);
     updateVideoMemAndMap(column, row, goldTL);

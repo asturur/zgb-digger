@@ -31,17 +31,28 @@ const UBYTE bag_static[] = {1, 0};
 // 1 8bit timer
 // 2 fall counter
 
-void setBagTiles(UBYTE column, UBYTE row, UBYTE type) {
+static void setBagTiles(UBYTE column, UBYTE row, UBYTE type) {
     updateVideoMemAndMap(column, row, type);
     updateVideoMemAndMap(column + 1, row, type);
     updateVideoMemAndMap(column, row + 1, type);
     updateVideoMemAndMap(column + 1, row + 1, type);
 }
 
-void updateBagTiles(uint8_t tileType) {
+static void updateBagTiles(uint8_t tileType) {
     UBYTE bagColumn = TILE_FROM_PIXEL(THIS->x);
     UBYTE bagRow = TILE_FROM_PIXEL(THIS->y);
     setBagTiles(bagColumn, bagRow, tileType);
+}
+
+static void deactivateBag(Sprite* bag) {
+	uint8_t column = TILE_FROM_PIXEL(bag->x);
+	uint8_t row = TILE_FROM_PIXEL(bag->y);
+	updateVideoMemAndMap(column, row, tileBagTL);
+	updateVideoMemAndMap(column + 1, row, tileBagTR);
+	updateVideoMemAndMap(column, row + 1, tileBagBL);
+	updateVideoMemAndMap(column + 1, row + 1, tileBagBR);
+	addOnMap(bag->x, bag->y, metaTileBag);
+	SpriteManagerRemoveSprite(bag);
 }
 
 // void setBagState(UBYTE bagState) {

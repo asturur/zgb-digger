@@ -7,9 +7,8 @@
 #include "SpritePlayer.h"
 
 extern void runMapSideEffects(void);
-extern void killPlayer(void);
 extern uint8_t isDying;
-
+extern uint8_t lives;
 const UBYTE anim_walk_right[] = {4, 0, 1, 2, 1};
 const UBYTE anim_walk_down[] = {4, 3, 4, 5, 4};
 const UBYTE anim_walk_up[] = {4, 6, 7, 8, 7};
@@ -27,7 +26,7 @@ UBYTE oppositeDirection;
 UBYTE column;
 UBYTE row;
 
-void setDirection(UBYTE dir) {
+static void setDirection(UBYTE dir) {
   direction = dir;
   switch (dir) {
     case J_DOWN:
@@ -45,6 +44,15 @@ void setDirection(UBYTE dir) {
   }
 }
 
+static void killPlayer(void) {
+	lives--;
+	isDying = 128;
+	THIS->custom_data[death_animation] = death_sequence_length;
+	if (lives == 0) {
+		SetState(StateGame);
+	}
+}
+
 void START(void) {
     setDirection(J_RIGHT);
     THIS->custom_data[custom_data_recharge] = 0;
@@ -52,15 +60,15 @@ void START(void) {
     THIS->custom_data[movement_accumulator] = 0;
 }
 
-BOOLEAN isColumnDisaligned(void) {
+static BOOLEAN isColumnDisaligned(void) {
     return MOD_FOR_LARGE_TILE(THIS->x - mapBoundLeft);
 }
 
-BOOLEAN isRowDisaligned(void) {
+static BOOLEAN isRowDisaligned(void) {
     return MOD_FOR_LARGE_TILE(THIS->y - mapBoundUp);
 }
 
-void updatePosition(void) {
+static void updatePosition(void) {
     THIS->custom_data[movement_accumulator] += 4;
     if (THIS->custom_data[movement_accumulator] < 5) {
         return;
@@ -90,7 +98,7 @@ void updatePosition(void) {
     }
 }
 
-void updateAnimation(void) {
+static void updateAnimation(void) {
     switch (direction) {
         case J_UP:
             SetSpriteAnim(THIS, THIS->custom_data[custom_data_recharge] > 0 ? discharged_up : anim_walk_up, 15);
@@ -107,7 +115,7 @@ void updateAnimation(void) {
     }
 }
 
-void updateMapTiles(void) {
+static void updateMapTiles(void) {
     // position of digger is the TOP LEFT first pixel of the sprite.
     // this check runs AFTER the digger has moved
     uint8_t nextColumn = TILE_FROM_PIXEL(THIS->x);

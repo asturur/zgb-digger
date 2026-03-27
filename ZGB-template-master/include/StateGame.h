@@ -74,6 +74,5 @@ void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) NONBANKED;
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
 uint8_t getEnemySpawnGapTimer(void);
 void activateBag(uint8_t bagcell);
-void deactivateBag(Sprite* bag);
 
 extern UBYTE difficultyLevel;
