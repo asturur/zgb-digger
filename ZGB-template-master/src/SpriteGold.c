@@ -58,6 +58,7 @@ void UPDATE(void) {
             THIS->custom_data[goldStatus] = stateCrumbling;
             SetSpriteAnim(THIS, gold_crumbling, 10);
         }
+        state = THIS->custom_data[goldStatus];
     }
     if (state == stateCrumbling) {
         if (THIS->custom_data[crumblingTimer] == 0) {

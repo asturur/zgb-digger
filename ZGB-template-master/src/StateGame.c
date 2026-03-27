@@ -67,16 +67,24 @@ void killPlayer(void) {
 	}
 }
 
+UBYTE getTileMapTile(UBYTE column, UBYTE row) {
+	// Use the RAM mirror for gameplay checks instead of reading live VRAM.
+	if (column >= tilesPerRow || row >= tilesPerColumn) {
+		return tileGrass;
+	}
+	return tileMap[row * tilesPerRow + column];
+}
+
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) {
 	set_bkg_tile_xy(column, row, type);
     tileMap[row * tilesPerRow + column] = type;
 }
 
 BOOLEAN checkTilesFor(UBYTE column, UBYTE row, UBYTE type) {
-    return get_bkg_tile_xy(column, row) == type ||
-        get_bkg_tile_xy(column + 1, row) == type || 
-        get_bkg_tile_xy(column, row + 1) == type || 
-        get_bkg_tile_xy(column + 1, row + 1) == type;
+    return getTileMapTile(column, row) == type ||
+        getTileMapTile(column + 1, row) == type || 
+        getTileMapTile(column, row + 1) == type || 
+        getTileMapTile(column + 1, row + 1) == type;
 }
 
 void paintScore(void) {

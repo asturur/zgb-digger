@@ -78,7 +78,7 @@ void START(void) {
     THIS->lim_y = 256;
     UBYTE bagColumn = TILE_FROM_PIXEL(THIS->x);
     UBYTE bagRow = TILE_FROM_PIXEL(THIS->y);
-    if (get_bkg_tile_xy(bagColumn, bagRow) >= bagTL) {
+    if (getTileMapTile(bagColumn, bagRow) >= bagTL) {
         updateBagTiles(tileBlack);
     } else {
         updateBagTiles(tileGrass);

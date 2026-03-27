@@ -119,19 +119,19 @@ void updateMapTiles(void) {
         row = nextRow;
         switch(direction) {
             case J_UP:
-                tile = get_bkg_tile_xy(column, row);
-                tileNext = get_bkg_tile_xy(column + 1, row);
+                tile = getTileMapTile(column, row);
+                tileNext = getTileMapTile(column + 1, row);
                 if (tile != tileBlack) {
                     updateVideoMemAndMap(column, row, tileBlack);
                 }
-                if (tileNext != 0) {
+                if (tileNext != tileBlack) {
                     updateVideoMemAndMap(column + 1, row, tileBlack);
                 }
                 break;
             case J_DOWN:
                 target = row + (MOD_FOR_TILE(THIS->y) ? 2 : 1);
-                tile = get_bkg_tile_xy(column, target);
-                tileNext = get_bkg_tile_xy(column + 1, target);
+                tile = getTileMapTile(column, target);
+                tileNext = getTileMapTile(column + 1, target);
                 if (tile != tileBlack) {
                     updateVideoMemAndMap(column, target, tileBlack);
                 }
@@ -141,19 +141,19 @@ void updateMapTiles(void) {
                 break;
             case J_LEFT:
                 // left is a good case, first pixel we cross we can clean up
-                tile = get_bkg_tile_xy(column, row);
-                tileNext = get_bkg_tile_xy(column, row + 1);
+                tile = getTileMapTile(column, row);
+                tileNext = getTileMapTile(column, row + 1);
                 if (tile != tileBlack) {
                     updateVideoMemAndMap(column, row, tileBlack);
                 }
-                if (tileNext != 0) {
+                if (tileNext != tileBlack) {
                     updateVideoMemAndMap(column, row + 1, tileBlack);
                 }
                 break;
             case J_RIGHT:
                 target = column + (MOD_FOR_TILE(THIS->x) ? 2 : 1);
-                tile = get_bkg_tile_xy(target, row);
-                tileNext = get_bkg_tile_xy(target, row + 1);
+                tile = getTileMapTile(target, row);
+                tileNext = getTileMapTile(target, row + 1);
                 if (tile != tileBlack) {
                     updateVideoMemAndMap(target, row, tileBlack);
                 }

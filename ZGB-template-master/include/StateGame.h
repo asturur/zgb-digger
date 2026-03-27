@@ -10,6 +10,7 @@
 
 // maps and tiles
 #define tilesPerRow 32
+#define tilesPerColumn 23
 #define scoreFontOffset 1
 #define hudSize 32 // tilesPerRow * 2
 #define lifeFont 11
@@ -68,6 +69,7 @@
 // utility functions
 void updateScore(uint16_t addScore);
 BOOLEAN checkTilesFor(UBYTE column, UBYTE row, UBYTE type);
+UBYTE getTileMapTile(UBYTE column, UBYTE row);
 void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile);
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type);
 uint8_t getEnemySpawnGapTimer(void);
