@@ -82,6 +82,7 @@ make gb
 Prerequisite:
 
 - `gbdk-2020` must be installed and discoverable either through `GBDK_HOME` or at `ZGB-2023.0/env/gbdk`
+- Java is required to launch the local `Emulicious/Emulicious.jar`
 
 If you change build assumptions, keep them consistent with the vendored SDK layout already used by the repo.
 
@@ -174,6 +175,23 @@ When implementing missing mechanics, compare against the PC source for:
 - The original level completion rule is `all emeralds collected OR all enemies cleared`. In this port, that currently maps to:
   - `diamonds == 0`
   - or `enemySpawned == enemyMaxTotal && enemyCountOnScreen == 0`
+
+## Emulator And Debug Notes
+
+- Prefer Emulicious over SameBoy for this repository.
+- The local emulator copy lives at `Emulicious/`, and normal runs can use `java -jar ~/develop/zgb-digger/Emulicious/Emulicious.jar ~/develop/zgb-digger/ZGB-template-master/bin/gb/Digger.gb`.
+- For source-level debugging with the VS Code Emulicious extension, use a Debug build:
+  - `cd /Users/andreabogazzi/develop/zgb-digger/ZGB-template-master/src`
+  - `make BUILD_TYPE=Debug gb`
+- The debug outputs are:
+  - `ZGB-template-master/bin/gb/Digger_Debug.gb`
+  - `ZGB-template-master/bin/gb/Digger_Debug.cdb`
+  - `ZGB-template-master/bin/gb/Digger_Debug.sym`
+- The working VS Code files are at the repository root:
+  - `.vscode/tasks.json`
+  - `.vscode/launch.json`
+- The older `ZGB-template-master/.vscode` files are template leftovers and point at wrong ROM paths for this repository.
+- In the Emulicious VS Code launch configuration, omit the `system` field. The extension rejected `"gb"` with `IllegalArgumentException : No enum constant ... EmulationSystem.GB`.
 
 ## Where Agents Should Be Careful
 

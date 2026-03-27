@@ -9,9 +9,10 @@
 #define stateStatic 1
 #define stateShaking 2
 #define stateFalling 3
+// #define statePushing 4
 
 #define bagStatus 0
-#define bagShakingTimer 1
+#define bagStateTimer 1
 #define bagFallCounter 2
 
 // tiles numbers for bag on black
@@ -43,10 +44,35 @@ void updateBagTiles(uint8_t tileType) {
     setBagTiles(bagColumn, bagRow, tileType);
 }
 
+// void setBagState(UBYTE bagState) {
+//     // THIS->custom_data[bagStatus] = bagState;
+
+//     // switch (bagState) {
+//     //     // case stateStatic:
+//     //     //     THIS->custom_data[bagStateTimer] = 0;
+//     //     //     THIS->custom_data[bagFallCounter] = 0;
+//     //     //     SetSpriteAnim(THIS, bag_static, 15);
+//     //     //     break;
+//     //     // case stateShaking:
+//     //     //     THIS->custom_data[bagStateTimer] = shakeBeforeFall;
+//     //     //     THIS->custom_data[bagFallCounter] = 0;
+//     //     //     SetSpriteAnim(THIS, bag_shake, 15);
+//     //     //     break;
+//     //     // case stateFalling:
+//     //     //     THIS->custom_data[bagStateTimer] = 0;
+//     //     //     SetSpriteAnim(THIS, bag_fall, 15);
+//     //     //     break;
+//     //     // case statePushing:
+//     //     //     THIS->custom_data[bagStateTimer] = largeTileSize;
+//     //     //     SetSpriteAnim(THIS, bag_static, 15);
+//     //     //     break;
+//     // }
+// }
+
 void START(void) {
     SetSpriteAnim(THIS, bag_shake, 15);
     THIS->custom_data[bagStatus] = 2;
-    THIS->custom_data[bagShakingTimer] = shakeBeforeFall;
+    THIS->custom_data[bagStateTimer] = shakeBeforeFall;
     THIS->custom_data[bagFallCounter] = 0;
     THIS->lim_x = 256;
     THIS->lim_y = 256;
@@ -61,10 +87,10 @@ void START(void) {
 
 void UPDATE(void) {
     // if is shaking and consumes the time fo shaking
-    if (THIS->custom_data[bagStatus] == stateShaking && THIS->custom_data[bagShakingTimer] > 0) {
-         THIS->custom_data[bagShakingTimer]--;
+    if (THIS->custom_data[bagStatus] == stateShaking && THIS->custom_data[bagStateTimer] > 0) {
+         THIS->custom_data[bagStateTimer]--;
     // it starts to fall down
-    } else if (THIS->custom_data[bagStatus] == stateShaking && THIS->custom_data[bagShakingTimer] == 0) {
+    } else if (THIS->custom_data[bagStatus] == stateShaking && THIS->custom_data[bagStateTimer] == 0) {
         THIS->custom_data[bagStatus] = stateFalling;
         SetSpriteAnim(THIS, bag_fall, 15);
     // else if is falling down as a bag or as a pile of gold
