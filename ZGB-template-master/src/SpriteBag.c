@@ -100,11 +100,10 @@ void UPDATE(void) {
             THIS->y++;
         } else {
             uint8_t column = TILE_FROM_PIXEL(THIS->x);
-            // precedence of bitshift is low compared to addition
-            uint8_t row = (TILE_FROM_PIXEL(THIS->y)) + 2;
+            uint8_t row = 2 + TILE_FROM_PIXEL(THIS->y);
             // we need to check what the next 4 tiles are doing
             // if at leat one is 0, se the other to 0 and continue falling
-            if (checkTilesFor(column, row, tileBlack) && THIS->y < mapBoundDown) {
+            if (THIS->y < mapBoundDown && checkTilesFor(column, row, tileBlack)) {
                 setBagTiles(column, row, tileBlack);
                 THIS->custom_data[bagFallCounter]++;
                 THIS->y++;

@@ -71,7 +71,7 @@ BOOLEAN checkTilesFor(UBYTE column, UBYTE row, UBYTE type);
 void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile);
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type);
 uint8_t getEnemySpawnGapTimer(void);
-Sprite* activateBag(uint8_t bagcell);
+void activateBag(uint8_t bagcell);
 void deactivateBag(Sprite* bag);
 
 extern UBYTE difficultyLevel;

@@ -162,7 +162,7 @@ void copyLevelMapToRam(unsigned char *mapToLoad[], uint8_t levelToLoadBank, stru
 	InitScroll(levelToLoadBank, &currentInMemoryLevel, 0, 0);
 }
 
-Sprite* activateBag(uint8_t bagcell) {
+void activateBag(uint8_t bagcell) {
 	// remove the bag tiles and replace with grass.
 	// remove the bag from the map replace with grass
 	// activate bag sprite
@@ -171,7 +171,7 @@ Sprite* activateBag(uint8_t bagcell) {
 	uint8_t row = (bagcell - column) / mapMetaWidth;
 	uint8_t positionX = mapBoundLeft + column * 16;
 	uint8_t positionY = mapBoundUp + row * 16;
-	return SpriteManagerAdd(SpriteBag, positionX, positionY);
+	SpriteManagerAdd(SpriteBag, positionX, positionY);
 }
 
 void deactivateBag(Sprite* bag) {

@@ -49,11 +49,9 @@ void UPDATE(void) {
     uint8_t state = THIS->custom_data[goldStatus];
     // if undefined or static check for below ground
     if (state == undefined) {
-        // start shaking again if the below tiles are digged
         uint8_t column = TILE_FROM_PIXEL(THIS->x);
-        // precedence of bitshift is low compared to addition
-        uint8_t row = (TILE_FROM_PIXEL(THIS->y)) + 2;
-        if (checkTilesFor(column, row, tileBlack) && THIS->y < mapBoundDown -1) {
+        uint8_t row = 2 + TILE_FROM_PIXEL(THIS->y);
+        if (THIS->y < mapBoundDown -1 && checkTilesFor(column, row, tileBlack)) {
             THIS->custom_data[goldStatus] = stateFalling;
             SetSpriteAnim(THIS, gold_falling, 10);
         } else {
