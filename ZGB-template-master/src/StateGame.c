@@ -67,7 +67,7 @@ void killPlayer(void) {
 	}
 }
 
-UBYTE getTileMapTile(UBYTE column, UBYTE row) {
+UBYTE getTileMapTile(UBYTE column, UBYTE row) NONBANKED {
 	// Use the RAM mirror for gameplay checks instead of reading live VRAM.
 	if (column >= tilesPerRow || row >= tilesPerColumn) {
 		return tileGrass;
@@ -75,12 +75,12 @@ UBYTE getTileMapTile(UBYTE column, UBYTE row) {
 	return tileMap[row * tilesPerRow + column];
 }
 
-void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) {
+void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED {
 	set_bkg_tile_xy(column, row, type);
     tileMap[row * tilesPerRow + column] = type;
 }
 
-BOOLEAN checkTilesFor(UBYTE column, UBYTE row, UBYTE type) {
+BOOLEAN checkTilesFor(UBYTE column, UBYTE row, UBYTE type) NONBANKED {
     return getTileMapTile(column, row) == type ||
         getTileMapTile(column + 1, row) == type || 
         getTileMapTile(column, row + 1) == type || 
@@ -221,13 +221,13 @@ void updateEmeraldSound(void) {
 	}
 }
 
-UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y) {
+UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y) NONBANKED {
 	const UBYTE column = LARGE_TILE_FROM_PIXEL(x - mapBoundLeft);
 	const UBYTE row = LARGE_TILE_FROM_PIXEL(y - mapBoundUp);
 	return row * mapMetaWidth + column;
 }
 
-void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) {
+void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) NONBANKED {
 	const UBYTE currentCell = getMapMetaTileArrayPosition(x, y);
 	levelMap[currentCell] += metaTile;
 }
