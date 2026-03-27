@@ -7,9 +7,8 @@
 #include "SpritePlayer.h"
 
 extern void runMapSideEffects(void);
-extern void killPlayer(void);
 extern uint8_t isDying;
-
+extern uint8_t lives;
 const UBYTE anim_walk_right[] = {4, 0, 1, 2, 1};
 const UBYTE anim_walk_down[] = {4, 3, 4, 5, 4};
 const UBYTE anim_walk_up[] = {4, 6, 7, 8, 7};
@@ -27,7 +26,7 @@ UBYTE oppositeDirection;
 UBYTE column;
 UBYTE row;
 
-void setDirection(UBYTE dir) {
+static void setDirection(UBYTE dir) {
   direction = dir;
   switch (dir) {
     case J_DOWN:
@@ -45,6 +44,15 @@ void setDirection(UBYTE dir) {
   }
 }
 
+static void killPlayer(void) {
+	lives--;
+	isDying = 128;
+	THIS->custom_data[death_animation] = death_sequence_length;
+	if (lives == 0) {
+		SetState(StateGame);
+	}
+}
+
 void START(void) {
     setDirection(J_RIGHT);
     THIS->custom_data[custom_data_recharge] = 0;
@@ -52,15 +60,15 @@ void START(void) {
     THIS->custom_data[movement_accumulator] = 0;
 }
 
-BOOLEAN isColumnDisaligned(void) {
+static BOOLEAN isColumnDisaligned(void) {
     return MOD_FOR_LARGE_TILE(THIS->x - mapBoundLeft);
 }
 
-BOOLEAN isRowDisaligned(void) {
+static BOOLEAN isRowDisaligned(void) {
     return MOD_FOR_LARGE_TILE(THIS->y - mapBoundUp);
 }
 
-void updatePosition(void) {
+static void updatePosition(void) {
     THIS->custom_data[movement_accumulator] += 4;
     if (THIS->custom_data[movement_accumulator] < 5) {
         return;
@@ -90,7 +98,7 @@ void updatePosition(void) {
     }
 }
 
-void updateAnimation(void) {
+static void updateAnimation(void) {
     switch (direction) {
         case J_UP:
             SetSpriteAnim(THIS, THIS->custom_data[custom_data_recharge] > 0 ? discharged_up : anim_walk_up, 15);
@@ -107,7 +115,7 @@ void updateAnimation(void) {
     }
 }
 
-void updateMapTiles(void) {
+static void updateMapTiles(void) {
     // position of digger is the TOP LEFT first pixel of the sprite.
     // this check runs AFTER the digger has moved
     uint8_t nextColumn = TILE_FROM_PIXEL(THIS->x);
@@ -119,19 +127,19 @@ void updateMapTiles(void) {
         row = nextRow;
         switch(direction) {
             case J_UP:
-                tile = get_bkg_tile_xy(column, row);
-                tileNext = get_bkg_tile_xy(column + 1, row);
+                tile = getTileMapTile(column, row);
+                tileNext = getTileMapTile(column + 1, row);
                 if (tile != tileBlack) {
                     updateVideoMemAndMap(column, row, tileBlack);
                 }
-                if (tileNext != 0) {
+                if (tileNext != tileBlack) {
                     updateVideoMemAndMap(column + 1, row, tileBlack);
                 }
                 break;
             case J_DOWN:
                 target = row + (MOD_FOR_TILE(THIS->y) ? 2 : 1);
-                tile = get_bkg_tile_xy(column, target);
-                tileNext = get_bkg_tile_xy(column + 1, target);
+                tile = getTileMapTile(column, target);
+                tileNext = getTileMapTile(column + 1, target);
                 if (tile != tileBlack) {
                     updateVideoMemAndMap(column, target, tileBlack);
                 }
@@ -141,19 +149,19 @@ void updateMapTiles(void) {
                 break;
             case J_LEFT:
                 // left is a good case, first pixel we cross we can clean up
-                tile = get_bkg_tile_xy(column, row);
-                tileNext = get_bkg_tile_xy(column, row + 1);
+                tile = getTileMapTile(column, row);
+                tileNext = getTileMapTile(column, row + 1);
                 if (tile != tileBlack) {
                     updateVideoMemAndMap(column, row, tileBlack);
                 }
-                if (tileNext != 0) {
+                if (tileNext != tileBlack) {
                     updateVideoMemAndMap(column, row + 1, tileBlack);
                 }
                 break;
             case J_RIGHT:
                 target = column + (MOD_FOR_TILE(THIS->x) ? 2 : 1);
-                tile = get_bkg_tile_xy(target, row);
-                tileNext = get_bkg_tile_xy(target, row + 1);
+                tile = getTileMapTile(target, row);
+                tileNext = getTileMapTile(target, row + 1);
                 if (tile != tileBlack) {
                     updateVideoMemAndMap(target, row, tileBlack);
                 }

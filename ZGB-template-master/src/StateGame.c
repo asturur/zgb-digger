@@ -58,28 +58,28 @@ unsigned char levelMap[150];
 struct MapInfo currentInMemoryLevel;
 unsigned char tileMap[736];
 
-void killPlayer(void) {
-	lives--;
-	isDying = 128;
-	scroll_target->custom_data[death_animation] = death_sequence_length;
-	if (lives == 0) {
-		SetState(StateGame);
+
+UBYTE getTileMapTile(UBYTE column, UBYTE row) NONBANKED {
+	// Use the RAM mirror for gameplay checks instead of reading live VRAM.
+	if (column >= tilesPerRow || row >= tilesPerColumn) {
+		return tileGrass;
 	}
+	return tileMap[row * tilesPerRow + column];
 }
 
-void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) {
+void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED {
 	set_bkg_tile_xy(column, row, type);
     tileMap[row * tilesPerRow + column] = type;
 }
 
-BOOLEAN checkTilesFor(UBYTE column, UBYTE row, UBYTE type) {
-    return get_bkg_tile_xy(column, row) == type ||
-        get_bkg_tile_xy(column + 1, row) == type || 
-        get_bkg_tile_xy(column, row + 1) == type || 
-        get_bkg_tile_xy(column + 1, row + 1) == type;
+BOOLEAN checkTilesFor(UBYTE column, UBYTE row, UBYTE type) NONBANKED {
+    return getTileMapTile(column, row) == type ||
+        getTileMapTile(column + 1, row) == type || 
+        getTileMapTile(column, row + 1) == type || 
+        getTileMapTile(column + 1, row + 1) == type;
 }
 
-void paintScore(void) {
+static void paintScore(void) {
 	// scores are multiple of 25 points.
 	// mod 2 = 1 draw a 5.
 	// then mod 4 for 2/5/7
@@ -174,6 +174,7 @@ void activateBag(uint8_t bagcell) {
 	SpriteManagerAdd(SpriteBag, positionX, positionY);
 }
 
+
 void updateScore(uint16_t addScore) {
 	score += addScore;
 	paintScore();
@@ -183,7 +184,7 @@ uint8_t getEnemySpawnGapTimer(void) {
 	return enemySpawnGapBaseTimer - (difficultyLevel * enemySpawnGapDifficultyStep);
 }
 
-void updateEmeraldSound(void) {
+static void updateEmeraldSound(void) {
 	if (emeraldScaleTimer > 0) {
 		emeraldScaleTimer--;
 	} else {
@@ -202,18 +203,18 @@ void updateEmeraldSound(void) {
 	}
 }
 
-UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y) {
+UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y) NONBANKED {
 	const UBYTE column = LARGE_TILE_FROM_PIXEL(x - mapBoundLeft);
 	const UBYTE row = LARGE_TILE_FROM_PIXEL(y - mapBoundUp);
 	return row * mapMetaWidth + column;
 }
 
-void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) {
+void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) NONBANKED {
 	const UBYTE currentCell = getMapMetaTileArrayPosition(x, y);
 	levelMap[currentCell] += metaTile;
 }
 
-void runMapSideEffects(void) {
+void runMapSideEffects(void) BANKED {
 	const UBYTE currentCell = getMapMetaTileArrayPosition(scroll_target->x, scroll_target->y);
 	const UBYTE currentMapValue = levelMap[currentCell];
 
@@ -266,7 +267,7 @@ void runMapSideEffects(void) {
 	lastVisitedMetaCell = currentCell;
 }
 
-void resetLevelState(void) {
+static void resetLevelState(void) {
 	lastVisitedMetaCell = 0;
 	isDying = 0;
 	enemyCountOnScreen = 0;
@@ -277,7 +278,7 @@ void resetLevelState(void) {
 	paintScore();
 }
 
-void loadLevel(UBYTE level) {
+static void loadLevel(UBYTE level) {
 	if (level > 8) {
 		currentLevel = 1;
 		level = 1;

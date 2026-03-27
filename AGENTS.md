@@ -82,6 +82,7 @@ make gb
 Prerequisite:
 
 - `gbdk-2020` must be installed and discoverable either through `GBDK_HOME` or at `ZGB-2023.0/env/gbdk`
+- Java is required to launch the local `Emulicious/Emulicious.jar`
 
 If you change build assumptions, keep them consistent with the vendored SDK layout already used by the repo.
 
@@ -129,6 +130,29 @@ This means new work should usually extend or correct existing gameplay code, not
 6. Be cautious with anything that touches ROM banking, `NONBANKED` functions, or large arrays copied into RAM.
 7. Avoid changing `ZGB-2023.0/` unless a repo task explicitly requires SDK-level changes.
 
+## Banking Notes
+
+- `ZGB-template-master/src/Makefile` uses `N_BANKS = A`, so the linker may rebalance code and assets across ROM banks as the project grows.
+- Files that include `Banks/SetAutoBank.h` or use `#pragma bank 255` should be treated as autobanked modules.
+- Prefer `BANKED` shared helpers over `NONBANKED` shared helpers when the helper really must be cross-file and does not need to be in fixed bank `0`.
+- In practice, an autobanked sprite or state file should be treated as an island:
+  - calling `static` helpers in the same `.c` file is safe
+  - calling ZGB engine entry points that switch banks on purpose is safe
+  - calling your own `BANKED` helpers is safe when they are declared and used as `BANKED`
+  - calling your own `NONBANKED` helpers is safe
+  - calling ordinary cross-file gameplay helpers is unsafe unless you have explicitly designed the bank switch
+- ZGB switches banks when entering sprite `START/UPDATE/DESTROY` handlers and state `START/UPDATE` handlers. In addition, `BANKED` functions are bank-safe call targets because the runtime/compiler handles the bank switch. Plain C calls between autobanked gameplay files are not automatically banked unless the target is actually `BANKED`.
+- A bug confirmed during bag-to-gold work: `SpriteGold` was placed in ROM bank `02` while shared helpers in `StateGame.c` such as `updateVideoMemAndMap()`, `checkTilesFor()`, and `addOnMap()` were in ROM bank `01`. Direct calls from `SpriteGold` to those helpers crashed until the shared helpers were moved to `NONBANKED`.
+- Do not rely on two gameplay files staying in the same bank just because the current build happens to place them together. With `N_BANKS = A`, that can change after unrelated code or asset growth.
+- Prefer this structure for new gameplay code:
+  - keep sprite-private or state-private logic as `static` functions inside the owning `.c`
+  - expose only small shared gameplay services through headers
+  - default shared cross-file gameplay services to `BANKED`
+  - use `NONBANKED` only when the helper must live in fixed bank `0`, is performance-sensitive enough to justify it, is needed in contexts where banked calls are awkward, or is part of a small always-available runtime surface
+- `NONBANKED` should be treated as a last-resort or special-case tool, not the default answer to every banking problem.
+- Good candidates for `NONBANKED` are small fixed-bank runtime helpers, hot tile/map primitives, ISR-adjacent code, and functions that must remain callable regardless of the currently mapped bank.
+- Be especially careful when moving helpers from a sprite file into `StateGame.c` or another shared module. That can accidentally convert a same-file call into a cross-bank call.
+
 ## Behavioral Reference Notes
 
 Some useful correspondences already visible in the repo:
@@ -174,6 +198,23 @@ When implementing missing mechanics, compare against the PC source for:
 - The original level completion rule is `all emeralds collected OR all enemies cleared`. In this port, that currently maps to:
   - `diamonds == 0`
   - or `enemySpawned == enemyMaxTotal && enemyCountOnScreen == 0`
+
+## Emulator And Debug Notes
+
+- Prefer Emulicious over SameBoy for this repository.
+- The local emulator copy lives at `Emulicious/`, and normal runs can use `java -jar ~/develop/zgb-digger/Emulicious/Emulicious.jar ~/develop/zgb-digger/ZGB-template-master/bin/gb/Digger.gb`.
+- For source-level debugging with the VS Code Emulicious extension, use a Debug build:
+  - `cd /Users/andreabogazzi/develop/zgb-digger/ZGB-template-master/src`
+  - `make BUILD_TYPE=Debug gb`
+- The debug outputs are:
+  - `ZGB-template-master/bin/gb/Digger_Debug.gb`
+  - `ZGB-template-master/bin/gb/Digger_Debug.cdb`
+  - `ZGB-template-master/bin/gb/Digger_Debug.sym`
+- The working VS Code files are at the repository root:
+  - `.vscode/tasks.json`
+  - `.vscode/launch.json`
+- The older `ZGB-template-master/.vscode` files are template leftovers and point at wrong ROM paths for this repository.
+- In the Emulicious VS Code launch configuration, omit the `system` field. The extension rejected `"gb"` with `IllegalArgumentException : No enum constant ... EmulationSystem.GB`.
 
 ## Where Agents Should Be Careful
 

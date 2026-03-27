@@ -9,9 +9,10 @@
 #define stateStatic 1
 #define stateShaking 2
 #define stateFalling 3
+// #define statePushing 4
 
 #define bagStatus 0
-#define bagShakingTimer 1
+#define bagStateTimer 1
 #define bagFallCounter 2
 
 // tiles numbers for bag on black
@@ -30,38 +31,65 @@ const UBYTE bag_static[] = {1, 0};
 // 1 8bit timer
 // 2 fall counter
 
-void createBagBackground(void) {
-    UBYTE column = TILE_FROM_PIXEL(THIS->x);
-    UBYTE row = TILE_FROM_PIXEL(THIS->y);
-    updateVideoMemAndMap(column, row, bagTL);
-    updateVideoMemAndMap(column + 1, row, bagTR);
-    updateVideoMemAndMap(column, row + 1, bagBL);
-    updateVideoMemAndMap(column + 1, row + 1, bagBR);
-}
-
-void setBagTiles(UBYTE column, UBYTE row, UBYTE type) {
+static void setBagTiles(UBYTE column, UBYTE row, UBYTE type) {
     updateVideoMemAndMap(column, row, type);
     updateVideoMemAndMap(column + 1, row, type);
     updateVideoMemAndMap(column, row + 1, type);
     updateVideoMemAndMap(column + 1, row + 1, type);
 }
 
-void updateBagTiles(uint8_t tileType) {
+static void updateBagTiles(uint8_t tileType) {
     UBYTE bagColumn = TILE_FROM_PIXEL(THIS->x);
     UBYTE bagRow = TILE_FROM_PIXEL(THIS->y);
     setBagTiles(bagColumn, bagRow, tileType);
 }
 
+static void deactivateBag(Sprite* bag) {
+	uint8_t column = TILE_FROM_PIXEL(bag->x);
+	uint8_t row = TILE_FROM_PIXEL(bag->y);
+	updateVideoMemAndMap(column, row, tileBagTL);
+	updateVideoMemAndMap(column + 1, row, tileBagTR);
+	updateVideoMemAndMap(column, row + 1, tileBagBL);
+	updateVideoMemAndMap(column + 1, row + 1, tileBagBR);
+	addOnMap(bag->x, bag->y, metaTileBag);
+	SpriteManagerRemoveSprite(bag);
+}
+
+// void setBagState(UBYTE bagState) {
+//     // THIS->custom_data[bagStatus] = bagState;
+
+//     // switch (bagState) {
+//     //     // case stateStatic:
+//     //     //     THIS->custom_data[bagStateTimer] = 0;
+//     //     //     THIS->custom_data[bagFallCounter] = 0;
+//     //     //     SetSpriteAnim(THIS, bag_static, 15);
+//     //     //     break;
+//     //     // case stateShaking:
+//     //     //     THIS->custom_data[bagStateTimer] = shakeBeforeFall;
+//     //     //     THIS->custom_data[bagFallCounter] = 0;
+//     //     //     SetSpriteAnim(THIS, bag_shake, 15);
+//     //     //     break;
+//     //     // case stateFalling:
+//     //     //     THIS->custom_data[bagStateTimer] = 0;
+//     //     //     SetSpriteAnim(THIS, bag_fall, 15);
+//     //     //     break;
+//     //     // case statePushing:
+//     //     //     THIS->custom_data[bagStateTimer] = largeTileSize;
+//     //     //     SetSpriteAnim(THIS, bag_static, 15);
+//     //     //     break;
+//     // }
+// }
+
 void START(void) {
     SetSpriteAnim(THIS, bag_shake, 15);
     THIS->custom_data[bagStatus] = 2;
-    THIS->custom_data[bagShakingTimer] = shakeBeforeFall;
+    THIS->custom_data[bagStateTimer] = shakeBeforeFall;
     THIS->custom_data[bagFallCounter] = 0;
     THIS->lim_x = 256;
     THIS->lim_y = 256;
     UBYTE bagColumn = TILE_FROM_PIXEL(THIS->x);
     UBYTE bagRow = TILE_FROM_PIXEL(THIS->y);
-    if (get_bkg_tile_xy(bagColumn, bagRow) >= bagTL) {
+    if (getTileMapTile(bagColumn, bagRow) >= bagTL) {
         updateBagTiles(tileBlack);
     } else {
         updateBagTiles(tileGrass);
@@ -70,10 +98,10 @@ void START(void) {
 
 void UPDATE(void) {
     // if is shaking and consumes the time fo shaking
-    if (THIS->custom_data[bagStatus] == stateShaking && THIS->custom_data[bagShakingTimer] > 0) {
-         THIS->custom_data[bagShakingTimer]--;
+    if (THIS->custom_data[bagStatus] == stateShaking && THIS->custom_data[bagStateTimer] > 0) {
+         THIS->custom_data[bagStateTimer]--;
     // it starts to fall down
-    } else if (THIS->custom_data[bagStatus] == stateShaking && THIS->custom_data[bagShakingTimer] == 0) {
+    } else if (THIS->custom_data[bagStatus] == stateShaking && THIS->custom_data[bagStateTimer] == 0) {
         THIS->custom_data[bagStatus] = stateFalling;
         SetSpriteAnim(THIS, bag_fall, 15);
     // else if is falling down as a bag or as a pile of gold
@@ -83,11 +111,10 @@ void UPDATE(void) {
             THIS->y++;
         } else {
             uint8_t column = TILE_FROM_PIXEL(THIS->x);
-            // precedence of bitshift is low compared to addition
-            uint8_t row = (TILE_FROM_PIXEL(THIS->y)) + 2;
+            uint8_t row = 2 + TILE_FROM_PIXEL(THIS->y);
             // we need to check what the next 4 tiles are doing
             // if at leat one is 0, se the other to 0 and continue falling
-            if (checkTilesFor(column, row, tileBlack) && THIS->y < mapBoundDown) {
+            if (THIS->y < mapBoundDown && checkTilesFor(column, row, tileBlack)) {
                 setBagTiles(column, row, tileBlack);
                 THIS->custom_data[bagFallCounter]++;
                 THIS->y++;
@@ -100,10 +127,8 @@ void UPDATE(void) {
                 else {
                     THIS->custom_data[bagStatus] = stateStatic;
                     THIS->custom_data[bagFallCounter] = 0;
-                    createBagBackground();
-                    addOnMap(THIS->x, THIS->y, metaTileBag);
+                    deactivateBag(THIS);
                 }
-                SpriteManagerRemoveSprite(THIS);
             }
         }
     }

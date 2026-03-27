@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Digger in Emulicious",
+            "type": "emulicious-debugger",
+            "request": "launch",
+            "program": "${workspaceFolder}/ZGB-template-master/bin/gb/Digger_Debug.gb",
+            "emuliciousPath": "${workspaceFolder}/Emulicious",
+            "port": 58870,
+            "stopOnEntry": false,
+            "preLaunchTask": "gb-debug-build",
+            "additionalSrcFolders": "${workspaceFolder}/ZGB-template-master/src;${workspaceFolder}/ZGB-template-master/include;${workspaceFolder}/ZGB-2023.0/common/src;${workspaceFolder}/ZGB-2023.0/common/include"
+        }
+    ]
+}

@@ -1,4 +1,5 @@
 #include <gb/gb.h> 
+#include "Sprite.h"
 
 
 // scores
@@ -9,6 +10,7 @@
 
 // maps and tiles
 #define tilesPerRow 32
+#define tilesPerColumn 23
 #define scoreFontOffset 1
 #define hudSize 32 // tilesPerRow * 2
 #define lifeFont 11
@@ -66,9 +68,11 @@
 #define MOD_FOR_LARGE_TILE(X) ((X) & 0x0F)
 // utility functions
 void updateScore(uint16_t addScore);
-BOOLEAN checkTilesFor(UBYTE column, UBYTE row, UBYTE type);
-void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile);
-void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type);
+BOOLEAN checkTilesFor(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
+UBYTE getTileMapTile(UBYTE column, UBYTE row) NONBANKED;
+void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) NONBANKED;
+void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
 uint8_t getEnemySpawnGapTimer(void);
+void activateBag(uint8_t bagcell);
 
 extern UBYTE difficultyLevel;
