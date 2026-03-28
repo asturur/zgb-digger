@@ -63,6 +63,17 @@ void crushEnemy(Sprite* enemy) BANKED {
     setEnemyModeFor(enemy, crushedMode);
 }
 
+UBYTE killEnemy(Sprite* enemy) BANKED {
+    UBYTE enemyMode = enemy->custom_data[mode];
+
+    if (enemyMode == deadMode || enemyMode == crushedMode) {
+        return FALSE;
+    }
+
+    setEnemyModeFor(enemy, deadMode);
+    return TRUE;
+}
+
 static UBYTE oppositeDirectionBit(UBYTE direction) {
     switch (direction) {
         case J_LEFT:
