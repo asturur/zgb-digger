@@ -19,6 +19,7 @@ Use this skill when the user asks to build the ROM and run or debug it in Emulic
 - Build directory: `~/develop/zgb-digger/ZGB-template-master/src`
 - Build command: `make gb`
 - Debug build command: `make BUILD_TYPE=Debug gb`
+- Vendored framework default: `~/develop/zgb-digger/CrossZGB-2026.1/ZGB/common`
 - ROM path: `~/develop/zgb-digger/ZGB-template-master/bin/gb/Digger.gb`
 - Debug ROM path: `~/develop/zgb-digger/ZGB-template-master/bin/gb/Digger_Debug.gb`
 - Debug symbols: `~/develop/zgb-digger/ZGB-template-master/bin/gb/Digger_Debug.cdb`
@@ -43,4 +44,5 @@ java -jar ~/develop/zgb-digger/Emulicious/Emulicious.jar ~/develop/zgb-digger/ZG
   - `~/develop/zgb-digger/.vscode/tasks.json`
   - `~/develop/zgb-digger/.vscode/launch.json`
 - The `system` field should be omitted from the Emulicious launch configuration for this project. The extension rejected `"gb"` with `No enum constant ... EmulationSystem.GB`.
+- CrossZGB `v2026.1` keeps this repo's current flat GB asset layout working; do not move assets into per-platform folders unless the task is explicitly about multi-platform resource organization.
 - Do not claim the ROM was launched unless the build succeeded and the launch command exited cleanly.
