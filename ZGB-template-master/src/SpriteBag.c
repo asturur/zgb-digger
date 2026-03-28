@@ -50,22 +50,15 @@ static BOOLEAN isBagAlignedToMetaCell(Sprite* bag) {
         MOD_FOR_LARGE_TILE(bag->y - mapBoundUp) == 0;
 }
 
-static BOOLEAN bagShouldFall(Sprite* bag) {
-    UBYTE currentColumn;
-    UBYTE currentRow;
+static BOOLEAN bagCanFallInCellBelow(Sprite* bag) {
     UBYTE cellBelow;
-
     if (bag->y >= mapBoundDown) {
         return FALSE;
     }
-
-    currentColumn = LARGE_TILE_FROM_PIXEL(bag->x - mapBoundLeft);
-    currentRow = LARGE_TILE_FROM_PIXEL(bag->y - mapBoundUp);
-    if (currentRow >= mapMetaHeight - 1) {
+    if (LARGE_TILE_FROM_PIXEL(bag->y - mapBoundUp) >= mapMetaHeight - 1) {
         return FALSE;
     }
-
-    cellBelow = currentRow * mapMetaWidth + currentColumn + mapMetaWidth;
+    cellBelow = getMapMetaTileArrayPosition(bag->x, bag->y) + mapMetaWidth;
     return (levelMap[cellBelow] & metaTileBag) == 0 &&
         (levelMap[cellBelow] & tunnelMask) != 0;
 }
@@ -86,6 +79,7 @@ void setBagState(Sprite* bag, UBYTE bagState) BANKED {
             break;
         case stateFalling:
             bag->custom_data[bagStateTimer] = 0;
+            bag->custom_data[bagFallCounter] = 0;
             SetSpriteAnim(bag, bag_fall, 15);
             break;
         case statePushing:
@@ -96,6 +90,15 @@ void setBagState(Sprite* bag, UBYTE bagState) BANKED {
             SetSpriteAnim(bag, bag_static, 15);
             break;
     }
+}
+
+void restoreStaticBag(Sprite* bag) BANKED {
+    UBYTE currentColumn = LARGE_TILE_FROM_PIXEL(bag->x - mapBoundLeft);
+    UBYTE currentRow = LARGE_TILE_FROM_PIXEL(bag->y - mapBoundUp);
+    UBYTE currentCell = currentRow * mapMetaWidth + currentColumn;
+
+    setBagState(bag, stateStatic);
+    deactivateBag(bag, (levelMap[currentCell] & tunnelMask) != 0 ? bagOnTunnel : bagOnGrass);
 }
 
 static void movePushingBag(void) {
@@ -123,13 +126,26 @@ static void movePushingBag(void) {
     }
 }
 
+static void crushEnemiesUnderBag(void) {
+    uint8_t i;
+    Sprite* spr;
+
+    SPRITEMANAGER_ITERATE(i, spr) {
+        if (spr->type == SpriteEnemy && spr->y >= THIS->y) {
+            if (CheckCollision(THIS, spr)) {
+                crushEnemy(spr);
+            }
+        }
+    }
+}
+
 static void finalizePushedBag(void) {
     UBYTE currentColumn = LARGE_TILE_FROM_PIXEL(THIS->x - mapBoundLeft);
     UBYTE currentRow = LARGE_TILE_FROM_PIXEL(THIS->y - mapBoundUp);
     UBYTE currentCell = currentRow * mapMetaWidth + currentColumn;
 
-    if (bagShouldFall(THIS)) {
-        setBagState(THIS, stateShaking);
+    if (bagCanFallInCellBelow(THIS)) {
+        setBagState(THIS, stateFalling);
     } else {
         setBagState(THIS, stateStatic);
         deactivateBag(THIS, (levelMap[currentCell] & tunnelMask) != 0 ? bagOnTunnel : bagOnGrass);
@@ -138,7 +154,7 @@ static void finalizePushedBag(void) {
 
 void START(void) {
     SetSpriteAnim(THIS, bag_shake, 15);
-    THIS->custom_data[bagStatus] = 2;
+    THIS->custom_data[bagStatus] = stateShaking;
     THIS->custom_data[bagStateTimer] = shakeBeforeFall;
     THIS->custom_data[bagFallCounter] = 0;
     THIS->custom_data[bagDirection] = 0;
@@ -161,8 +177,7 @@ void UPDATE(void) {
          THIS->custom_data[bagStateTimer]--;
     // it starts to fall down
     } else if (THIS->custom_data[bagStatus] == stateShaking && THIS->custom_data[bagStateTimer] == 0) {
-        THIS->custom_data[bagStatus] = stateFalling;
-        SetSpriteAnim(THIS, bag_fall, 15);
+        setBagState(THIS, stateFalling);
     } else if (THIS->custom_data[bagStatus] == statePushing) {
         movePushingBag();
         if (THIS->custom_data[bagPushDistance] == 0 && isBagAlignedToMetaCell(THIS)) {
@@ -173,18 +188,22 @@ void UPDATE(void) {
         if (MOD_FOR_LARGE_TILE(THIS->y)) {
             THIS->custom_data[bagFallCounter]++;
             THIS->y++;
+            crushEnemiesUnderBag();
         } else {
+            UBYTE cellBelow = getMapMetaTileArrayPosition(THIS->x, THIS->y) + mapMetaWidth;
             uint8_t column = TILE_FROM_PIXEL(THIS->x);
             uint8_t row = 2 + TILE_FROM_PIXEL(THIS->y);
-            // we need to check what the next 4 tiles are doing
-            // if at leat one is 0, se the other to 0 and continue falling
-            if (THIS->y < mapBoundDown && checkTilesFor(column, row, tileBlack)) {
+            if (bagCanFallInCellBelow(THIS)) {
+                if ((levelMap[cellBelow] & metaTileGold) != 0) {
+                    levelMap[cellBelow] &= (UBYTE)~metaTileGold;
+                }
                 setBagTiles(column, row, tileBlack);
                 THIS->custom_data[bagFallCounter]++;
                 THIS->y++;
+                crushEnemiesUnderBag();
             } else {
                 // solid ground or reach end of map
-                if (THIS->custom_data[bagFallCounter] > 40 && THIS->custom_data[bagStatus] == stateFalling) {
+                if (THIS->custom_data[bagFallCounter] >= largeTileSize && THIS->custom_data[bagStatus] == stateFalling) {
                     SpriteManagerAdd(SpriteGold, THIS->x, THIS->y);
                     SpriteManagerRemoveSprite(THIS);
                 } 

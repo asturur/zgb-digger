@@ -70,9 +70,12 @@
 void updateScore(uint16_t addScore);
 BOOLEAN checkTilesFor(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
 UBYTE getTileMapTile(UBYTE column, UBYTE row) NONBANKED;
+UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y) NONBANKED;
 void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) NONBANKED;
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
 uint8_t getEnemySpawnGapTimer(void);
 Sprite* activateBag(uint8_t bagcell) BANKED;
 
+extern UBYTE currentLevel;
 extern UBYTE difficultyLevel;
+extern unsigned char levelMap[150];
