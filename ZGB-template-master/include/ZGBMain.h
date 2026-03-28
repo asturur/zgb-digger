@@ -13,6 +13,7 @@ _SPRITE_DMG(SpriteEnemy, hobnob)\
 _SPRITE_DMG(SpriteBag, bag)\
 _SPRITE_DMG(SpriteFireball, fireball)\
 _SPRITE_DMG(SpriteGold, gold)\
+_SPRITE_DMG(SpriteGrave, grave)\
 SPRITE_DEF_END
 
 #include "ZGBMain_Init.h"

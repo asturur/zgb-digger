@@ -10,8 +10,6 @@
 extern unsigned char levelMap[150];
 extern void runMapSideEffects(void);
 extern UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y);
-extern uint8_t isDying;
-extern uint8_t lives;
 const UBYTE anim_walk_right[] = {4, 0, 1, 2, 1};
 const UBYTE anim_walk_down[] = {4, 3, 4, 5, 4};
 const UBYTE anim_walk_up[] = {4, 6, 7, 8, 7};
@@ -23,6 +21,15 @@ const UBYTE discharged_up[] = {4, 18, 19, 20, 19};
 const UBYTE discharged_left[] = {4, 21, 22, 23, 22};
 
 const UBYTE anim_dead[] = {1, 24};
+
+#define deathBounceStepFrames originalTickToGameBoyFrameRatio
+#define deathPreGraveWaitFrames (5u * originalTickToGameBoyFrameRatio)
+#define deathFinalHoldFrames (60u * originalTickToGameBoyFrameRatio)
+#define graveEmergeFrames 128u
+#define deathRespawnFrames (graveEmergeFrames + deathFinalHoldFrames)
+#define graveSpawnYOffset 6
+
+static const UBYTE deathBounceOffsets[] = {3, 5, 6, 6, 5, 3, 0};
 
 #define pushBagNoBag 0
 #define pushBagStarted 1
@@ -70,19 +77,63 @@ static void setDirection(UBYTE dir) {
   }
 }
 
-static void killPlayer(void) {
-	lives--;
-	isDying = 128;
-	THIS->custom_data[death_animation] = death_sequence_length;
-	if (lives == 0) {
-		SetState(StateGame);
+static void beginTestDeathSequence(void) {
+	if (THIS->custom_data[death_state] != playerDeathNone || isDying) {
+		return;
+	}
+
+	if (!infiniteLives && lives > 0) {
+		lives--;
+	}
+	updateScore(0);
+	beginDeathFreeze();
+	THIS->custom_data[death_state] = playerDeathBounce;
+	THIS->custom_data[death_timer] = 0;
+	THIS->custom_data[death_step] = 0;
+	THIS->custom_data[death_base_y] = (UBYTE)THIS->y;
+	SetSpriteAnim(THIS, anim_dead, 15);
+}
+
+static void updateDeathSequence(void) {
+	switch (THIS->custom_data[death_state]) {
+		case playerDeathBounce:
+			if (THIS->custom_data[death_timer] > 0) {
+				THIS->custom_data[death_timer]--;
+				return;
+			}
+
+			if (THIS->custom_data[death_step] < (UBYTE)sizeof(deathBounceOffsets)) {
+				THIS->y = THIS->custom_data[death_base_y] - deathBounceOffsets[THIS->custom_data[death_step]];
+				THIS->custom_data[death_step]++;
+				THIS->custom_data[death_timer] = deathBounceStepFrames;
+			}
+
+			if (THIS->custom_data[death_step] >= (UBYTE)sizeof(deathBounceOffsets)) {
+				THIS->y = THIS->custom_data[death_base_y];
+				THIS->custom_data[death_state] = playerDeathPreGraveWait;
+				THIS->custom_data[death_timer] = deathPreGraveWaitFrames;
+			}
+			break;
+		case playerDeathPreGraveWait:
+			if (THIS->custom_data[death_timer] > 0) {
+				THIS->custom_data[death_timer]--;
+				return;
+			}
+
+			SetVisible(THIS, FALSE);
+			SpriteManagerAdd(SpriteGrave, THIS->x, THIS->y - graveSpawnYOffset);
+			queueDeathRespawn(deathRespawnFrames);
+			SpriteManagerRemoveSprite(THIS);
+			break;
+		default:
+			break;
 	}
 }
 
 void START(void) {
     setDirection(J_RIGHT);
     setRechargeTime(0);
-    THIS->custom_data[death_animation] = 0;
+    THIS->custom_data[death_state] = playerDeathNone;
     THIS->custom_data[movement_accumulator] = 0;
 }
 
@@ -288,30 +339,17 @@ static void updateMapTiles(void) {
 }
 
 void UPDATE(void) {
-    uint8_t d = THIS->custom_data[death_animation];
-    if (d > 0) {
-        if (d == 26) {
-            THIS->y -= 8;
-        } else if (d == 25) {
-            THIS->y -= 4;
-        } else if (d & 0x01) {
-            THIS->y += 1;
-        }
-        THIS->custom_data[death_animation]--;
-        SetSpriteAnim(THIS, anim_dead, 15);
-        if (d == 1) {
-            SpriteManagerRemoveSprite(THIS);
-        }
+    if (THIS->custom_data[death_state] != playerDeathNone) {
+        updateDeathSequence();
         return;
     }
-    // DEBUG FOR DEATH ANIMATION
     if(KEY_PRESSED(J_B)) {
-        killPlayer();
-        THIS->custom_data[death_animation] = 8;
+        beginTestDeathSequence();
+        return;
     }
-    if (isDying == 1) {
-		return;
-	}
+    if (isDying) {
+			return;
+		}
     BOOLEAN moving = FALSE;
     BOOLEAN changeDirection = FALSE;
     if (KEY_PRESSED(J_UP)) {
