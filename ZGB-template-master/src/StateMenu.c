@@ -15,6 +15,9 @@ void UPDATE(void) {
 	if(KEY_TICKED(J_START)) {
 		SetState(StateGame);
 	}
+	if(KEY_TICKED(J_SELECT)) {
+		SetState(StateOptions);
+	}
 }
 
 void DESTROY(void) {
