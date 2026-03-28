@@ -1,29 +1,10 @@
 #include "Banks/SetAutoBank.h"
+#include "SpriteBag.h"
 #include "Keys.h"
 #include "SpriteManager.h"
 #include "SpriteEnemy.h"
 #include "StateGame.h"
 #include "ZGBMain.h"
-
-#define shakeBeforeFall 60
-
-#define stateStatic 1
-#define stateShaking 2
-#define stateFalling 3
-#define statePushing 4
-
-#define bagStatus 0
-#define bagStateTimer 1
-#define bagFallCounter 2
-#define bagDirection 3
-#define bagPushDistance 4
-#define bagMovementAccumulator 5
-
-// tiles numbers for bag on black
-#define bagTL 22
-#define bagTR 23
-#define bagBL 24
-#define bagBR 25
 
 const UBYTE bag_shake[] = {4, 0, 1, 0, 2};
 const UBYTE bag_fall[] = {1, 3};
@@ -53,13 +34,13 @@ static void updateBagTiles(uint8_t tileType) {
     setBagTiles(bagColumn, bagRow, tileType);
 }
 
-static void deactivateBag(Sprite* bag) {
+static void deactivateBag(Sprite* bag, BOOLEAN onBlack) {
 	uint8_t column = TILE_FROM_PIXEL(bag->x);
 	uint8_t row = TILE_FROM_PIXEL(bag->y);
-	updateVideoMemAndMap(column, row, tileBagTL);
-	updateVideoMemAndMap(column + 1, row, tileBagTR);
-	updateVideoMemAndMap(column, row + 1, tileBagBL);
-	updateVideoMemAndMap(column + 1, row + 1, tileBagBR);
+	updateVideoMemAndMap(column, row, onBlack ? bagTL : tileBagTL);
+	updateVideoMemAndMap(column + 1, row, onBlack ? bagTR : tileBagTR);
+	updateVideoMemAndMap(column, row + 1, onBlack ? bagBL : tileBagBL);
+	updateVideoMemAndMap(column + 1, row + 1, onBlack ? bagBR : tileBagBR);
 	addOnMap(bag->x, bag->y, metaTileBag);
 	SpriteManagerRemoveSprite(bag);
 }
@@ -72,7 +53,7 @@ static BOOLEAN isBagAlignedToMetaCell(Sprite* bag) {
 static BOOLEAN bagShouldFall(Sprite* bag) {
     UBYTE currentColumn;
     UBYTE currentRow;
-    UBYTE currentCell;
+    UBYTE cellBelow;
 
     if (bag->y >= mapBoundDown) {
         return FALSE;
@@ -84,12 +65,12 @@ static BOOLEAN bagShouldFall(Sprite* bag) {
         return FALSE;
     }
 
-    currentCell = currentRow * mapMetaWidth + currentColumn;
-    return (levelMap[currentCell + mapMetaWidth] & metaTileBag) == 0 &&
-        (levelMap[currentCell + mapMetaWidth] & tunnelMask) != 0;
+    cellBelow = currentRow * mapMetaWidth + currentColumn + mapMetaWidth;
+    return (levelMap[cellBelow] & metaTileBag) == 0 &&
+        (levelMap[cellBelow] & tunnelMask) != 0;
 }
 
-static void setBagState(Sprite* bag, UBYTE bagState) {
+void setBagState(Sprite* bag, UBYTE bagState) BANKED {
     bag->custom_data[bagStatus] = bagState;
 
     switch (bagState) {
@@ -142,17 +123,16 @@ static void movePushingBag(void) {
     }
 }
 
-void initPushedBag(Sprite* bag, UBYTE direction) BANKED {
-    bag->custom_data[bagDirection] = direction;
-    setBagState(bag, statePushing);
-}
-
 static void finalizePushedBag(void) {
+    UBYTE currentColumn = LARGE_TILE_FROM_PIXEL(THIS->x - mapBoundLeft);
+    UBYTE currentRow = LARGE_TILE_FROM_PIXEL(THIS->y - mapBoundUp);
+    UBYTE currentCell = currentRow * mapMetaWidth + currentColumn;
+
     if (bagShouldFall(THIS)) {
         setBagState(THIS, stateShaking);
     } else {
         setBagState(THIS, stateStatic);
-        deactivateBag(THIS);
+        deactivateBag(THIS, (levelMap[currentCell] & tunnelMask) != 0 ? bagOnTunnel : bagOnGrass);
     }
 }
 
@@ -211,7 +191,7 @@ void UPDATE(void) {
                 else {
                     THIS->custom_data[bagStatus] = stateStatic;
                     THIS->custom_data[bagFallCounter] = 0;
-                    deactivateBag(THIS);
+                    deactivateBag(THIS, bagOnTunnel);
                 }
             }
         }
