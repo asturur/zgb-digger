@@ -4,9 +4,12 @@
 #include "ZGBMain.h"
 #include "StateGame.h"
 #include "SpriteFireball.h"
+#include "SpriteBag.h"
 #include "SpritePlayer.h"
 
+extern unsigned char levelMap[150];
 extern void runMapSideEffects(void);
+extern UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y);
 extern uint8_t isDying;
 extern uint8_t lives;
 const UBYTE anim_walk_right[] = {4, 0, 1, 2, 1};
@@ -20,6 +23,10 @@ const UBYTE discharged_up[] = {4, 18, 19, 20, 19};
 const UBYTE discharged_left[] = {4, 21, 22, 23, 22};
 
 const UBYTE anim_dead[] = {1, 24};
+
+#define pushBagNoBag 0
+#define pushBagStarted 1
+#define pushBagBlocked 2
 
 UBYTE direction;
 UBYTE oppositeDirection;
@@ -66,6 +73,66 @@ static BOOLEAN isColumnDisaligned(void) {
 
 static BOOLEAN isRowDisaligned(void) {
     return MOD_FOR_LARGE_TILE(THIS->y - mapBoundUp);
+}
+
+static UBYTE tryPushStaticBag(void) {
+    UBYTE currentCell;
+    UBYTE currentColumn;
+    UBYTE bagCell;
+    UBYTE destinationCell;
+    UBYTE destinationValue;
+    Sprite* bagSprite;
+
+    if (direction != J_LEFT && direction != J_RIGHT) {
+        return pushBagNoBag;
+    }
+    if (isRowDisaligned() || isColumnDisaligned()) {
+        return pushBagNoBag;
+    }
+
+    currentCell = getMapMetaTileArrayPosition(THIS->x, THIS->y);
+    currentColumn = currentCell % mapMetaWidth;
+
+    if (direction == J_LEFT) {
+        if (currentColumn == 0) {
+            return pushBagNoBag;
+        }
+        bagCell = currentCell - 1;
+    } else {
+        if (currentColumn == mapMetaWidth - 1) {
+            return pushBagNoBag;
+        }
+        bagCell = currentCell + 1;
+    }
+
+    if ((levelMap[bagCell] & metaTileBag) == 0) {
+        return pushBagNoBag;
+    }
+
+    if (direction == J_LEFT) {
+        if (currentColumn == 1) {
+            return pushBagBlocked;
+        }
+        destinationCell = bagCell - 1;
+    } else {
+        if (currentColumn == mapMetaWidth - 2) {
+            return pushBagBlocked;
+        }
+        destinationCell = bagCell + 1;
+    }
+
+    destinationValue = levelMap[destinationCell];
+    if ((destinationValue & (metaTileBag | metaTileEmerald | metaTileGold)) != 0) {
+        return pushBagBlocked;
+    }
+
+    bagSprite = activateBag(bagCell);
+    if (bagSprite == 0) {
+        return pushBagBlocked;
+    }
+    bagSprite->custom_data[bagDirection] = direction;
+    setBagState(bagSprite, statePushing);
+    return pushBagStarted;
 }
 
 static void updatePosition(void) {
@@ -288,6 +355,15 @@ void UPDATE(void) {
         THIS->custom_data[custom_data_recharge]--;
         if (THIS->custom_data[custom_data_recharge] == 0) {
             updateAnimation();
+        }
+    }
+    if (moving && !isRowDisaligned() && !isColumnDisaligned() && (direction == J_LEFT || direction == J_RIGHT)) {
+        UBYTE pushResult = tryPushStaticBag();
+        if (pushResult == pushBagBlocked) {
+            moving = FALSE;
+            if (changeDirection) {
+                updateAnimation();
+            }
         }
     }
     if (moving) {
