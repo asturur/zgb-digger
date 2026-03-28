@@ -1,7 +1,7 @@
 PROJECT_NAME = Digger
 
-# Default to the vendored SDK snapshot in this repository.
-ZGB_PATH ?= ../../ZGB-2023.0/common
+# Default to the vendored CrossZGB release in this repository.
+ZGB_PATH ?= ../../CrossZGB-2026.1/ZGB/common
 
 # Set platforms to build here, spaced separated. (These are in the separate Makefile.targets)
 # They can also be built/cleaned individually: "make gg" and "make gg-clean"

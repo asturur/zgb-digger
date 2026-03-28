@@ -1,0 +1,269 @@
+<html>
+<head>
+<title>Using Carillon Player &amp; FX Hammer</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<style type="text/css">
+<!--
+p {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 8pt}
+b {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 9pt}
+h3 {  font-family: "Times New Roman", Times, serif; font-size: 16pt; font-style: italic; font-weight: normal}
+h2 {  font-family: "Times New Roman", Times, serif; font-size: 24pt; font-style: italic; font-weight: bold}
+-->
+</style>
+</head>
+
+<body bgcolor="#EEEEEE" text="#000000" link="#666666" vlink="#666666" alink="#666666">
+<h2 align="center">FX Hammer Editor</h2>
+<p align="center">&copy;2000-2001 Aleksi Eeben (email: aleksi@cncd.fi)<br>
+  http://www.cncd.fi/aeeben</p>
+<p><a href="#new"><b>FX Hammer Editor v1.1<br>
+  </b></a><b><a href="#editor">Compatibility</a></b><br>
+  <b><a href="#buttons">FX Hammer Editor Buttons<br>
+  </a></b><b><a href="#param">Sound FX Parameters</a></b> </p>
+<p><b><a href="#banks">Handling Sound FX Banks</a></b></p>
+<hr>
+<h3><a name="new"></a>FX Hammer Editor v1.1 (CGB)</h3>
+<h3><img src="hammer.gif" width="160" height="144"></h3>
+<p>New features in version 1.1:</p>
+<p>Sound FX knee point (Select + Down to set/remove) - When the sound reaches 
+  this step its priority is changed to zero so that any new sound FX requested 
+  will override it. Typically the knee point would be set right after the 'main 
+  body' of the sound FX and before any panning echoes or other sustaining 'tail' 
+  (which are less important).</p>
+<p>Trig sound at half speed (Start + Up) - Very useful in fine adjusting more 
+  complex sounds.</p>
+<p><b>Compatibility</b></p>
+<p>It is recommended to run the editor on the actual Game Boy Color hardware only. 
+  The editor should also work fine on the old monochrome Game Boy and Game Boy 
+  Pocket.</p>
+<p>If you want to run the editor on an emulator you should use (V)GBC (by Rusty 
+  Wagner) or No$gmb(v2.5). A third option would be REW.</p>
+<hr>
+<p><b><a name="buttons"></a>FX Hammer Editor Buttons<br>
+  </b></p>
+<table width="100%" border="0" cellspacing="0" cellpadding="8" align="center">
+  <tr bgcolor="#CCCCCC"> 
+    <td> 
+      <p>Up/Down/Left/Right</p>
+    </td>
+    <td> 
+      <p>Scroll / Move cursor</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td> 
+      <p bgcolor="DDDDDD">A + Left/Right</p>
+    </td>
+    <td> 
+      <p bgcolor="DDDDDD">Edit parameter under cursor (Pan / Note / Frequency 
+        Div)</p>
+    </td>
+  </tr>
+  <tr bgcolor="#CCCCCC"> 
+    <td> 
+      <p>A + Up/Down</p>
+    </td>
+    <td> 
+      <p>Edit other parameter (Level / Pulse Width / Note in octave leaps / Frequency)</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td> 
+      <p bgcolor="DDDDDD">A + B</p>
+    </td>
+    <td> 
+      <p bgcolor="DDDDDD">Clear one step on the current channel</p>
+    </td>
+  </tr>
+  <tr bgcolor="#CCCCCC"> 
+    <td> 
+      <p>B + Up/Down</p>
+    </td>
+    <td> 
+      <p>Go to next/previous Sound FX (also stops any Sound FX playing)</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td> 
+      <p bgcolor="DDDDDD">B + Left/Right</p>
+    </td>
+    <td> 
+      <p bgcolor="DDDDDD">Change Priority of current Sound FX ($0 - $f, higher 
+        value = higher priority)</p>
+    </td>
+  </tr>
+  <tr bgcolor="#CCCCCC"> 
+    <td> 
+      <p>Start</p>
+    </td>
+    <td> 
+      <p>Play Sound FX</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td> 
+      <p bgcolor="DDDDDD">Down + Start</p>
+    </td>
+    <td> 
+      <p bgcolor="DDDDDD">Play Sound FX and scroll while playing (New feature: 
+        Up + Start to play at half speed)</p>
+    </td>
+  </tr>
+  <tr bgcolor="#CCCCCC"> 
+    <td> 
+      <p>Select + Left</p>
+    </td>
+    <td> 
+      <p>Jump to start of Sound FX</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td> 
+      <p bgcolor="DDDDDD">Select + Right</p>
+    </td>
+    <td> 
+      <p bgcolor="DDDDDD">Jump to middle of Sound FX (step $10)</p>
+    </td>
+  </tr>
+  <tr bgcolor="#CCCCCC">
+    <td>
+      <p>Select + Up</p>
+      </td>
+    <td>
+      <p>Copy Sound FX to buffer</p>
+      </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td> 
+      <p>Select + Start</p>
+      </td>
+    <td> 
+      <p>Copy Sound FX from buffer</p>
+      </td>
+  </tr>
+  <tr bgcolor="#CCCCCC"> 
+    <td> 
+      <p>A + Select</p>
+    </td>
+    <td> 
+      <p>Insert step (on both channels)</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td> 
+      <p>B + Select</p>
+    </td>
+    <td> 
+      <p>Delete step (on both channels)</p>
+    </td>
+  </tr>
+  <tr bgcolor="#CCCCCC"> 
+    <td valign="top"> 
+      <p>Select + Down</p>
+      </td>
+    <td> 
+      <p>Set Sound FX knee point (shown as a '&gt;' symbol)</p>
+      </td>
+  </tr>
+</table>
+<p></p>
+<h3></h3>
+<hr>
+<h3><a name="param"></a>Sound FX Parameters</h3>
+<p>Sound FX data is read from top to bottom, from step $00 to $1f (much like the 
+  sound data in Carillon Editor).</p>
+<p><img src="hammer.gif" width="160" height="144"></p>
+<table border="0" cellspacing="0" cellpadding="8" align="center" bgcolor="#CCCCCC" width="100%">
+  <tr> 
+    <td valign="top"> 
+      <p><b>TIME/END</b><br>
+        (TM)</p>
+    </td>
+    <td valign="top"> 
+      <p>The number of frames ($01 to $7F) to wait before proceeding with the 
+        next step in the sound.</p>
+      <p>$01 - Used for sliding frequency<br>
+        $02 to $03 - Good for arpeggios<br>
+        $03 to $06 - For pulse width modulation<br>
+        $06 to $0F - For sustaining sounds and tails of fading sounds<br>
+        $10 to $7F - </p>
+      </td>
+  </tr>
+  <tr> 
+    <td bgcolor="DDDDDD" valign="top"> 
+      <p><b>CH2/PLEV</b><br>
+        (PL) </p>
+    </td>
+    <td bgcolor="DDDDDD" valign="top"> 
+      <p>Pan (L, M, R) and Level ($0-$F) for Channel 2</p>
+      <p>Carillon Player doesn't use the built-in envelope function in CGB. Instead 
+        there is a fully programmable envelope which allows an individual volume 
+        setting for each step in the sound.</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p><b>CH2/PWDT</b><br>
+        (W)<br>
+      </p>
+      <p>&nbsp;</p>
+    </td>
+    <td valign="top"> 
+      <p>0 - Pulse width 12.5% (sharp tone)<br>
+        1 - Pulse width 25% (less sharp)<br>
+        2 - Pulse width 50% (hollow tone)<br>
+        3 - Pulse width 75% (same as 1 inverted, sounds the same)</p>
+      </td>
+  </tr>
+  <tr> 
+    <td bgcolor="DDDDDD" valign="top"> 
+      <p><b>CH2/NOTE</b><br>
+        (NT)</p>
+    </td>
+    <td bgcolor="DDDDDD" valign="top"> 
+      <p>Note played this step: C-0 to B-5</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p><b>CH4/PLEV<br>
+        </b> (PL) </p>
+      </td>
+    <td valign="top"> 
+      <p>Pan (L, M, R) and Level ($0-$F) for Channel 4 (Noise)</p>
+      </td>
+  </tr>
+  <tr> 
+    <td bgcolor="DDDDDD" valign="top"> 
+      <p><b>CH4/FRQD<br>
+        </b> (FR)</p>
+      </td>
+    <td bgcolor="DDDDDD" valign="top">
+      <p>Noise Frequency (the actual value written directly to the noise frequency 
+        register)</p>
+      <p>The high nybble selects noise frequency:</p>
+      <p><br>
+        $00, $10, $20, $30 - High pitched noise<br>
+        $40, $50, $60, $70 - Lower<br>
+        $80, $90, $A0, $B0 - Explosions, low garbling noise</p>
+      <p>The lower nybble selects noise type:</p>
+      <p>$0 - &quot;White&quot; noise<br>
+        $8 - Buzz</p>
+      <p>Note: Noise emulation is very inaccurate in all software emulators</p>
+      </td>
+  </tr>
+</table>
+<hr>
+<h3><a name="banks"></a>Handling Sound FX Banks</h3>
+<p>Each Sound FX Bank (one ROM bank) holds 60 sounds and the FX Hammer code. Use 
+  your flash card specific tools to transfer Sound FX data to/from your computer. 
+  If you want to start from scratch, just clear the entire SRAM on the card.</p>
+<p>The card SRAM is updated (ie. the Sound FX data is saved) every time you trig 
+  a sound in the editor.</p>
+<p>SRAM files are 32KB of which the first half of 16KB is the Sound FX Bank image. 
+  (You can easily trim the files by using the Slice SRAM File -option in Carillon 
+  Editor Utility. The resulting *.bin-file is the Sound FX Bank and the other 
+  *.sam file can be discarded.)</p>
+<p>&nbsp; </p>
+</body>
+</html>

@@ -1,0 +1,853 @@
+<html>
+<head>
+<title>Using Carillon Player &amp; FX Hammer</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<style type="text/css">
+<!--
+p {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 8pt}
+b {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 9pt}
+h3 {  font-family: "Times New Roman", Times, serif; font-size: 16pt; font-style: italic; font-weight: normal}
+h2 {  font-family: "Times New Roman", Times, serif; font-size: 24pt; font-style: italic; font-weight: bold}
+-->
+</style>
+</head>
+
+<body bgcolor="#EEEEEE" text="#000000" link="#666666" vlink="#666666" alink="#666666">
+<h2 align="center">Using Carillon Player &amp; FX Hammer</h2>
+<p align="center">&copy;2000-2001 Aleksi Eeben (email: aleksi@cncd.fi)<br>
+  http://www.cncd.fi/aeeben</p>
+<p><b><a href="#routines">Carillon Player Routines</a></b><br>
+  <b><a href="#fade">Fade In/Fade Out<br>
+  </a></b><b><a href="#variables">Player Variables in Work RAM<br>
+  </a><a href="#reserving">Using Your Own Sound FX Routines</a></b></p>
+<hr>
+<h3><a name="routines"></a>Carillon Player Routines</h3>
+<p>Note that any registers may change during any of these calls. If you are using 
+  interrupts don't forget to store all the registers. Also be sure to use proper 
+  banking!</p>
+<table width="100%" border="0" cellspacing="0" cellpadding="8" bgcolor="#CCCCCC">
+  <tr> 
+    <td valign="top"> 
+      <p><b>Player_Initialize<br>
+        $4000 </b>in Music Bank</p>
+    </td>
+    <td valign="top"> 
+      <p>Initializes hardware sound registers and player variables at $c7c0-$c7ef. 
+        Call this at program startup before using any other Carillon Player or 
+        FX Hammer routines.</p>
+      <p>Example:</p>
+      <p><font face="Courier New, Courier, mono">ld&nbsp;&nbsp;&nbsp;&nbsp;a,MusicBank&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;; 
+        Any of the Music Banks<br>
+        ld&nbsp;&nbsp;&nbsp;&nbsp;[rROMB0],a<br>
+        call&nbsp; Player_Initialize&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; Initialize 
+        Carillon Player and FX Hammer</font></p>
+      <p> This routine is not needed at later time except for that if you need 
+        to disable all the sound circuits (by writing $00 to rNR52) for example 
+        during pause mode.</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p><b>Player_MusicStart<br>
+        $4003 </b>in Music Bank</p>
+    </td>
+    <td valign="top"> 
+      <p>Starts playing song number 0. Call <b>Player_SongSelect</b> <i>right 
+        after </i>this call to select another song.</p>
+      <p>Example:</p>
+      <p><font face="Courier New, Courier, mono">ld&nbsp;&nbsp;&nbsp;&nbsp;a,MusicBank<br>
+        ld&nbsp;&nbsp;&nbsp;&nbsp;[rROMB0],a &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;; 
+        Switch to desired Music Bank<br>
+        ld&nbsp;&nbsp;&nbsp;&nbsp;[CurrentMusicBank],a&nbsp;&nbsp;&nbsp;; Store 
+        Music Bank number for later use<br>
+        call&nbsp; Player_MusicStart &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;; Start playing 
+        song number 0</font> </p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p><b>Player_MusicStop<br>
+        $4006 </b> in Music Bank</p>
+    </td>
+    <td valign="top"> 
+      <p>Stops playing the current song. Any sound FX currently playing are not 
+        affected.</p>
+      <p>Example:</p>
+      <p><font face="Courier New, Courier, mono">ld&nbsp;&nbsp;&nbsp;&nbsp;a,[CurrentMusicBank]<br>
+        ld&nbsp;&nbsp;&nbsp;&nbsp;[rROMB0],a &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;; 
+        Switch to current Music Bank<br>
+        </font><font face="Courier New, Courier, mono">call&nbsp; Player_MusicStop 
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;; Stop music</font></p>
+      <p>Note: Calling this routine is <i>not</i> necessary when switching to 
+        a different song or Music Bank.</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p><b>Player_SongSelect<br>
+        $400c </b>in Music Bank</p>
+    </td>
+    <td valign="top"> 
+      <p>Call this to select a song other than song number zero. Load register 
+        A with song number (0 - 7). Always call <b>Player_MusicStart</b> <i>before 
+        </i>calling this routine.</p>
+      <p>Example:</p>
+      <p><font face="Courier New, Courier, mono">ld&nbsp;&nbsp;&nbsp;&nbsp;a,MusicBank<br>
+        ld&nbsp;&nbsp;&nbsp;&nbsp;[rROMB0],a &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;; 
+        Switch to desired Music Bank<br>
+        ld&nbsp;&nbsp;&nbsp;&nbsp;[CurrentMusicBank],a&nbsp;&nbsp;&nbsp;; Store 
+        Music Bank number for later use<br>
+        call&nbsp; Player_MusicStart &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;; Start music 
+        first...<br>
+        ld&nbsp;&nbsp;&nbsp;&nbsp;a,3<br>
+        call&nbsp;&nbsp;Player_SongSelect&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;; 
+        Start playing song number 3 (instead of 0)</font></p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p><b>Player_MusicUpdate<br>
+        $4100 </b>in Music Bank</p>
+    </td>
+    <td valign="top"> 
+      <p>This must be called once every frame to keep the music playing. (After 
+        all your VBlank routines is usually fine.)</p>
+      <p>Example:</p>
+      <p><font face="Courier New, Courier, mono">ld&nbsp;&nbsp;&nbsp;&nbsp;a,[CurrentMusicBank]<br>
+        ld&nbsp;&nbsp;&nbsp;&nbsp;[rROMB0],a &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;; 
+        Switch to current Music Bank<br>
+        </font><font face="Courier New, Courier, mono">call&nbsp; Player_MusicUpdate&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;; 
+        Keep music playing</font></p>
+      <p>The routine takes only 0 - 3 LCD lines of raster time (Less than 2% CPU 
+        usage).</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p><b>Player_SampleUpdate<br>
+        $4000 </b>in Sample Bank</p>
+    </td>
+    <td valign="top"> 
+      <p>If the song is using samples (ie. there is a sample bank for that song) 
+        you must call this routine four times every frame.</p>
+      <p>For example at LCD lines $10, $36, $5d and $83. This way no VBlank time 
+        is wasted ever.</p>
+      <p>Example:</p>
+      <p><font face="Courier New, Courier, mono">ld&nbsp;&nbsp;&nbsp;&nbsp;a,[CurrentSampleBank]&nbsp;&nbsp;; 
+        Get active Sample Bank number<br>
+        ld&nbsp;&nbsp;&nbsp;&nbsp;[rROMB0],a &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;; 
+        Switch to current Sample Bank<br>
+        </font><font face="Courier New, Courier, mono">call&nbsp; Player_SampleUpdate&nbsp;&nbsp;&nbsp;&nbsp;; 
+        Update Waveform RAM</font></p>
+      <p>Each call takes less than 1 LCD line of raster time.</p>
+      <p>The most working solution for timing is to use a series of LYC-interrupts. 
+        You can also use a simple LCD line wait if that works with the program 
+        (maybe for title and menu screens).</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p><b>SoundFX_Trig<br>
+        $4000 </b>in SoundFX Bank</p>
+    </td>
+    <td valign="top"> 
+      <p>Call this to start playing a sound FX. Load register A with sound FX 
+        number (0 - 59). This can be done at any point in your game program.</p>
+      <p>Example:</p>
+      <p><font face="Courier New, Courier, mono">ld&nbsp;&nbsp;&nbsp;&nbsp;a,SoundFXBank<br>
+        ld&nbsp;&nbsp;&nbsp;&nbsp;[rROMB0],a &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;; 
+        Switch to SoundFX Bank<br>
+        </font><font face="Courier New, Courier, mono">ld&nbsp;&nbsp;&nbsp;&nbsp;a,5<br>
+        call&nbsp; SoundFX_Trig&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;; 
+        Trig sound FX number 5</font></p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p><b>SoundFX_Stop<br>
+        $4003 </b>in SoundFX Bank</p>
+    </td>
+    <td valign="top"> 
+      <p>Call this if you need to stop a sound FX currently playing. Remember 
+        that calling <b>Player_MusicStop</b> doesn't affect sound FX.</p>
+      <p>Example:</p>
+      <p><font face="Courier New, Courier, mono">ld&nbsp;&nbsp;&nbsp;&nbsp;a,SoundFXBank<br>
+        ld&nbsp;&nbsp;&nbsp;&nbsp;[rROMB0],a &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;; 
+        Switch to SoundFX Bank<br>
+        </font><font face="Courier New, Courier, mono">call&nbsp; SoundFX_Stop&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;; 
+        Stop any sound FX playing</font></p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p><b>SoundFX_Update<br>
+        $4006</b> in SoundFX bank<b><br>
+        </b></p>
+    </td>
+    <td valign="top"> 
+      <p>This must be called once every frame to keep the sound FX playing. Right 
+        after <b>Player_MusicUpdate </b>is fine.</p>
+      <p>Example:</p>
+      <p><font face="Courier New, Courier, mono">ld&nbsp;&nbsp;&nbsp;&nbsp;a,SoundFXBank<br>
+        ld&nbsp;&nbsp;&nbsp;&nbsp;[rROMB0],a &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;; 
+        Switch to SoundFX Bank<br>
+        </font><font face="Courier New, Courier, mono">call&nbsp; SoundFX_Update&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;; 
+        Keep sound FX playing</font></p>
+      <p>The routine takes less than 1 LCD line of raster time.</p>
+    </td>
+  </tr>
+</table>
+<p>Important note: If you cannot (for any reason) call <b>Player_MusicUpdate</b> 
+  and <b>SoundFX_Update</b> once every frame you should turn off the music and 
+  sound FX during that period to avoid any unwanted bleeps.</p>
+<p><b><a name="fade"></a>Fade In/Fade Out</b></p>
+<p>Carillon sets the master volume register (rNR50) to maximum ($77) in <b>Player_Initialize</b> 
+  but doesn't change that value afterwards. You can use this register for fading 
+  sound ($77, $66, $55, $44, $33, $22, $11, $00 at desired rate, then call <b>Player_MusicStop</b> 
+  and <b>SoundFX_Stop</b>). Do not forget to restore the maximum level ($77) before 
+  starting another song or trigging sound FX.</p>
+<hr>
+<h3><a name="variables"></a>Player Variables in Work RAM</h3>
+<table width="100%" border="0" cellspacing="0" cellpadding="8" bgcolor="#CCCCCC">
+  <tr> 
+    <td valign="top"> 
+      <p>$c7c0</p>
+    </td>
+    <td valign="top"> 
+      <p>MusicFlag</p>
+    </td>
+    <td valign="top"> 
+      <p>New music note data is read at the current tempo (Speed) when MusicFlag 
+        = $00.<br>
+        Music is stopped when MusicFlag = $01 (No more new notes are read).</p>
+      <p>MusicFlag is set to $01 when the end of music data is reached (Some channels 
+        may still be active).</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p>$c7c1</p>
+    </td>
+    <td valign="top"> 
+      <p>Speed</p>
+    </td>
+    <td valign="top"> 
+      <p>Current Tempo</p>
+      <p>Default = $07, changed using command TMPx in block data.</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7c2</p>
+    </td>
+    <td valign="top"> 
+      <p>StepP</p>
+    </td>
+    <td valign="top"> 
+      <p>Step time counter</p>
+      <p>Starts at value in Speed, decremented by one every frame. One step is 
+        advanced when StepP = Speed/2 or StepP = $00.</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7c3</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">PatternP</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Current step (n * $08)</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7c4</p>
+    </td>
+    <td valign="top"> 
+      <p>PatternH</p>
+    </td>
+    <td valign="top"> 
+      <p>Current block (block number + $50)</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>$c7c5</p>
+      <p>&nbsp;</p>
+    </td>
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>SequencerP</p>
+      <p>&nbsp;</p>
+    </td>
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>Current position in Block Order List</p>
+      <p>In Player_MusicSelect SequencerP is set to (actual song starting position 
+        - 1) and PatternP is set to $00.</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7c6</p>
+      <p>&nbsp;</p>
+    </td>
+    <td valign="top"> 
+      <p>Ch1Flags</p>
+    </td>
+    <td valign="top"> 
+      <p>Bit 1: Ch1 reserved for sound FX routines (1 = yes, 0 = no)<br>
+        Bit 0: Ch1 music note playing (1 = no, 0 = yes)</p>
+      <p>When Ch1Flags is not $00, no instrument sound data is read and all Ch1 
+        sound registers (rNR1x) remain intact.</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7c7</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Ch1Count</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Countdown (in frames) before moving to next step in 
+        sound data</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7c8</p>
+    </td>
+    <td valign="top"> 
+      <p>Ch1SndP</p>
+    </td>
+    <td valign="top"> 
+      <p>High nybble: CH1-2 Sound number<br>
+        Low nybble: Current step in sound data</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7c9</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Ch1Note</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Current Ch1 Note (before arpeggiato)</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7ca</p>
+    </td>
+    <td valign="top"> 
+      <p>Ch1FreqL</p>
+    </td>
+    <td valign="top"> 
+      <p>Ch1 Frequency Low-order byte (before modulation/slide)</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7cb</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Ch1FreqH</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Ch1 Frequency High-order byte (before modulation/slide)</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7cc</p>
+      <p>&nbsp;</p>
+    </td>
+    <td valign="top"> 
+      <p>Ch2Flags</p>
+      <p>&nbsp;</p>
+    </td>
+    <td valign="top"> 
+      <p>Bit 1: Ch2 reserved for sound FX routines (1 = yes, 0 = no)<br>
+        Bit 0: Ch2 music note playing (1 = no, 0 = yes)</p>
+      <p>When Ch2Flags is not $00, no instrument sound data is read and all Ch2 
+        sound registers (rNR2x) remain intact.</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7cd</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Ch2Count</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Countdown (in frames) before moving to next step in 
+        sound data</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7ce</p>
+    </td>
+    <td valign="top"> 
+      <p>Ch2SndP</p>
+    </td>
+    <td valign="top"> 
+      <p>High nybble: CH1-2 Sound number<br>
+        Low nybble: Current step in sound data</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7cf</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Ch2Note</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Current Ch2 Note (before arpeggiato)</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7d0</p>
+    </td>
+    <td valign="top"> 
+      <p>Ch2FreqL</p>
+    </td>
+    <td valign="top"> 
+      <p>Ch2 Frequency Low-order byte (before modulation/slide)</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7d1</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Ch2FreqH</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Ch2 Frequency High-order byte (before modulation/slide)</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7d2</p>
+      <p>&nbsp;</p>
+    </td>
+    <td valign="top"> 
+      <p>Ch3Flags</p>
+      <p>&nbsp;</p>
+    </td>
+    <td valign="top"> 
+      <p>Bit 2: Ch3 reserved for playing a sample trigged in music data (1 = yes, 
+        0 = no)<br>
+        Bit 1: Ch3 reserved for sound FX routines (1 = yes, 0 = no)<br>
+        Bit 0: Ch3 music note playing (1 = no, 0 = yes)</p>
+      <p>When Ch3Flags is not $00, no instrument sound data is read and all Ch3 
+        sound registers (rNR3x) remain intact.</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7d3</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Ch3Count</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Countdown (in frames) before moving to next step in 
+        sound data</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7d4</p>
+    </td>
+    <td valign="top"> 
+      <p>Ch3Wave</p>
+    </td>
+    <td valign="top"> 
+      <p>Current Waveform (n * $10) in Waveform RAM</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7d5</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Ch3SndP</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">High nybble: WAV3 Sound number<br>
+        Low nybble: Current step in sound data</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7d6</p>
+    </td>
+    <td valign="top"> 
+      <p>Ch3Note</p>
+    </td>
+    <td valign="top"> 
+      <p>Current Ch3 Note (before arpeggiato)</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7d7</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Ch3FreqL</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Ch3 Frequency Low-order byte (before modulation/slide)</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7d8</p>
+    </td>
+    <td valign="top"> 
+      <p>Ch3FreqH</p>
+    </td>
+    <td valign="top"> 
+      <p>Ch3 Frequency High-order byte (before modulation/slide)</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7d9</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Ch4Flags</p>
+    </td>
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>Bit 1: Ch4 reserved for sound FX routines (1 = yes, 0 = no)<br>
+        Bit 0: Ch4 music note playing (1 = no, 0 = yes)</p>
+      <p>When Ch4Flags is not $00, no instrument sound data is read and all Ch4 
+        sound registers (rNR4x) remain intact.</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7da</p>
+    </td>
+    <td valign="top"> 
+      <p>Ch4Count</p>
+    </td>
+    <td valign="top"> 
+      <p>Countdown (in frames) before moving to next step in sound data</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7db</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">Ch4SndP</p>
+    </td>
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">High nybble: PRC4 Sound number<br>
+        Low nybble: Current step in sound data</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7dc</p>
+    </td>
+    <td valign="top"> 
+      <p>Ch3Init</p>
+    </td>
+    <td valign="top"> 
+      <p>Internally set when Waveform RAM is reloaded</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7dd</p>
+    </td>
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>Modulate</p>
+    </td>
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>Bit 7: Vibrato/Slide<br>
+        Bit 2: Modulate Ch3<br>
+        Bit 1: Modulate Ch2<br>
+        Bit 0: Modulate Ch1</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7de</p>
+    </td>
+    <td valign="top"> 
+      <p>VibratoP</p>
+    </td>
+    <td valign="top"> 
+      <p>Vibrato Phase (and Width)</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7df</p>
+    </td>
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>VibSpeed</p>
+    </td>
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>Vibrato Speed</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7e0</p>
+    </td>
+    <td valign="top"> 
+      <p>ModLAdd</p>
+    </td>
+    <td valign="top"> 
+      <p>Slide Add Low-order byte</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7e1</p>
+    </td>
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>ModL</p>
+    </td>
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>Current Slide Amount Low-order byte</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7e2</p>
+    </td>
+    <td valign="top"> 
+      <p>ModHAdd</p>
+    </td>
+    <td valign="top"> 
+      <p>Slide Add High-order byte</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7e3</p>
+    </td>
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>ModH</p>
+    </td>
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>Current Slide Amount High-order byte</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7e4</p>
+    </td>
+    <td valign="top"> 
+      <p>SampleL</p>
+    </td>
+    <td valign="top"> 
+      <p>Sample address Low-order byte</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7e5</p>
+    </td>
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>SampleH</p>
+    </td>
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>Sample address High-order byte</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7e6</p>
+    </td>
+    <td valign="top"> 
+      <p>SamCount</p>
+    </td>
+    <td valign="top"> 
+      <p>Sample blocks left to play</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7e7</p>
+    </td>
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>TrigCount</p>
+    </td>
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>Used for timing</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7e8</p>
+    </td>
+    <td valign="top"> 
+      <p>NewPanMask</p>
+    </td>
+    <td valign="top"> 
+      <p>Pan position for trigged sample</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7e9</p>
+    </td>
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>NewSampleL</p>
+    </td>
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>Temporary storage for trigging sample</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7ea</p>
+    </td>
+    <td valign="top"> 
+      <p>NewSampleH</p>
+    </td>
+    <td valign="top"> 
+      <p>Temporary storage for trigging sample</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p bgcolor="DDDDDD">$c7eb</p>
+    </td>
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>NewSamCount</p>
+    </td>
+    <td valign="top" bgcolor="DDDDDD"> 
+      <p>Sample length in blocks</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7ec</p>
+    </td>
+    <td valign="top"> 
+      <p>FXCurrentPri</p>
+    </td>
+    <td valign="top"> 
+      <p>FX Hammer: Priority of current Sound FX playing ($00 = lowest)</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p>$c7ed</p>
+    </td>
+    <td valign="top"> 
+      <p>FXSoundCount</p>
+    </td>
+    <td valign="top"> 
+      <p>FX Hammer: Countdown (in frames) before moving to next step in Sound 
+        FX</p>
+    </td>
+  </tr>
+  <tr> 
+    <td valign="top"> 
+      <p>$c7ee</p>
+    </td>
+    <td valign="top"> 
+      <p>FXSoundP</p>
+    </td>
+    <td valign="top"> 
+      <p>FX Hammer: Current Step</p>
+    </td>
+  </tr>
+  <tr bgcolor="DDDDDD"> 
+    <td valign="top"> 
+      <p>$c7ef</p>
+    </td>
+    <td valign="top"> 
+      <p>FXSoundH</p>
+    </td>
+    <td valign="top"> 
+      <p>FX Hammer: Current Sound FX (FX number + $44)</p>
+    </td>
+  </tr>
+</table>
+<hr>
+<p>&nbsp;</p>
+<h3><a name="reserving"></a>Using Your Own Sound FX Routines</h3>
+<p>Before using your own routines to play a sound FX you must first reserve the 
+  corresponding channel or channels:</p>
+<table width="100%" border="0" cellspacing="0" cellpadding="8">
+  <tr bgcolor="#CCCCCC"> 
+    <td bgcolor="#CCCCCC" width="25%" valign="top"> 
+      <p><b>Reserving Channel 1</b></p>
+      <p>- Write $03 to Ch1Flags ($c7c6)</p>
+    </td>
+    <td bgcolor="DDDDDD" width="25%" valign="top"> 
+      <p><b>Reserving Channel 2</b></p>
+      <p>- Write $03 to Ch2Flags ($c7cc)</p>
+    </td>
+    <td width="25%" valign="top"> 
+      <p><b>Reserving Channel 3*</b></p>
+      <p>- Write $03 to Ch3Flags<br>
+        ($c7d2)</p>
+      <p>- If using samples in the music, write $00 to both TrigCount ($c7e7) 
+        and SamCount ($c7e6)</p>
+      <p>- Note that Waveform RAM may contain any waveform (or if using samples 
+        even some &quot;random&quot; buzz), so you must immediately reload the 
+        Waveform RAM</p>
+    </td>
+    <td bgcolor="DDDDDD" width="25%" valign="top"> 
+      <p><b>Reserving Channel 4</b></p>
+      <p>- Write $03 to Ch4Flags ($c7d9)</p>
+    </td>
+  </tr>
+</table>
+<p>Since the sound registers may contain any values at this time, you should start 
+  playing the sound FX immediately.</p>
+<p>* Important note on Channel 3 usage: If using samples in the music (Sample 
+  Player add-on), you must skip all Sample_Update calls while playing a sound 
+  FX on Channel 3.</p>
+<p>After your sound FX is finished the used channels must be released:</p>
+<table width="100%" border="0" cellspacing="0" cellpadding="8">
+  <tr bgcolor="#CCCCCC"> 
+    <td bgcolor="#CCCCCC" width="25%" valign="top"> 
+      <p><b>Releasing Channel 1</b></p>
+      <p>- Write $00 to rNR10 (FX might have used the Ch1 slide function)</p>
+      <p>- Write $08 to rNR12, then write $80 to rNR14 (Cuts any FX tail)</p>
+      <p>- Write $01 to Ch1Flags ($c7c6)</p>
+    </td>
+    <td bgcolor="DDDDDD" width="25%" valign="top"> 
+      <p><b>Releasing Channel 2</b></p>
+      <p>- Write $08 to rNR22, then write $80 to rNR14 (Cuts any FX tail)</p>
+      <p>- Write $01 to Ch2Flags ($c7cc)</p>
+    </td>
+    <td width="25%" valign="top"> 
+      <p><b>Releasing Channel 3*</b></p>
+      <p>- Write $00 to rNR32 (Cuts any FX tail)</p>
+      <p>- Write $ff to Ch3Wave ($c7d4) to make sure the Waveform RAM is reloaded 
+        by the music player</p>
+      <p>- If using samples in the music, again write $00 to both TrigCount ($c7e7) 
+        and SamCount ($c7e6)</p>
+      <p>- Write $01 to Ch3Flags<br>
+        ($c7d2)</p>
+    </td>
+    <td bgcolor="DDDDDD" width="25%" valign="top"> 
+      <p><b>Releasing Channel 4</b></p>
+      <p>- Write $08 to rNR42, then write $80 to NR44 (Cuts any FX tail)</p>
+      <p>- Write $01 to Ch4Flags ($c7d9)</p>
+    </td>
+  </tr>
+</table>
+<p>Note: If using FX Hammer you shouldn't use channels 2 and 4 in your own sound 
+  FX routines.</p>
+<p>&nbsp;</p>
+</body>
+</html>

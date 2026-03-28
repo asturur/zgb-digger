@@ -1,0 +1,101 @@
+Player_Initialize       equ     $4000
+Player_MusicStart       equ     $4003
+Player_MusicStop        equ     $4006
+Player_SongSelect       equ     $400c
+Player_MusicUpdate      equ     $4100
+
+SoundFX_Trig            equ     $4000
+SoundFX_Stop            equ     $4003
+SoundFX_Update          equ     $4006
+
+
+MusicBank               equ     1
+FXBank                  equ     3
+
+SongNumber              equ     0       ; 0 - 7
+
+
+
+        SECTION "Example",HOME[$150]
+
+FirstTime:
+        ld      a,MusicBank             ; Switch to MusicBank
+        ld      [rROMB0],a
+
+        call    Player_Initialize       ; Initialize sound registers and
+                                        ; player variables on startup
+
+NewSong:
+        ld      a,MusicBank             ; Switch to MusicBank
+        ld      [rROMB0],a
+
+        call    Player_MusicStart       ; Start music playing
+
+        ld      a,SongNumber            ; Call SongSelect AFTER MusicStart!
+        call    Player_SongSelect       ; (Not needed if SongNumber = 0)
+
+
+FrameLoop:
+        ld      c,$10                   ; Waiting
+        call    WaitLCDLine
+
+        ld      a,MusicBank             ; Switch to MusicBank
+        ld      [rROMB0],a
+        call    Player_MusicUpdate      ; Call this once a frame
+
+        ld      a,FXBank                ; Switch to FXBank
+        ld      [rROMB0],a
+        call    SoundFX_Update          ; Call this once a frame too
+
+
+        ld      c,$90                   ; Waiting
+        call    WaitLCDLine
+
+        jr      FrameLoop
+
+
+
+StopExample:
+        ld      a,MusicBank             ; Switch to MusicBank
+        ld      [rROMB0],a
+        call    Player_MusicStop        ; Stops reading note data and cuts
+                                        ; all music notes currently playing
+
+        ld      a,FxBank                ; Switch to FXBank
+        ld      [rROMB0],a
+        call    SoundFX_Stop            ; Stop any sound FX playing
+
+        ret
+
+
+TrigSoundFXExample:
+        ld      a,FxBank                ; Switch to FXBank
+        ld      [rROMB0],a
+        ld      a,2
+        call    SoundFX_Trig            ; Trig sound FX number 2
+
+        ret
+
+
+WaitLCDLine:
+        ld      a,[rLY]
+        cp      c
+        jr      nz,WaitLCDLine
+
+        ret
+
+
+
+        SECTION "Music",DATA[$4000],BANK[MusicBank]
+
+        INCBIN "music.bin"              ; player code and music data
+
+
+        SECTION "FX",DATA[$4000],BANK[FXBank]
+
+        INCBIN "fxbank.bin"
+
+
+        SECTION "Reserved",BSS[$c7c0]
+
+        ds      $30                     ; $c7c0 - $c7ef for player variables

@@ -10,7 +10,7 @@
             "port": 58870,
             "stopOnEntry": false,
             "preLaunchTask": "gb-debug-build",
-            "additionalSrcFolders": "${workspaceFolder}/ZGB-template-master/src;${workspaceFolder}/ZGB-template-master/include;${workspaceFolder}/ZGB-2023.0/common/src;${workspaceFolder}/ZGB-2023.0/common/include"
+            "additionalSrcFolders": "${workspaceFolder}/ZGB-template-master/src;${workspaceFolder}/ZGB-template-master/include;${workspaceFolder}/CrossZGB-2026.1/ZGB/common/src;${workspaceFolder}/CrossZGB-2026.1/ZGB/common/include"
         }
     ]
 }

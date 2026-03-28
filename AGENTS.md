@@ -2,7 +2,7 @@
 
 ## Project Mission
 
-This repository is a Game Boy reimplementation / port of **Digger** for the **original Nintendo Game Boy** using the **ZGB** SDK.
+This repository is a Game Boy reimplementation / port of **Digger** for the **original Nintendo Game Boy** using the **CrossZGB / ZGB** SDK.
 
 The working goal is not to preserve the PC code structure verbatim. The goal is to reproduce Digger's gameplay, level logic, and feel within original Game Boy constraints:
 
@@ -49,9 +49,15 @@ Do not treat `digger_pc_src/` as the place to implement the Game Boy port unless
 
 ### Vendored SDK and tools
 
-`ZGB-2023.0/`
+`CrossZGB-2026.1/`
 
-This is a vendored ZGB snapshot used by the game project. Avoid editing it unless the task is clearly an SDK/toolchain fix that cannot live in the game code.
+This is the vendored CrossZGB release used by the game project. Its layout differs from the old `ZGB-2023.0` snapshot:
+
+- engine sources and headers live under `CrossZGB-2026.1/ZGB/common/`
+- the bundled `gbdk-2020` toolchain lives under `CrossZGB-2026.1/gbdk/`
+- bundled art tools live under `CrossZGB-2026.1/env/tools/`
+
+Avoid editing it unless the task is clearly an SDK/toolchain fix that cannot live in the game code.
 
 ### Historical / backup assets
 
@@ -70,7 +76,7 @@ Key details already encoded there:
 
 - project name: `Digger`
 - target platform: `gb`
-- SDK path defaults to the vendored `../../ZGB-2023.0/common`
+- SDK path defaults to the vendored `../../CrossZGB-2026.1/ZGB/common`
 
 Expected build command:
 
@@ -81,10 +87,15 @@ make gb
 
 Prerequisite:
 
-- `gbdk-2020` must be installed and discoverable either through `GBDK_HOME` or at `ZGB-2023.0/env/gbdk`
+- `gbdk-2020` is bundled at `CrossZGB-2026.1/gbdk` and is discovered automatically from the vendored CrossZGB layout unless `GBDK_HOME` overrides it
 - Java is required to launch the local `Emulicious/Emulicious.jar`
 
-If you change build assumptions, keep them consistent with the vendored SDK layout already used by the repo.
+Asset layout note:
+
+- this repo is still GB-only, so the existing flat assets in `ZGB-template-master/res/` and `ZGB-template-master/res/sprites/` remain valid with CrossZGB `v2026.1`
+- if future work adds per-platform assets, use CrossZGB's platform folders such as `res/backgrounds/gb/`, `res/fonts/gb/`, `res/music/gb/`, `res/sounds/gb/`, and `res/sprites/gb/`
+
+If you change build assumptions, keep them consistent with the vendored CrossZGB layout already used by the repo.
 
 ## Current Implementation Status
 
@@ -128,7 +139,7 @@ This means new work should usually extend or correct existing gameplay code, not
    - meta-level logic in `levelMap`
    - rendered 8x8 background tiles in `tileMap`
 6. Be cautious with anything that touches ROM banking, `NONBANKED` functions, or large arrays copied into RAM.
-7. Avoid changing `ZGB-2023.0/` unless a repo task explicitly requires SDK-level changes.
+7. Avoid changing `CrossZGB-2026.1/` unless a repo task explicitly requires SDK-level changes.
 
 ## Banking Notes
 
