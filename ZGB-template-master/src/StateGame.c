@@ -27,6 +27,8 @@ extern const unsigned char level8Map[150];
 extern uint8_t fx_00[];
 extern void __mute_mask_fx_00;
 
+BOOLEAN infiniteLives = FALSE;
+BOOLEAN invincibility = FALSE;
 UBYTE currentLevel = 0;
 UBYTE difficultyLevel = 0;
 uint16_t score = 0;

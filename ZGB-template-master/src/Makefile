@@ -23,3 +23,7 @@ MUSIC_PLAYER = HUGETRACKER
 DEFAULT_SPRITES_SIZE = SPRITES_8x16
 
 include $(subst ',,$(subst \,/,'$(ZGB_PATH)'))/src/MakefileCommon
+
+# macOS on this machine exposes python3, not python; override the font tool here
+# instead of patching the vendored CrossZGB makefiles.
+PNG2FONT = python3 $(ZGB_PATH_UNIX)/../tools/png2font/png2font.py
