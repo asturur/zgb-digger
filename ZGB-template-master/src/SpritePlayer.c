@@ -6,7 +6,10 @@
 #include "SpriteFireball.h"
 #include "SpritePlayer.h"
 
+extern unsigned char levelMap[150];
 extern void runMapSideEffects(void);
+extern UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y);
+extern void initPushedBag(Sprite* bag, UBYTE direction);
 extern uint8_t isDying;
 extern uint8_t lives;
 const UBYTE anim_walk_right[] = {4, 0, 1, 2, 1};
@@ -66,6 +69,62 @@ static BOOLEAN isColumnDisaligned(void) {
 
 static BOOLEAN isRowDisaligned(void) {
     return MOD_FOR_LARGE_TILE(THIS->y - mapBoundUp);
+}
+
+static UBYTE tryPushStaticBag(void) {
+    UBYTE currentCell;
+    UBYTE currentColumn;
+    UBYTE bagCell;
+    UBYTE destinationCell;
+    UBYTE destinationValue;
+    Sprite* bagSprite;
+
+    if (direction != J_LEFT && direction != J_RIGHT) {
+        return 0;
+    }
+    if (isRowDisaligned()) {
+        return 0;
+    }
+
+    currentCell = getMapMetaTileArrayPosition(THIS->x, THIS->y);
+    currentColumn = currentCell % mapMetaWidth;
+
+    if (direction == J_LEFT) {
+        if (currentColumn == 0) {
+            return 0;
+        }
+        bagCell = currentCell - 1;
+        if (currentColumn == 1) {
+            return 2;
+        }
+        destinationCell = bagCell - 1;
+    } else {
+        if (currentColumn == mapMetaWidth - 1) {
+            return 0;
+        }
+        bagCell = currentCell + 1;
+        if (currentColumn == mapMetaWidth - 2) {
+            return 2;
+        }
+        destinationCell = bagCell + 1;
+    }
+
+    if ((levelMap[bagCell] & metaTileBag) == 0) {
+        return 0;
+    }
+
+    destinationValue = levelMap[destinationCell];
+    if ((destinationValue & (metaTileBag | metaTileEmerald | metaTileGold)) != 0) {
+        return 2;
+    }
+
+    bagSprite = activateBag(bagCell);
+    if (bagSprite == 0) {
+        return 2;
+    }
+
+    initPushedBag(bagSprite, direction);
+    return 1;
 }
 
 static void updatePosition(void) {
@@ -288,6 +347,15 @@ void UPDATE(void) {
         THIS->custom_data[custom_data_recharge]--;
         if (THIS->custom_data[custom_data_recharge] == 0) {
             updateAnimation();
+        }
+    }
+    if (moving && !isRowDisaligned() && (direction == J_LEFT || direction == J_RIGHT)) {
+        UBYTE pushResult = tryPushStaticBag();
+        if (pushResult == 2) {
+            moving = FALSE;
+            if (changeDirection) {
+                updateAnimation();
+            }
         }
     }
     if (moving) {
