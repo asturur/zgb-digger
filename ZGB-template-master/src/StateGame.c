@@ -227,7 +227,7 @@ void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) NONBANKED {
 void runMapSideEffects(void) BANKED {
 	const UBYTE currentCell = getMapMetaTileArrayPosition(scroll_target->x, scroll_target->y);
 	const UBYTE currentMapValue = levelMap[currentCell];
-	if (currentCell == lastVisitedMetaCell) {
+	if (currentCell == lastVisitedMetaCell && (currentMapValue & metaTileGold) == 0) {
 		return;
 	}
 	if ((currentMapValue & metaTileGold) != 0) {

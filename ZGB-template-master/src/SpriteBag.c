@@ -50,22 +50,15 @@ static BOOLEAN isBagAlignedToMetaCell(Sprite* bag) {
         MOD_FOR_LARGE_TILE(bag->y - mapBoundUp) == 0;
 }
 
-static BOOLEAN bagShouldFall(Sprite* bag) {
-    UBYTE currentColumn;
-    UBYTE currentRow;
+static BOOLEAN bagCanFallInCellBelow(Sprite* bag) {
     UBYTE cellBelow;
-
     if (bag->y >= mapBoundDown) {
         return FALSE;
     }
-
-    currentColumn = LARGE_TILE_FROM_PIXEL(bag->x - mapBoundLeft);
-    currentRow = LARGE_TILE_FROM_PIXEL(bag->y - mapBoundUp);
-    if (currentRow >= mapMetaHeight - 1) {
+    if (LARGE_TILE_FROM_PIXEL(bag->y - mapBoundUp) >= mapMetaHeight - 1) {
         return FALSE;
     }
-
-    cellBelow = currentRow * mapMetaWidth + currentColumn + mapMetaWidth;
+    cellBelow = getMapMetaTileArrayPosition(bag->x, bag->y) + mapMetaWidth;
     return (levelMap[cellBelow] & metaTileBag) == 0 &&
         (levelMap[cellBelow] & tunnelMask) != 0;
 }
@@ -151,7 +144,7 @@ static void finalizePushedBag(void) {
     UBYTE currentRow = LARGE_TILE_FROM_PIXEL(THIS->y - mapBoundUp);
     UBYTE currentCell = currentRow * mapMetaWidth + currentColumn;
 
-    if (bagShouldFall(THIS)) {
+    if (bagCanFallInCellBelow(THIS)) {
         setBagState(THIS, stateFalling);
     } else {
         setBagState(THIS, stateStatic);
@@ -197,11 +190,13 @@ void UPDATE(void) {
             THIS->y++;
             crushEnemiesUnderBag();
         } else {
+            UBYTE cellBelow = getMapMetaTileArrayPosition(THIS->x, THIS->y) + mapMetaWidth;
             uint8_t column = TILE_FROM_PIXEL(THIS->x);
             uint8_t row = 2 + TILE_FROM_PIXEL(THIS->y);
-            // we need to check what the next 4 tiles are doing
-            // if at leat one is 0, se the other to 0 and continue falling
-            if (THIS->y < mapBoundDown && checkTilesFor(column, row, tileBlack)) {
+            if (bagCanFallInCellBelow(THIS)) {
+                if ((levelMap[cellBelow] & metaTileGold) != 0) {
+                    levelMap[cellBelow] &= (UBYTE)~metaTileGold;
+                }
                 setBagTiles(column, row, tileBlack);
                 THIS->custom_data[bagFallCounter]++;
                 THIS->y++;
