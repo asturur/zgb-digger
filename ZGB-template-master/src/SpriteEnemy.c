@@ -190,7 +190,7 @@ void START(void) {
 
 
 void UPDATE(void) {
-    if (isDying == 1) {
+    if (isDying) {
         return;
     }
     if (THIS->custom_data[mode] == deadMode) {

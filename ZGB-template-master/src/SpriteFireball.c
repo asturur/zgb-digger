@@ -25,6 +25,10 @@ void UPDATE(void) {
     uint8_t i;
 	Sprite* spr;
 
+    if (isDying) {
+        return;
+    }
+
     if (THIS->custom_data[exploding]) {
         if (THIS->custom_data[despawnTimer] > 0) {
             THIS->custom_data[despawnTimer]--;
