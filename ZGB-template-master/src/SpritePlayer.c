@@ -33,6 +33,25 @@ UBYTE oppositeDirection;
 UBYTE column;
 UBYTE row;
 
+static uint16_t getRechargeTime(void) {
+    return ((uint16_t)THIS->custom_data[recharge_time_hi] << 8) | THIS->custom_data[recharge_time_lo];
+}
+
+static void setRechargeTime(uint16_t value) {
+    THIS->custom_data[recharge_time_lo] = (UBYTE)value;
+    THIS->custom_data[recharge_time_hi] = (UBYTE)(value >> 8);
+}
+
+static uint16_t getFireRechargeFrames(void) {
+    UBYTE level = currentLevel;
+
+    if (level == 0) {
+        level = 1;
+    }
+
+    return ((uint16_t)60 + ((uint16_t)level * 3u)) * originalTickToGameBoyFrameRatio;
+}
+
 static void setDirection(UBYTE dir) {
   direction = dir;
   switch (dir) {
@@ -62,7 +81,7 @@ static void killPlayer(void) {
 
 void START(void) {
     setDirection(J_RIGHT);
-    THIS->custom_data[custom_data_recharge] = 0;
+    setRechargeTime(0);
     THIS->custom_data[death_animation] = 0;
     THIS->custom_data[movement_accumulator] = 0;
 }
@@ -166,18 +185,20 @@ static void updatePosition(void) {
 }
 
 static void updateAnimation(void) {
+    BOOLEAN recharging = getRechargeTime() > 0;
+
     switch (direction) {
         case J_UP:
-            SetSpriteAnim(THIS, THIS->custom_data[custom_data_recharge] > 0 ? discharged_up : anim_walk_up, 15);
+            SetSpriteAnim(THIS, recharging ? discharged_up : anim_walk_up, 15);
             break;
         case J_DOWN:
-            SetSpriteAnim(THIS, THIS->custom_data[custom_data_recharge] > 0 ? discharged_down : anim_walk_down, 15);
+            SetSpriteAnim(THIS, recharging ? discharged_down : anim_walk_down, 15);
             break;
         case J_LEFT:
-            SetSpriteAnim(THIS, THIS->custom_data[custom_data_recharge] > 0 ? discharged_left : anim_walk_left, 15);
+            SetSpriteAnim(THIS, recharging ? discharged_left : anim_walk_left, 15);
             break;
         case J_RIGHT:
-            SetSpriteAnim(THIS, THIS->custom_data[custom_data_recharge] > 0 ? discharged_right : anim_walk_right, 15);
+            SetSpriteAnim(THIS, recharging ? discharged_right : anim_walk_right, 15);
             break;
     }
 }
@@ -320,10 +341,10 @@ void UPDATE(void) {
         }
 	}
     if(KEY_PRESSED(J_A)) {
-        if (THIS->custom_data[custom_data_recharge] == 0) {
+        if (getRechargeTime() == 0) {
             uint8_t spriteX = 0;
             uint8_t spriteY = 0;
-            THIS->custom_data[custom_data_recharge] = 255;
+            setRechargeTime(getFireRechargeFrames());
             switch (direction) {
                 case J_UP:
                     spriteX = THIS->x + 4;
@@ -345,15 +366,18 @@ void UPDATE(void) {
                     break;
             }
             Sprite *fireball = SpriteManagerAdd(SpriteFireball, spriteX, spriteY);
-            fireball->custom_data[projectile_direction] = direction;
-            if (!moving) {
-                updateAnimation();
+            if (fireball != 0) {
+                fireball->custom_data[projectile_direction] = direction;
+                if (!moving) {
+                    updateAnimation();
+                }
             }
         }
 	}
-    if (THIS->custom_data[custom_data_recharge] > 0) {
-        THIS->custom_data[custom_data_recharge]--;
-        if (THIS->custom_data[custom_data_recharge] == 0) {
+    if (getRechargeTime() > 0) {
+        uint16_t rechargeTime = getRechargeTime() - 1;
+        setRechargeTime(rechargeTime);
+        if (rechargeTime == 0) {
             updateAnimation();
         }
     }

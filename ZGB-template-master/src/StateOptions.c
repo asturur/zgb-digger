@@ -4,7 +4,6 @@
 #include "Keys.h"
 #include "Print.h"
 #include "ZGBMain.h"
-#include "StateOptions.h"
 
 #define CENTER(len) (((SCREEN_TILES_W - (len)) >> 1) + 1)
 

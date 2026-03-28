@@ -219,13 +219,19 @@ void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) NONBANKED {
 void runMapSideEffects(void) BANKED {
 	const UBYTE currentCell = getMapMetaTileArrayPosition(scroll_target->x, scroll_target->y);
 	const UBYTE currentMapValue = levelMap[currentCell];
-
 	if (currentCell == lastVisitedMetaCell) {
 		return;
 	}
-	if (currentMapValue == metaTileGold) {
+	if ((currentMapValue & metaTileGold) != 0) {
+		const UBYTE x = TILE_FROM_PIXEL(scroll_target->x);
+		const UBYTE y = TILE_FROM_PIXEL(scroll_target->y);
 		updateScore(scoreGold);
+		levelMap[currentCell] &= tunnelMask;
 		levelMap[currentCell] |= direction;
+		updateVideoMemAndMap(x, y, tileBlack);
+		updateVideoMemAndMap(x + 1, y, tileBlack);
+		updateVideoMemAndMap(x, y + 1, tileBlack);
+		updateVideoMemAndMap(x + 1, y + 1, tileBlack);
 	}
 	// we eat a gem
 	if (currentMapValue == metaTileEmerald) {
