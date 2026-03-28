@@ -23,12 +23,17 @@ extern const unsigned char level5Map[150];
 extern const unsigned char level6Map[150];
 extern const unsigned char level7Map[150];
 extern const unsigned char level8Map[150];
+extern const unsigned char levelDebugMap[150];
 
 extern uint8_t fx_00[];
 extern void __mute_mask_fx_00;
 
+// options
 BOOLEAN infiniteLives = FALSE;
 BOOLEAN invincibility = FALSE;
+BOOLEAN debugMode = FALSE;
+
+//
 UBYTE currentLevel = 0;
 UBYTE difficultyLevel = 0;
 uint16_t score = 0;
@@ -168,12 +173,15 @@ Sprite* activateBag(uint8_t bagcell) BANKED {
 	// remove the bag tiles and replace with grass.
 	// remove the bag from the map replace with grass
 	// activate bag sprite
-	levelMap[bagcell] -= metaTileBag;
 	uint8_t column = bagcell % mapMetaWidth;
 	uint8_t row = (bagcell - column) / mapMetaWidth;
 	uint8_t positionX = mapBoundLeft + column * 16;
 	uint8_t positionY = mapBoundUp + row * 16;
-	return SpriteManagerAdd(SpriteBag, positionX, positionY);
+	Sprite* bag = SpriteManagerAdd(SpriteBag, positionX, positionY);
+	if (bag != 0) {
+		levelMap[bagcell] -= metaTileBag;
+	}
+	return bag;
 }
 
 
@@ -305,6 +313,11 @@ static void loadLevel(UBYTE level) {
 	enemyMaxTotal = totalEnemiesBaseCount + difficultyLevel;
 	// add first the spriteManager only then load the level
 	switch (level) {
+		case 0:
+		    IMPORT_MAP(levelDebug);
+			copyLevelMapToRam(&levelDebugMap, BANK(levelDebug), &levelDebug);
+			diamonds = 99;
+		break;
 		case 1:
 			IMPORT_MAP(level1);
 			copyLevelMapToRam(&level1Map, BANK(level1), &level1);
@@ -358,7 +371,7 @@ void START(void) {
 	NR51_REG = 0xFF; //Enables all channels (left and right)
 	NR50_REG = 0x77; //Max volume
 	lives = 3;
-	currentLevel = 1;
+	currentLevel = debugMode ? 0 : 1;
 	loadLevel(currentLevel);
 	PlayMusic(music, 1);
 	IMPORT_MAP(hud);

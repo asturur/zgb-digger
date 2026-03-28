@@ -99,6 +99,15 @@ void setBagState(Sprite* bag, UBYTE bagState) BANKED {
     }
 }
 
+void restoreStaticBag(Sprite* bag) BANKED {
+    UBYTE currentColumn = LARGE_TILE_FROM_PIXEL(bag->x - mapBoundLeft);
+    UBYTE currentRow = LARGE_TILE_FROM_PIXEL(bag->y - mapBoundUp);
+    UBYTE currentCell = currentRow * mapMetaWidth + currentColumn;
+
+    setBagState(bag, stateStatic);
+    deactivateBag(bag, (levelMap[currentCell] & tunnelMask) != 0 ? bagOnTunnel : bagOnGrass);
+}
+
 static void movePushingBag(void) {
     THIS->custom_data[bagMovementAccumulator] += 4;
     if (THIS->custom_data[bagMovementAccumulator] < 5) {

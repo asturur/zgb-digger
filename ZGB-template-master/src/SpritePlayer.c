@@ -95,12 +95,16 @@ static BOOLEAN isRowDisaligned(void) {
 }
 
 static UBYTE tryPushStaticBag(void) {
+    UBYTE bagCells[mapMetaWidth];
+    Sprite* activatedBags[mapMetaWidth];
+    UBYTE chainCount = 0;
     UBYTE currentCell;
     UBYTE currentColumn;
     UBYTE bagCell;
     UBYTE destinationCell;
     UBYTE destinationValue;
-    Sprite* bagSprite;
+    UBYTE scanColumn;
+    UBYTE idx;
 
     if (direction != J_LEFT && direction != J_RIGHT) {
         return pushBagNoBag;
@@ -128,16 +132,26 @@ static UBYTE tryPushStaticBag(void) {
         return pushBagNoBag;
     }
 
-    if (direction == J_LEFT) {
-        if (currentColumn == 1) {
+    destinationCell = bagCell;
+    scanColumn = bagCell % mapMetaWidth;
+    while ((levelMap[destinationCell] & metaTileBag) != 0) {
+        if (chainCount == mapMetaWidth) {
             return pushBagBlocked;
         }
-        destinationCell = bagCell - 1;
-    } else {
-        if (currentColumn == mapMetaWidth - 2) {
-            return pushBagBlocked;
+        bagCells[chainCount++] = destinationCell;
+        if (direction == J_LEFT) {
+            if (scanColumn == 0) {
+                return pushBagBlocked;
+            }
+            destinationCell--;
+            scanColumn--;
+        } else {
+            if (scanColumn == mapMetaWidth - 1) {
+                return pushBagBlocked;
+            }
+            destinationCell++;
+            scanColumn++;
         }
-        destinationCell = bagCell + 1;
     }
 
     destinationValue = levelMap[destinationCell];
@@ -145,12 +159,24 @@ static UBYTE tryPushStaticBag(void) {
         return pushBagBlocked;
     }
 
-    bagSprite = activateBag(bagCell);
-    if (bagSprite == 0) {
-        return pushBagBlocked;
+    for (idx = 0; idx != chainCount; ++idx) {
+        activatedBags[idx] = 0;
     }
-    bagSprite->custom_data[bagDirection] = direction;
-    setBagState(bagSprite, statePushing);
+
+    for (idx = chainCount; idx != 0; --idx) {
+        Sprite* bagSprite = activateBag(bagCells[idx - 1]);
+        if (bagSprite == 0) {
+            while (idx < chainCount) {
+                restoreStaticBag(activatedBags[idx]);
+                idx++;
+            }
+            return pushBagBlocked;
+        }
+        bagSprite->custom_data[bagDirection] = direction;
+        setBagState(bagSprite, statePushing);
+        activatedBags[idx - 1] = bagSprite;
+    }
+
     return pushBagStarted;
 }
 
