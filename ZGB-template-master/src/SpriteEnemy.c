@@ -1,6 +1,8 @@
 #include "Banks/SetAutoBank.h"
 #include "SpriteManager.h"
 #include "SpriteEnemy.h"
+#include "SpriteBag.h"
+#include "ZGBMain.h"
 #include "StateGame.h"
 
 extern unsigned char levelMap[150];
@@ -14,26 +16,62 @@ const UBYTE hob_walk[] = {4, 4, 5, 6, 5};
 const UBYTE nob_dies[] = {1, 3};
 const UBYTE hob_dies[] = {1, 7};
 
-static void setEnemyMode(UBYTE enemyMode) {
-    THIS->custom_data[mode] = enemyMode;
+static BOOLEAN enemyUsesHobAnimation(Sprite* enemy) {
+    return enemy->custom_data[mode] == hobMode ||
+        enemy->anim_data == hob_walk ||
+        enemy->anim_data == hob_dies;
+}
+
+static void setEnemyModeFor(Sprite* enemy, UBYTE enemyMode) {
+    BOOLEAN useHobDeathAnim = enemyUsesHobAnimation(enemy);
+    enemy->custom_data[mode] = enemyMode;
 
     switch (enemyMode) {
         case nobMode:
-            THIS->custom_data[mode_timer] = 0;
-            SetSpriteAnim(THIS, nob_walk, 15);
+            enemy->custom_data[mode_timer] = 0;
+            SetSpriteAnim(enemy, nob_walk, 15);
         break;
         case hobMode:
-            THIS->custom_data[mode_timer] = 0;
-            SetSpriteAnim(THIS, hob_walk, 15);
+            enemy->custom_data[mode_timer] = 0;
+            SetSpriteAnim(enemy, hob_walk, 15);
         break;
         case deadMode:
-            THIS->custom_data[mode_timer] = deathTimer;
-            SetSpriteAnim(THIS, nob_dies, 15);
+            enemy->custom_data[mode_timer] = deathTimer;
+            SetSpriteAnim(enemy, useHobDeathAnim ? hob_dies : nob_dies, 15);
         break;
         case waitMode:
-            THIS->custom_data[mode_timer] = initialWaitTime;
+            enemy->custom_data[mode_timer] = initialWaitTime;
+        break;
+        case crushedMode:
+            enemy->custom_data[mode_timer] = 0;
+            SetSpriteAnim(enemy, useHobDeathAnim ? hob_dies : nob_dies, 15);
         break;
     }
+}
+
+static void setEnemyMode(UBYTE enemyMode) {
+    setEnemyModeFor(THIS, enemyMode);
+}
+
+void crushEnemy(Sprite* enemy) BANKED {
+    UBYTE enemyMode = enemy->custom_data[mode];
+
+    if (enemyMode == deadMode || enemyMode == waitMode || enemyMode == crushedMode) {
+        return;
+    }
+
+    setEnemyModeFor(enemy, crushedMode);
+}
+
+UBYTE killEnemy(Sprite* enemy) BANKED {
+    UBYTE enemyMode = enemy->custom_data[mode];
+
+    if (enemyMode == deadMode || enemyMode == crushedMode) {
+        return FALSE;
+    }
+
+    setEnemyModeFor(enemy, deadMode);
+    return TRUE;
 }
 
 static UBYTE oppositeDirectionBit(UBYTE direction) {
@@ -53,6 +91,21 @@ static UBYTE oppositeDirectionBit(UBYTE direction) {
 
 static BOOLEAN isEnemyAligned(void) {
     return MOD_FOR_LARGE_TILE(THIS->x - mapBoundLeft) == 0 && MOD_FOR_LARGE_TILE(THIS->y - mapBoundUp) == 0;
+}
+
+static BOOLEAN followCrushingBag(void) {
+    uint8_t i;
+    Sprite* spr;
+
+    SPRITEMANAGER_ITERATE(i, spr) {
+        if (spr->type == SpriteBag && spr->custom_data[bagStatus] == stateFalling) {
+            if (CheckCollision(THIS, spr) && THIS->y >= spr->y) {
+                THIS->y = spr->y;
+                return TRUE;
+            }
+        }
+    }
+    return FALSE;
 }
 
 static UBYTE getEnemyCurrentTunnel(void) {
@@ -146,6 +199,14 @@ void UPDATE(void) {
         } else {
             SpriteManagerRemoveSprite(THIS);
         }
+        return;
+    }
+    if (THIS->custom_data[mode] == crushedMode) {
+        if (followCrushingBag()) {
+            return;
+        }
+        setEnemyMode(deadMode);
+        updateScore(scoreKill);
         return;
     }
     if (THIS->custom_data[mode] == waitMode) {

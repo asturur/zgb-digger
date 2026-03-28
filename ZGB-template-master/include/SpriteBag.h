@@ -23,3 +23,4 @@
 #define bagOnTunnel TRUE
 
 void setBagState(Sprite* bag, UBYTE bagState) BANKED;
+void restoreStaticBag(Sprite* bag) BANKED;

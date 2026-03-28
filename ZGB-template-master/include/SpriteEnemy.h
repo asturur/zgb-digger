@@ -1,8 +1,11 @@
 
+#include "Sprite.h"
+
 #define nobMode 0
 #define hobMode 1
 #define deadMode 2
 #define waitMode 3
+#define crushedMode 4
 
 #define changeTimer 255
 #define deathTimer 45
@@ -17,3 +20,6 @@
 #define hasEatenGold 5
 #define movement_accumulator 6
 // #define deathTimer 7
+
+void crushEnemy(Sprite* enemy) BANKED;
+UBYTE killEnemy(Sprite* enemy) BANKED;

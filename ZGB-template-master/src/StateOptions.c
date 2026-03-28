@@ -4,16 +4,16 @@
 #include "Keys.h"
 #include "Print.h"
 #include "ZGBMain.h"
-#include "StateOptions.h"
 
 #define CENTER(len) (((SCREEN_TILES_W - (len)) >> 1) + 1)
 
 #define menuStart 1
-#define menuLength 2
+#define menuLength 3
 #define menuCursorFontTile 46
 
 extern BOOLEAN infiniteLives;
 extern BOOLEAN invincibility;
+extern BOOLEAN debugMode;
 
 IMPORT_TILES(font);
 
@@ -45,6 +45,10 @@ static void toggleMenu(void) {
             invincibility = !invincibility;
             PRINT(SCREEN_TILES_W - 3,  2, invincibility ? "ON ": "OFF ");
             break;
+        case 3:
+            debugMode = !debugMode;
+            PRINT(SCREEN_TILES_W - 3,  3, debugMode ? "ON ": "OFF ");
+            break;
         default:
             break;
     }
@@ -63,6 +67,9 @@ void START(void) {
 
     PRINT(0,  2, "INVINCIBILITY");
     PRINT(SCREEN_TILES_W - 3,  2, "OFF");
+
+    PRINT(0,  3, "DEBUG LEVEL");
+    PRINT(SCREEN_TILES_W - 3,  3, "OFF");
 
 	PRINT(0, 17, "PRESS START TO EXIT");
     set_bkg_tile_xy(SCREEN_TILES_W - 4, menu_pos_y, menuCursorFontTile);
