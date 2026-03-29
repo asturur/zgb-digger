@@ -75,7 +75,13 @@ void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) NONBANKED;
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
 uint8_t getEnemySpawnGapTimer(void);
 Sprite* activateBag(uint8_t bagcell) BANKED;
+void beginDeathFreeze(void) BANKED;
+void playDeathMusic(void) BANKED;
+void queueDeathRespawn(uint16_t frames) BANKED;
 
 extern UBYTE currentLevel;
 extern UBYTE difficultyLevel;
 extern unsigned char levelMap[150];
+extern uint8_t isDying;
+extern BOOLEAN infiniteLives;
+extern uint8_t lives;

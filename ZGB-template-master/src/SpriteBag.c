@@ -172,6 +172,9 @@ void START(void) {
 }
 
 void UPDATE(void) {
+    if (isDying) {
+        return;
+    }
     // if is shaking and consumes the time fo shaking
     if (THIS->custom_data[bagStatus] == stateShaking && THIS->custom_data[bagStateTimer] > 0) {
          THIS->custom_data[bagStateTimer]--;

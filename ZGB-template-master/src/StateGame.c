@@ -54,10 +54,13 @@ uint8_t emeraldFreqIndex = 0;
 uint8_t lastVisitedMetaCell = 0;
 
 // handles the death state.
-// sprites do not move, a music plays
+// sprites do not move while the active death sequence continues
 uint8_t isDying = 0;
+static BOOLEAN deathRespawnQueued = FALSE;
+static uint16_t deathRespawnTimer = 0;
 
-DECLARE_MUSIC(music);
+DECLARE_MUSIC(popcorn);
+DECLARE_MUSIC(dirge);
 
 // currently loaded map
 unsigned char levelMap[150];
@@ -286,12 +289,30 @@ void runMapSideEffects(void) BANKED {
 static void resetLevelState(void) {
 	lastVisitedMetaCell = 0;
 	isDying = 0;
+	deathRespawnQueued = FALSE;
+	deathRespawnTimer = 0;
 	enemyCountOnScreen = 0;
 	enemySpawned = 0;
 	spawnTimer = 0;
 	SpriteManagerReset();
 	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 160);
 	paintScore();
+}
+
+void beginDeathFreeze(void) BANKED {
+	isDying = TRUE;
+	deathRespawnQueued = FALSE;
+	deathRespawnTimer = 0;
+	StopMusic;
+}
+
+void playDeathMusic(void) BANKED {
+	PlayMusic(dirge, 0);
+}
+
+void queueDeathRespawn(uint16_t frames) BANKED {
+	deathRespawnTimer = frames;
+	deathRespawnQueued = TRUE;
 }
 
 static void loadLevel(UBYTE level) {
@@ -373,17 +394,26 @@ void START(void) {
 	lives = 3;
 	currentLevel = debugMode ? 0 : 1;
 	loadLevel(currentLevel);
-	PlayMusic(music, 1);
+	PlayMusic(popcorn, 1);
 	IMPORT_MAP(hud);
 	INIT_HUD_EX(hud, 0, 8);
 	updateScore(0);
 }
 
 void UPDATE(void) {
-	if (isDying > 0) {
-		isDying--;
-		if (isDying == 0) {
-			resetLevelState();
+	if (isDying) {
+		if (deathRespawnQueued) {
+			if (deathRespawnTimer > 0) {
+				deathRespawnTimer--;
+			}
+			if (deathRespawnTimer == 0) {
+				if (lives == 0) {
+					SetState(StateGame);
+				} else {
+					resetLevelState();
+					PlayMusic(popcorn, 1);
+				}
+			}
 		}
 		return;
 	}
