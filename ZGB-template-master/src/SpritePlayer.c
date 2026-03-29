@@ -27,7 +27,7 @@ const UBYTE anim_dead[] = {1, 24};
 #define deathFinalHoldFrames (60u * originalTickToGameBoyFrameRatio)
 #define graveEmergeFrames 128u
 #define deathRespawnFrames (graveEmergeFrames + deathFinalHoldFrames)
-#define graveSpawnYOffset 6
+#define graveSpawnYOffset 1
 
 static const UBYTE deathBounceOffsets[] = {3, 5, 6, 6, 5, 3, 0};
 
@@ -122,6 +122,7 @@ static void updateDeathSequence(void) {
 
 			SetVisible(THIS, FALSE);
 			SpriteManagerAdd(SpriteGrave, THIS->x, THIS->y - graveSpawnYOffset);
+			playDeathMusic();
 			queueDeathRespawn(deathRespawnFrames);
 			SpriteManagerRemoveSprite(THIS);
 			break;

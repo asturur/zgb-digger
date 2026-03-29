@@ -60,6 +60,7 @@ static BOOLEAN deathRespawnQueued = FALSE;
 static uint16_t deathRespawnTimer = 0;
 
 DECLARE_MUSIC(music);
+DECLARE_MUSIC(death);
 
 // currently loaded map
 unsigned char levelMap[150];
@@ -303,6 +304,10 @@ void beginDeathFreeze(void) BANKED {
 	deathRespawnQueued = FALSE;
 	deathRespawnTimer = 0;
 	StopMusic;
+}
+
+void playDeathMusic(void) BANKED {
+	PlayMusic(death, 0);
 }
 
 void queueDeathRespawn(uint16_t frames) BANKED {
