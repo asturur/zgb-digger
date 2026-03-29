@@ -59,8 +59,8 @@ uint8_t isDying = 0;
 static BOOLEAN deathRespawnQueued = FALSE;
 static uint16_t deathRespawnTimer = 0;
 
-DECLARE_MUSIC(music);
-DECLARE_MUSIC(death);
+DECLARE_MUSIC(popcorn);
+DECLARE_MUSIC(dirge);
 
 // currently loaded map
 unsigned char levelMap[150];
@@ -307,7 +307,7 @@ void beginDeathFreeze(void) BANKED {
 }
 
 void playDeathMusic(void) BANKED {
-	PlayMusic(death, 0);
+	PlayMusic(dirge, 0);
 }
 
 void queueDeathRespawn(uint16_t frames) BANKED {
@@ -394,7 +394,7 @@ void START(void) {
 	lives = 3;
 	currentLevel = debugMode ? 0 : 1;
 	loadLevel(currentLevel);
-	PlayMusic(music, 1);
+	PlayMusic(popcorn, 1);
 	IMPORT_MAP(hud);
 	INIT_HUD_EX(hud, 0, 8);
 	updateScore(0);
@@ -411,7 +411,7 @@ void UPDATE(void) {
 					SetState(StateGame);
 				} else {
 					resetLevelState();
-					PlayMusic(music, 1);
+					PlayMusic(popcorn, 1);
 				}
 			}
 		}
