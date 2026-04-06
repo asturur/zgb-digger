@@ -12,6 +12,16 @@
 #include "StateGame.h"
 #include "SpritePlayer.h"
 
+IMPORT_MAP(levelDebug);
+IMPORT_MAP(level1);
+IMPORT_MAP(level2);
+IMPORT_MAP(level3);
+IMPORT_MAP(level4);
+IMPORT_MAP(level5);
+IMPORT_MAP(level6);
+IMPORT_MAP(level7);
+IMPORT_MAP(level8);
+
 extern const UBYTE direction;
 extern const UBYTE oppositeDirection;
 
@@ -334,50 +344,41 @@ static void loadLevel(UBYTE level) {
 	// add first the spriteManager only then load the level
 	switch (level) {
 		case 0:
-		    IMPORT_MAP(levelDebug);
-			copyLevelMapToRam(&levelDebugMap, BANK(Levels), &levelDebug);
+			copyLevelMapToRam(&levelDebugMap, BANK(levelDebugMap), &levelDebug);
 			diamonds = 99;
 		break;
 		case 1:
-			IMPORT_MAP(level1);
-			copyLevelMapToRam(&level1Map, BANK(Levels), &level1);
+			copyLevelMapToRam(&level1Map, BANK(level1Map), &level1);
 			diamonds = 30;
 		break;
 		case 2: 
-			IMPORT_MAP(level2);
-			copyLevelMapToRam(&level2Map, BANK(Levels), &level2);
+			copyLevelMapToRam(&level2Map, BANK(level2Map), &level2);
 			diamonds = 41;
 		break;
 		case 3: 
-			IMPORT_MAP(level3);
-			copyLevelMapToRam(&level3Map, BANK(Levels), &level3);
+			copyLevelMapToRam(&level3Map, BANK(level3Map), &level3);
 			diamonds = 51;
 		break;
 		case 4: 
-			IMPORT_MAP(level4);
-			copyLevelMapToRam(&level4Map, BANK(Levels), &level4);
+			copyLevelMapToRam(&level4Map, BANK(level4Map), &level4);
 			diamonds = 65;
 		break;
 		case 5: {
-			IMPORT_MAP(level5);
-			copyLevelMapToRam(&level5Map, BANK(Levels), &level5);
+			copyLevelMapToRam(&level5Map, BANK(level5Map), &level5);
 			diamonds = 77;
 		} break;
 		case 6: {
 			// Level tilemaps are synthesized from levelMap, so later levels can
 			// reuse the same MapInfo metadata as long as the dimensions match.
-			IMPORT_MAP(level6);
-			copyLevelMapToRam(&level6Map, BANK(Levels), &level6);
+			copyLevelMapToRam(&level6Map, BANK(level6Map), &level6);
 			diamonds = 52;
 		} break;
 		case 7: {
-			IMPORT_MAP(level7);
-			copyLevelMapToRam(&level7Map, BANK(Levels), &level7);
+			copyLevelMapToRam(&level7Map, BANK(level7Map), &level7);
 			diamonds = 92;
 		} break;
 		case 8: {
-			IMPORT_MAP(level8);
-			copyLevelMapToRam(&level8Map, BANK(Levels), &level8);
+			copyLevelMapToRam(&level8Map, BANK(level8Map), &level8);
 			diamonds = 63;
 		} break;
 		default:
