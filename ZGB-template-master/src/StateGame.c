@@ -109,7 +109,7 @@ static void paintScore(void) {
 	UPDATE_HUD_TILE(14, 0, scoreFontOffset + enemyCountOnScreen);
 }
 
-void copyTileMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) BANKED {
+void copyTileMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
 	uint8_t __save = CURRENT_BANK;
 	SWITCH_ROM(levelToLoadBank);
 	// copy everything
@@ -123,7 +123,7 @@ void copyTileMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) BANK
 	SWITCH_ROM(__save);
 }
 
-void copyLevelMapToRam(unsigned char *mapToLoad[], uint8_t levelToLoadBank, struct MapInfo *levelToLoad) BANKED {
+void copyLevelMapToRam(unsigned char *mapToLoad[], uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
 	// uint8_t __save = CURRENT_BANK;
 	// SWITCH_ROM(mapToLoadBank);
 	memcpy(levelMap, mapToLoad, 150);
