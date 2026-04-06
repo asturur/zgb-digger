@@ -15,6 +15,7 @@
 extern const UBYTE direction;
 extern const UBYTE oppositeDirection;
 
+BANKREF_EXTERN(Levels)
 extern const unsigned char level1Map[150];
 extern const unsigned char level2Map[150];
 extern const unsigned char level3Map[150];
@@ -108,14 +109,12 @@ static void paintScore(void) {
 	UPDATE_HUD_TILE(14, 0, scoreFontOffset + enemyCountOnScreen);
 }
 
-void copyTileMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
+void copyTileMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) BANKED {
 	uint8_t __save = CURRENT_BANK;
 	SWITCH_ROM(levelToLoadBank);
 	// copy everything
 	currentInMemoryLevel = *levelToLoad;
 	// the data in the array is filled in by copyLevelMapToRam
-	// now copy the actual map data inside the array
-	// memcpy(tileMap, levelToLoad->data, currentInMemoryLevel.width * currentInMemoryLevel.height);
 	// redefine the pointer to my in memory array
 	currentInMemoryLevel.data = tileMap;
 	currentInMemoryLevel.width = 32;
@@ -124,7 +123,7 @@ void copyTileMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONB
 	SWITCH_ROM(__save);
 }
 
-void copyLevelMapToRam(unsigned char *mapToLoad[], uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
+void copyLevelMapToRam(unsigned char *mapToLoad[], uint8_t levelToLoadBank, struct MapInfo *levelToLoad) BANKED {
 	// uint8_t __save = CURRENT_BANK;
 	// SWITCH_ROM(mapToLoadBank);
 	memcpy(levelMap, mapToLoad, 150);
@@ -336,49 +335,49 @@ static void loadLevel(UBYTE level) {
 	switch (level) {
 		case 0:
 		    IMPORT_MAP(levelDebug);
-			copyLevelMapToRam(&levelDebugMap, BANK(levelDebug), &levelDebug);
+			copyLevelMapToRam(&levelDebugMap, BANK(Levels), &levelDebug);
 			diamonds = 99;
 		break;
 		case 1:
 			IMPORT_MAP(level1);
-			copyLevelMapToRam(&level1Map, BANK(level1), &level1);
+			copyLevelMapToRam(&level1Map, BANK(Levels), &level1);
 			diamonds = 30;
 		break;
 		case 2: 
 			IMPORT_MAP(level2);
-			copyLevelMapToRam(&level2Map, BANK(level2), &level2);
+			copyLevelMapToRam(&level2Map, BANK(Levels), &level2);
 			diamonds = 41;
 		break;
 		case 3: 
 			IMPORT_MAP(level3);
-			copyLevelMapToRam(&level3Map, BANK(level3), &level3);
+			copyLevelMapToRam(&level3Map, BANK(Levels), &level3);
 			diamonds = 51;
 		break;
 		case 4: 
 			IMPORT_MAP(level4);
-			copyLevelMapToRam(&level4Map, BANK(level4), &level4);
+			copyLevelMapToRam(&level4Map, BANK(Levels), &level4);
 			diamonds = 65;
 		break;
 		case 5: {
 			IMPORT_MAP(level5);
-			copyLevelMapToRam(&level5Map, BANK(level5), &level5);
+			copyLevelMapToRam(&level5Map, BANK(Levels), &level5);
 			diamonds = 77;
 		} break;
 		case 6: {
 			// Level tilemaps are synthesized from levelMap, so later levels can
 			// reuse the same MapInfo metadata as long as the dimensions match.
 			IMPORT_MAP(level6);
-			copyLevelMapToRam(&level6Map, BANK(level6), &level6);
+			copyLevelMapToRam(&level6Map, BANK(Levels), &level6);
 			diamonds = 52;
 		} break;
 		case 7: {
 			IMPORT_MAP(level7);
-			copyLevelMapToRam(&level7Map, BANK(level7), &level7);
+			copyLevelMapToRam(&level7Map, BANK(Levels), &level7);
 			diamonds = 92;
 		} break;
 		case 8: {
 			IMPORT_MAP(level8);
-			copyLevelMapToRam(&level8Map, BANK(level8), &level8);
+			copyLevelMapToRam(&level8Map, BANK(Levels), &level8);
 			diamonds = 63;
 		} break;
 		default:
