@@ -25,15 +25,23 @@ IMPORT_MAP(level8);
 extern const UBYTE direction;
 extern const UBYTE oppositeDirection;
 
-BANKREF_EXTERN(Levels)
+BANKREF_EXTERN(Level1Map)
 extern const unsigned char level1Map[150];
+BANKREF_EXTERN(Level2Map)
 extern const unsigned char level2Map[150];
+BANKREF_EXTERN(Level3Map)
 extern const unsigned char level3Map[150];
+BANKREF_EXTERN(Level4Map)
 extern const unsigned char level4Map[150];
+BANKREF_EXTERN(Level5Map)
 extern const unsigned char level5Map[150];
+BANKREF_EXTERN(Level6Map)
 extern const unsigned char level6Map[150];
+BANKREF_EXTERN(Level7Map)
 extern const unsigned char level7Map[150];
+BANKREF_EXTERN(Level8Map)
 extern const unsigned char level8Map[150];
+BANKREF_EXTERN(LevelDebugMap)
 extern const unsigned char levelDebugMap[150];
 
 extern uint8_t fx_00[];
