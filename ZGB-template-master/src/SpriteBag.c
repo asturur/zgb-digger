@@ -93,10 +93,7 @@ void setBagState(Sprite* bag, UBYTE bagState) BANKED {
 }
 
 void restoreStaticBag(Sprite* bag) BANKED {
-    UBYTE currentColumn = LARGE_TILE_FROM_PIXEL(bag->x - mapBoundLeft);
-    UBYTE currentRow = LARGE_TILE_FROM_PIXEL(bag->y - mapBoundUp);
-    UBYTE currentCell = currentRow * mapMetaWidth + currentColumn;
-
+    const UBYTE currentCell = getMapMetaTileArrayPosition(bag->x, bag->y);
     setBagState(bag, stateStatic);
     deactivateBag(bag, (levelMap[currentCell] & tunnelMask) != 0 ? bagOnTunnel : bagOnGrass);
 }
@@ -140,10 +137,7 @@ static void crushEnemiesUnderBag(void) {
 }
 
 static void finalizePushedBag(void) {
-    UBYTE currentColumn = LARGE_TILE_FROM_PIXEL(THIS->x - mapBoundLeft);
-    UBYTE currentRow = LARGE_TILE_FROM_PIXEL(THIS->y - mapBoundUp);
-    UBYTE currentCell = currentRow * mapMetaWidth + currentColumn;
-
+    const UBYTE currentCell = getMapMetaTileArrayPosition(THIS->x, THIS->y);
     if (bagCanFallInCellBelow(THIS)) {
         setBagState(THIS, stateFalling);
     } else {
@@ -188,25 +182,28 @@ void UPDATE(void) {
         }
     // else if is falling down as a bag or as a pile of gold
     } else if (THIS->custom_data[bagStatus] == stateFalling && THIS->y <= mapBoundDown) {
-        if (MOD_FOR_LARGE_TILE(THIS->y)) {
+        if (isBagAlignedToMetaCell(THIS) == FALSE) {
             THIS->custom_data[bagFallCounter]++;
             THIS->y++;
             crushEnemiesUnderBag();
         } else {
-            UBYTE cellBelow = getMapMetaTileArrayPosition(THIS->x, THIS->y) + mapMetaWidth;
-            uint8_t column = TILE_FROM_PIXEL(THIS->x);
-            uint8_t row = 2 + TILE_FROM_PIXEL(THIS->y);
             if (bagCanFallInCellBelow(THIS)) {
+                uint8_t column = TILE_FROM_PIXEL(THIS->x);
+                uint8_t row = 2 + TILE_FROM_PIXEL(THIS->y);
+                const UBYTE currentCell = getMapMetaTileArrayPosition(THIS->x, THIS->y);
+                UBYTE cellBelow = currentCell + mapMetaWidth;
                 if ((levelMap[cellBelow] & metaTileGold) != 0) {
                     levelMap[cellBelow] &= (UBYTE)~metaTileGold;
                 }
+                levelMap[cellBelow] |= J_DOWN;
+                levelMap[currentCell] |= J_UP;
                 setBagTiles(column, row, tileBlack);
                 THIS->custom_data[bagFallCounter]++;
                 THIS->y++;
                 crushEnemiesUnderBag();
             } else {
                 // solid ground or reach end of map
-                if (THIS->custom_data[bagFallCounter] >= largeTileSize && THIS->custom_data[bagStatus] == stateFalling) {
+                if (THIS->custom_data[bagFallCounter] >= largeTileSize * 2 && THIS->custom_data[bagStatus] == stateFalling) {
                     SpriteManagerAdd(SpriteGold, THIS->x, THIS->y);
                     SpriteManagerRemoveSprite(THIS);
                 } 
