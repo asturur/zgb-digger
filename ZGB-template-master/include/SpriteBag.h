@@ -1,6 +1,7 @@
 #include "Sprite.h"
 
 #define shakeBeforeFall 60
+#define bagActivationGraceFrames 20
 
 #define stateStatic 1
 #define stateShaking 2

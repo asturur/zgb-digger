@@ -244,9 +244,27 @@ void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) NONBANKED {
 	levelMap[currentCell] += metaTile;
 }
 
+static void tryActivateBagAboveCell(UBYTE cellBelow) {
+	UBYTE bagCell;
+
+	if (cellBelow < mapMetaWidth) {
+		return;
+	}
+	if ((levelMap[cellBelow] & tunnelMask) == 0) {
+		return;
+	}
+	bagCell = cellBelow - mapMetaWidth;
+	if ((levelMap[bagCell] & metaTileBag) == 0) {
+		return;
+	}
+	activateBag(bagCell);
+}
+
 void runMapSideEffects(void) BANKED {
 	const UBYTE currentCell = getMapMetaTileArrayPosition(scroll_target->x, scroll_target->y);
 	const UBYTE currentMapValue = levelMap[currentCell];
+	const UBYTE previousCell = lastVisitedMetaCell;
+	tryActivateBagAboveCell(currentCell);
 	if (currentCell == lastVisitedMetaCell && (currentMapValue & metaTileGold) == 0) {
 		return;
 	}
@@ -296,9 +314,9 @@ void runMapSideEffects(void) BANKED {
 		levelMap[lastVisitedMetaCell] |= oppositeDirection;
 	}
 
-	// we are under a bag, we need to activate it
-	if (currentCell > 14 && (levelMap[currentCell - mapMetaWidth] & metaTileBag)) {
-		activateBag(currentCell - mapMetaWidth);
+	tryActivateBagAboveCell(currentCell);
+	if (previousCell != currentCell) {
+		tryActivateBagAboveCell(previousCell);
 	}
 	lastVisitedMetaCell = currentCell;
 }

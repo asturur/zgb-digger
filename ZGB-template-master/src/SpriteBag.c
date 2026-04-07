@@ -5,6 +5,7 @@
 #include "SpriteEnemy.h"
 #include "StateGame.h"
 #include "ZGBMain.h"
+#include "Scroll.h"
 
 const UBYTE bag_shake[] = {4, 0, 1, 0, 2};
 const UBYTE bag_fall[] = {1, 3};
@@ -20,6 +21,18 @@ const UBYTE bag_static[] = {1, 0};
 // 5 movement accumulator for future pushing
 
 extern unsigned char levelMap[150];
+extern const UBYTE direction;
+
+static BOOLEAN isPlayerTouchingBagFromBelow(void) {
+    if (scroll_target == 0 || isDying) {
+        return FALSE;
+    }
+    if (direction != J_UP) {
+        return FALSE;
+    }
+    return scroll_target->x == THIS->x &&
+        scroll_target->y == (uint16_t)(THIS->y + largeTileSize);
+}
 
 static void setBagTiles(UBYTE column, UBYTE row, UBYTE type) {
     updateVideoMemAndMap(column, row, type);
@@ -147,9 +160,9 @@ static void finalizePushedBag(void) {
 }
 
 void START(void) {
-    SetSpriteAnim(THIS, bag_shake, 15);
-    THIS->custom_data[bagStatus] = stateShaking;
-    THIS->custom_data[bagStateTimer] = shakeBeforeFall;
+    SetSpriteAnim(THIS, bag_static, 15);
+    THIS->custom_data[bagStatus] = stateStatic;
+    THIS->custom_data[bagStateTimer] = bagActivationGraceFrames;
     THIS->custom_data[bagFallCounter] = 0;
     THIS->custom_data[bagDirection] = 0;
     THIS->custom_data[bagPushDistance] = 0;
@@ -169,9 +182,15 @@ void UPDATE(void) {
     if (isDying) {
         return;
     }
+    if (THIS->custom_data[bagStatus] == stateStatic) {
+        if (THIS->custom_data[bagStateTimer] > 0) {
+            THIS->custom_data[bagStateTimer]--;
+        } else if (!isPlayerTouchingBagFromBelow() && bagCanFallInCellBelow(THIS)) {
+            setBagState(THIS, stateShaking);
+        }
     // if is shaking and consumes the time fo shaking
-    if (THIS->custom_data[bagStatus] == stateShaking && THIS->custom_data[bagStateTimer] > 0) {
-         THIS->custom_data[bagStateTimer]--;
+    } else if (THIS->custom_data[bagStatus] == stateShaking && THIS->custom_data[bagStateTimer] > 0) {
+        THIS->custom_data[bagStateTimer]--;
     // it starts to fall down
     } else if (THIS->custom_data[bagStatus] == stateShaking && THIS->custom_data[bagStateTimer] == 0) {
         setBagState(THIS, stateFalling);
