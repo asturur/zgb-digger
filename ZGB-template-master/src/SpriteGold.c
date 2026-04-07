@@ -122,8 +122,6 @@ void UPDATE(void) {
     }
 
     if (timer == 0) {
-        levelMap[getMapMetaTileArrayPosition(THIS->x, THIS->y)] &= tunnelMask;
-        clearGoldBackground();
         SpriteManagerRemoveSprite(THIS);
     } else {
         setGoldTimer(timer - 1);

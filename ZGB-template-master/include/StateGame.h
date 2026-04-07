@@ -67,7 +67,7 @@
 #define LARGE_TILE_FROM_PIXEL(X) ((X) >> largetTileSizeBitShift)
 #define MOD_FOR_LARGE_TILE(X) ((X) & 0x0F)
 // utility functions
-void updateScore(uint16_t addScore);
+void updateScore(uint16_t addScore) BANKED;
 BOOLEAN checkTilesFor(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
 UBYTE getTileMapTile(UBYTE column, UBYTE row) NONBANKED;
 UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y) NONBANKED;
