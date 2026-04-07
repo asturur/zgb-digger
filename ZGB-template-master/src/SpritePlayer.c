@@ -6,6 +6,7 @@
 #include "SpriteFireball.h"
 #include "SpriteBag.h"
 #include "SpritePlayer.h"
+#include "Scroll.h"
 
 extern unsigned char levelMap[150];
 extern void runMapSideEffects(void);
@@ -97,8 +98,59 @@ static void beginTestDeathSequence(void) {
 	SetSpriteAnim(THIS, anim_dead, 15);
 }
 
+BOOLEAN crushPlayerWithBag(uint16_t bagY) BANKED {
+    if (scroll_target == 0 ||
+        scroll_target->marked_for_removal ||
+        scroll_target->custom_data[death_state] == playerDeathPreGraveWait ||
+        isDying) {
+        return FALSE;
+    }
+
+    if (scroll_target->custom_data[death_state] == playerDeathBagPinned) {
+        if ((uint16_t)(bagY + 6) > scroll_target->y) {
+            scroll_target->y = (uint8_t)(bagY + 6);
+        }
+        return TRUE;
+    }
+
+    if (scroll_target->custom_data[death_state] != playerDeathNone) {
+        return FALSE;
+    }
+
+    if ((uint16_t)(bagY + 6) > scroll_target->y) {
+        scroll_target->y = (uint8_t)(bagY + 6);
+    }
+    if (!infiniteLives && lives > 0) {
+        lives--;
+    }
+    updateScore(0);
+    scroll_target->custom_data[death_state] = playerDeathBagPinned;
+    scroll_target->custom_data[death_timer] = 0;
+    scroll_target->custom_data[death_step] = 0;
+    scroll_target->custom_data[death_base_y] = (UBYTE)scroll_target->y;
+    SetSpriteAnim(scroll_target, anim_dead, 15);
+    return TRUE;
+}
+
+void finalizePlayerBagCrush(void) BANKED {
+    if (scroll_target == 0 ||
+        scroll_target->marked_for_removal ||
+        scroll_target->custom_data[death_state] != playerDeathBagPinned) {
+        return;
+    }
+
+    beginDeathFreeze();
+    scroll_target->custom_data[death_state] = playerDeathBounce;
+    scroll_target->custom_data[death_timer] = 0;
+    scroll_target->custom_data[death_step] = 0;
+    scroll_target->custom_data[death_base_y] = (UBYTE)scroll_target->y;
+    SetSpriteAnim(scroll_target, anim_dead, 15);
+}
+
 static void updateDeathSequence(void) {
 	switch (THIS->custom_data[death_state]) {
+        case playerDeathBagPinned:
+            return;
 		case playerDeathBounce:
 			if (THIS->custom_data[death_timer] > 0) {
 				THIS->custom_data[death_timer]--;

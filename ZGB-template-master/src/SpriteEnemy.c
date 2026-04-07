@@ -98,7 +98,9 @@ static BOOLEAN followCrushingBag(void) {
     Sprite* spr;
 
     SPRITEMANAGER_ITERATE(i, spr) {
-        if (spr->type == SpriteBag && spr->custom_data[bagStatus] == stateFalling) {
+        if (!spr->marked_for_removal &&
+            spr->type == SpriteBag &&
+            spr->custom_data[bagStatus] == stateFalling) {
             if (CheckCollision(THIS, spr) && THIS->y >= spr->y) {
                 THIS->y = spr->y;
                 return TRUE;
