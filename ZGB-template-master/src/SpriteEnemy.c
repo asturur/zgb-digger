@@ -16,6 +16,12 @@ const UBYTE hob_walk[] = {4, 4, 5, 6, 5};
 const UBYTE nob_dies[] = {1, 3};
 const UBYTE hob_dies[] = {1, 7};
 
+uint8_t spawnTimer = 0;
+
+static uint8_t getEnemySpawnGapTimer(void) {
+	return enemySpawnGapBaseTimer - (difficultyLevel * enemySpawnGapDifficultyStep);
+}
+
 static BOOLEAN enemyUsesHobAnimation(Sprite* enemy) {
     return enemy->custom_data[mode] == hobMode ||
         enemy->anim_data == hob_walk ||
@@ -182,6 +188,7 @@ static void chooseEnemyDirection(void) {
 }
 
 void START(void) {
+    spawnTimer = getEnemySpawnGapTimer();
     setEnemyMode(waitMode);
     THIS->custom_data[enemy_direction] = J_LEFT;
     THIS->custom_data[movement_accumulator] = 20;

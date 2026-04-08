@@ -51,8 +51,6 @@
 // game timers and behaviour
 #define originalTickToGameBoyFrameRatio 4 // Keep the original 4:1 ratio in mind, but don't derive timings from it here.
 #define enemyFirstSpawnTimer 40 // 10 original * 4
-#define enemySpawnGapBaseTimer 180
-#define enemySpawnGapDifficultyStep 8
 #define maxDifficultyLevel 10
 #define totalEnemiesBaseCount 5
 #define maxEnemiesOnScreenLevel1 3
@@ -73,7 +71,6 @@ UBYTE getTileMapTile(UBYTE column, UBYTE row) NONBANKED;
 UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y) NONBANKED;
 void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) NONBANKED;
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
-uint8_t getEnemySpawnGapTimer(void);
 Sprite* activateBag(uint8_t bagcell) BANKED;
 void beginDeathFreeze(void) BANKED;
 void playDeathMusic(void) BANKED;

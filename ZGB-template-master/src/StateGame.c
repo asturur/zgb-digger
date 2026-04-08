@@ -46,6 +46,7 @@ extern const unsigned char levelDebugMap[150];
 
 extern uint8_t fx_00[];
 extern void __mute_mask_fx_00;
+extern uint8_t spawnTimer;
 
 // options
 BOOLEAN infiniteLives = FALSE;
@@ -57,7 +58,6 @@ UBYTE currentLevel = 0;
 UBYTE difficultyLevel = 0;
 uint16_t score = 0;
 UBYTE diamonds = 0;
-uint8_t spawnTimer = 0;
 uint8_t enemyCountOnScreen = 0;
 uint8_t enemyMaxOnScreen = 0;
 uint8_t enemyMaxTotal = 0;
@@ -81,12 +81,12 @@ static uint16_t deathRespawnTimer = 0;
 DECLARE_MUSIC(popcorn);
 DECLARE_MUSIC(dirge);
 
+// contains current game map tiles for rendering
 unsigned char tileMap[736];
-// currently loaded map
+// contains current game map state
 unsigned char levelMap[150];
 
 struct MapInfo currentInMemoryLevel;
-unsigned char tileMap[736];
 
 
 UBYTE getTileMapTile(UBYTE column, UBYTE row) NONBANKED {
@@ -209,10 +209,6 @@ Sprite* activateBag(uint8_t bagcell) BANKED {
 void updateScore(uint16_t addScore) BANKED {
 	score += addScore;
 	paintScore();
-}
-
-uint8_t getEnemySpawnGapTimer(void) {
-	return enemySpawnGapBaseTimer - (difficultyLevel * enemySpawnGapDifficultyStep);
 }
 
 static void updateEmeraldSound(void) {
@@ -452,7 +448,6 @@ void UPDATE(void) {
 		loadLevel(currentLevel);
 	}
 	if (spawnTimer == 0 && enemyCountOnScreen < enemyMaxOnScreen && enemySpawned < enemyMaxTotal) {
-		spawnTimer = getEnemySpawnGapTimer();
 		enemyCountOnScreen++;
 		enemySpawned++;
 		SpriteManagerAdd(SpriteEnemy, 232, 16);
