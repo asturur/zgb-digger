@@ -325,7 +325,7 @@ static void resetLevelState(void) {
 	SpriteManagerReset();
 	enemyCountOnScreen = 0;
 	enemySpawned = 0;
-	spawnTimer = 0;
+	spawnTimer = enemyFirstSpawnTimer;
 	isDying = FALSE;
 	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 160);
 	paintScore();
