@@ -81,6 +81,7 @@ static uint16_t deathRespawnTimer = 0;
 DECLARE_MUSIC(popcorn);
 DECLARE_MUSIC(dirge);
 
+unsigned char tileMap[736];
 // currently loaded map
 unsigned char levelMap[150];
 
@@ -141,9 +142,9 @@ void copyTileMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONB
 	SWITCH_ROM(__save);
 }
 
-void copyLevelMapToRam(const unsigned char *mapToLoad, uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
-	// uint8_t __save = CURRENT_BANK;
-	// SWITCH_ROM(mapToLoadBank);
+void copyLevelMapToRam(uint8_t mapToLoadBank, const unsigned char *mapToLoad, uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
+	uint8_t __save = CURRENT_BANK;
+	SWITCH_ROM(mapToLoadBank);
 	memcpy(levelMap, mapToLoad, 150);
 	int8_t i, j;
 	// fill up the first lines of the map with 2 lines 0s and 1 of 1s
@@ -184,7 +185,7 @@ void copyLevelMapToRam(const unsigned char *mapToLoad, uint8_t levelToLoadBank, 
 		// and skip a full line
 		offset = offset + tilesPerRow + 2;
 	}
-	// SWITCH_ROM(__save);
+	SWITCH_ROM(__save);
 	copyTileMapToRam(levelToLoadBank, levelToLoad);
 	InitScroll(levelToLoadBank, &currentInMemoryLevel, 0, 0);
 }
@@ -370,41 +371,41 @@ static void loadLevel(UBYTE level) {
 	// add first the spriteManager only then load the level
 	switch (level) {
 		case 0:
-			copyLevelMapToRam(levelDebugMap, BANK(levelDebug), &levelDebug);
+			copyLevelMapToRam(BANK(levelDebugMap), levelDebugMap, BANK(levelDebug), &levelDebug);
 			diamonds = 99;
 		break;
 		case 1:
-			copyLevelMapToRam(level1Map, BANK(level1), &level1);
+			copyLevelMapToRam(BANK(level1Map), level1Map, BANK(level1), &level1);
 			diamonds = 30;
 		break;
 		case 2: 
-			copyLevelMapToRam(level2Map, BANK(level2), &level2);
+			copyLevelMapToRam(BANK(level2Map), level2Map, BANK(level2), &level2);
 			diamonds = 41;
 		break;
 		case 3: 
-			copyLevelMapToRam(level3Map, BANK(level3), &level3);
+			copyLevelMapToRam(BANK(level3Map), level3Map, BANK(level3), &level3);
 			diamonds = 51;
 		break;
 		case 4: 
-			copyLevelMapToRam(level4Map, BANK(level4), &level4);
+			copyLevelMapToRam(BANK(level4Map), level4Map, BANK(level4), &level4);
 			diamonds = 65;
 		break;
 		case 5: {
-			copyLevelMapToRam(level5Map, BANK(level5), &level5);
+			copyLevelMapToRam(BANK(level5Map), level5Map, BANK(level5), &level5);
 			diamonds = 77;
 		} break;
 		case 6: {
 			// Level tilemaps are synthesized from levelMap, so later levels can
 			// reuse the same MapInfo metadata as long as the dimensions match.
-			copyLevelMapToRam(level6Map, BANK(level6), &level6);
+			copyLevelMapToRam(BANK(level6Map), level6Map, BANK(level6), &level6);
 			diamonds = 52;
 		} break;
 		case 7: {
-			copyLevelMapToRam(level7Map, BANK(level7), &level7);
+			copyLevelMapToRam(BANK(level7Map), level7Map, BANK(level7), &level7);
 			diamonds = 92;
 		} break;
 		case 8: {
-			copyLevelMapToRam(level8Map, BANK(level8), &level8);
+			copyLevelMapToRam(BANK(level8Map), level8Map, BANK(level8), &level8);
 			diamonds = 63;
 		} break;
 		default:
