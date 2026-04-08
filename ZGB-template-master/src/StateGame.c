@@ -323,13 +323,13 @@ void runMapSideEffects(void) BANKED {
 
 static void resetLevelState(void) {
 	lastVisitedMetaCell = 0;
-	isDying = 0;
 	deathRespawnQueued = FALSE;
 	deathRespawnTimer = 0;
 	SpriteManagerReset();
 	enemyCountOnScreen = 0;
 	enemySpawned = 0;
 	spawnTimer = 0;
+	isDying = FALSE;
 	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 160);
 	paintScore();
 }
