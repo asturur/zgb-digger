@@ -70,6 +70,7 @@ UBYTE getTileMapTile(UBYTE column, UBYTE row) NONBANKED;
 UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y) NONBANKED;
 void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) NONBANKED;
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
+void runMapSideEffects(void) BANKED;
 Sprite* activateBag(uint8_t bagcell) BANKED;
 void beginDeathFreeze(void) BANKED;
 void playDeathMusic(void) BANKED;

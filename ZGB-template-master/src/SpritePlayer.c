@@ -9,8 +9,6 @@
 #include "Scroll.h"
 
 extern unsigned char levelMap[150];
-extern void runMapSideEffects(void);
-extern UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y);
 const UBYTE anim_walk_right[] = {4, 0, 1, 2, 1};
 const UBYTE anim_walk_down[] = {4, 3, 4, 5, 4};
 const UBYTE anim_walk_up[] = {4, 6, 7, 8, 7};
@@ -373,7 +371,7 @@ static UBYTE updatePosition(void) {
 }
 
 static void updateAnimation(void) {
-    BOOLEAN recharging = getRechargeTime() > 0;
+    uint16_t recharging = getRechargeTime() > 0;
 
     switch (direction) {
         case J_UP:
@@ -517,8 +515,9 @@ void UPDATE(void) {
            setDirection(J_RIGHT);
         }
 	}
+    uint16_t rechargeTime = getRechargeTime();
     if(KEY_PRESSED(J_A)) {
-        if (getRechargeTime() == 0) {
+        if (rechargeTime == 0) {
             uint8_t spriteX = 0;
             uint8_t spriteY = 0;
             setRechargeTime(getFireRechargeFrames());
@@ -551,10 +550,9 @@ void UPDATE(void) {
             }
         }
 	}
-    if (getRechargeTime() > 0) {
-        uint16_t rechargeTime = getRechargeTime() - 1;
-        setRechargeTime(rechargeTime);
-        if (rechargeTime == 0) {
+    if (rechargeTime > 0) {
+        setRechargeTime(rechargeTime - 1);
+        if (rechargeTime == 1) {
             updateAnimation();
         }
     }
