@@ -17,9 +17,11 @@
 // #define timerQty 2
 #define enemy_direction 3
 #define frightned 4
-#define hasEatenGold 5
 #define movement_accumulator 6
 // #define deathTimer 7
+
+#define enemySpawnGapBaseTimer 180
+#define enemySpawnGapDifficultyStep 8
 
 void crushEnemy(Sprite* enemy) BANKED;
 UBYTE killEnemy(Sprite* enemy) BANKED;

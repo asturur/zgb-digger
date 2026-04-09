@@ -7,7 +7,6 @@
 
 extern unsigned char levelMap[150];
 extern uint8_t enemyCountOnScreen;
-extern uint8_t spawnTimer;
 extern uint8_t isDying;
 extern UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y);
 
@@ -15,6 +14,12 @@ const UBYTE nob_walk[] = {4, 0, 1, 2, 1};
 const UBYTE hob_walk[] = {4, 4, 5, 6, 5};
 const UBYTE nob_dies[] = {1, 3};
 const UBYTE hob_dies[] = {1, 7};
+
+uint8_t spawnTimer = 0;
+
+static uint8_t getEnemySpawnGapTimer(void) {
+	return enemySpawnGapBaseTimer - (difficultyLevel * enemySpawnGapDifficultyStep);
+}
 
 static BOOLEAN enemyUsesHobAnimation(Sprite* enemy) {
     return enemy->custom_data[mode] == hobMode ||
@@ -98,7 +103,9 @@ static BOOLEAN followCrushingBag(void) {
     Sprite* spr;
 
     SPRITEMANAGER_ITERATE(i, spr) {
-        if (spr->type == SpriteBag && spr->custom_data[bagStatus] == stateFalling) {
+        if (!spr->marked_for_removal &&
+            spr->type == SpriteBag &&
+            spr->custom_data[bagStatus] == stateFalling) {
             if (CheckCollision(THIS, spr) && THIS->y >= spr->y) {
                 THIS->y = spr->y;
                 return TRUE;
@@ -137,6 +144,29 @@ static BOOLEAN enemyCanMove(UBYTE direction, UBYTE tunnel) {
         default:
             return FALSE;
     }
+}
+
+static void consumeGoldAtCurrentCell(void) {
+    UBYTE currentCell;
+    UBYTE column;
+    UBYTE row;
+
+    if (!isEnemyAligned()) {
+        return;
+    }
+
+    currentCell = getMapMetaTileArrayPosition(THIS->x, THIS->y);
+    if ((levelMap[currentCell] & metaTileGold) == 0) {
+        return;
+    }
+
+    levelMap[currentCell] &= tunnelMask;
+    column = TILE_FROM_PIXEL(THIS->x);
+    row = TILE_FROM_PIXEL(THIS->y);
+    updateVideoMemAndMap(column, row, tileBlack);
+    updateVideoMemAndMap(column + 1, row, tileBlack);
+    updateVideoMemAndMap(column, row + 1, tileBlack);
+    updateVideoMemAndMap(column + 1, row + 1, tileBlack);
 }
 
 static void chooseEnemyDirection(void) {
@@ -180,6 +210,10 @@ static void chooseEnemyDirection(void) {
 }
 
 void START(void) {
+    if(_cpu != CGB_TYPE){
+        SPRITE_SET_PALETTE(THIS,1);
+    }
+    spawnTimer = getEnemySpawnGapTimer();
     setEnemyMode(waitMode);
     THIS->custom_data[enemy_direction] = J_LEFT;
     THIS->custom_data[movement_accumulator] = 20;
@@ -228,6 +262,7 @@ void UPDATE(void) {
             setEnemyMode(nobMode);
         }
         chooseEnemyDirection();
+        consumeGoldAtCurrentCell();
     }
     THIS->custom_data[movement_accumulator] += 4;
     if (THIS->custom_data[movement_accumulator] < 25) {

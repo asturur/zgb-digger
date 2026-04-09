@@ -5,10 +5,14 @@
 #include "SpriteEnemy.h"
 #include "StateGame.h"
 #include "ZGBMain.h"
+#include "Scroll.h"
 
 const UBYTE bag_shake[] = {4, 0, 1, 0, 2};
 const UBYTE bag_fall[] = {1, 3};
 const UBYTE bag_static[] = {1, 0};
+
+#define playerCrushMinHorizontalOverlap 4
+#define playerCrushMinVerticalOverlap 2
 // const UBYTE bag_gold_fall_start[] = {3, 6, 5, 4};
 
 // CUSTOM_DATA usage
@@ -20,6 +24,20 @@ const UBYTE bag_static[] = {1, 0};
 // 5 movement accumulator for future pushing
 
 extern unsigned char levelMap[150];
+extern const UBYTE direction;
+BOOLEAN crushPlayerWithBag(uint16_t bagY) BANKED;
+void finalizePlayerBagCrush(void) BANKED;
+
+static BOOLEAN isPlayerTouchingBagFromBelow(void) {
+    if (scroll_target == 0 || scroll_target->marked_for_removal || isDying) {
+        return FALSE;
+    }
+    if (direction != J_UP) {
+        return FALSE;
+    }
+    return scroll_target->x == THIS->x &&
+        scroll_target->y == (uint16_t)(THIS->y + largeTileSize);
+}
 
 static void setBagTiles(UBYTE column, UBYTE row, UBYTE type) {
     updateVideoMemAndMap(column, row, type);
@@ -128,10 +146,43 @@ static void crushEnemiesUnderBag(void) {
     Sprite* spr;
 
     SPRITEMANAGER_ITERATE(i, spr) {
-        if (spr->type == SpriteEnemy && spr->y >= THIS->y) {
+        if (!spr->marked_for_removal && spr->type == SpriteEnemy && spr->y >= THIS->y) {
             if (CheckCollision(THIS, spr)) {
                 crushEnemy(spr);
             }
+        }
+    }
+}
+
+static UBYTE overlapAmount(UINT16 startA, UINT8 sizeA, UINT16 startB, UINT8 sizeB) {
+    UINT16 endA = startA + sizeA;
+    UINT16 endB = startB + sizeB;
+    UINT16 overlapStart;
+    UINT16 overlapEnd;
+
+    if (endA <= startB || endB <= startA) {
+        return 0;
+    }
+
+    overlapStart = startA > startB ? startA : startB;
+    overlapEnd = endA < endB ? endA : endB;
+    return (UBYTE)(overlapEnd - overlapStart);
+}
+
+static void crushPlayerUnderBag(void) {
+    UBYTE horizontalOverlap;
+    UBYTE verticalOverlap;
+
+    if (scroll_target != 0 &&
+        !scroll_target->marked_for_removal &&
+        scroll_target->type == SpritePlayer &&
+        THIS->custom_data[bagStatus] == stateFalling &&
+        scroll_target->y >= THIS->y) {
+        horizontalOverlap = overlapAmount(THIS->x, THIS->coll_w, scroll_target->x, scroll_target->coll_w);
+        verticalOverlap = overlapAmount(THIS->y, THIS->coll_h, scroll_target->y, scroll_target->coll_h);
+        if (horizontalOverlap >= playerCrushMinHorizontalOverlap &&
+            verticalOverlap >= playerCrushMinVerticalOverlap) {
+        crushPlayerWithBag(THIS->y);
         }
     }
 }
@@ -147,9 +198,9 @@ static void finalizePushedBag(void) {
 }
 
 void START(void) {
-    SetSpriteAnim(THIS, bag_shake, 15);
-    THIS->custom_data[bagStatus] = stateShaking;
-    THIS->custom_data[bagStateTimer] = shakeBeforeFall;
+    SetSpriteAnim(THIS, bag_static, 15);
+    THIS->custom_data[bagStatus] = stateStatic;
+    THIS->custom_data[bagStateTimer] = bagActivationGraceFrames;
     THIS->custom_data[bagFallCounter] = 0;
     THIS->custom_data[bagDirection] = 0;
     THIS->custom_data[bagPushDistance] = 0;
@@ -169,9 +220,15 @@ void UPDATE(void) {
     if (isDying) {
         return;
     }
+    if (THIS->custom_data[bagStatus] == stateStatic) {
+        if (THIS->custom_data[bagStateTimer] > 0) {
+            THIS->custom_data[bagStateTimer]--;
+        } else if (!isPlayerTouchingBagFromBelow() && bagCanFallInCellBelow(THIS)) {
+            setBagState(THIS, stateShaking);
+        }
     // if is shaking and consumes the time fo shaking
-    if (THIS->custom_data[bagStatus] == stateShaking && THIS->custom_data[bagStateTimer] > 0) {
-         THIS->custom_data[bagStateTimer]--;
+    } else if (THIS->custom_data[bagStatus] == stateShaking && THIS->custom_data[bagStateTimer] > 0) {
+        THIS->custom_data[bagStateTimer]--;
     // it starts to fall down
     } else if (THIS->custom_data[bagStatus] == stateShaking && THIS->custom_data[bagStateTimer] == 0) {
         setBagState(THIS, stateFalling);
@@ -186,6 +243,7 @@ void UPDATE(void) {
             THIS->custom_data[bagFallCounter]++;
             THIS->y++;
             crushEnemiesUnderBag();
+            crushPlayerUnderBag();
         } else {
             if (bagCanFallInCellBelow(THIS)) {
                 uint8_t column = TILE_FROM_PIXEL(THIS->x);
@@ -201,15 +259,18 @@ void UPDATE(void) {
                 THIS->custom_data[bagFallCounter]++;
                 THIS->y++;
                 crushEnemiesUnderBag();
+                crushPlayerUnderBag();
             } else {
                 // solid ground or reach end of map
                 if (THIS->custom_data[bagFallCounter] >= largeTileSize * 2 && THIS->custom_data[bagStatus] == stateFalling) {
                     SpriteManagerAdd(SpriteGold, THIS->x, THIS->y);
+                    finalizePlayerBagCrush();
                     SpriteManagerRemoveSprite(THIS);
                 } 
                 else {
                     THIS->custom_data[bagStatus] = stateStatic;
                     THIS->custom_data[bagFallCounter] = 0;
+                    finalizePlayerBagCrush();
                     deactivateBag(THIS, bagOnTunnel);
                 }
             }

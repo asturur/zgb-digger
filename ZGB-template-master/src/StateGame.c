@@ -46,6 +46,7 @@ extern const unsigned char levelDebugMap[150];
 
 extern uint8_t fx_00[];
 extern void __mute_mask_fx_00;
+extern uint8_t spawnTimer;
 
 // options
 BOOLEAN infiniteLives = FALSE;
@@ -57,7 +58,6 @@ UBYTE currentLevel = 0;
 UBYTE difficultyLevel = 0;
 uint16_t score = 0;
 UBYTE diamonds = 0;
-uint8_t spawnTimer = 0;
 uint8_t enemyCountOnScreen = 0;
 uint8_t enemyMaxOnScreen = 0;
 uint8_t enemyMaxTotal = 0;
@@ -81,11 +81,12 @@ static uint16_t deathRespawnTimer = 0;
 DECLARE_MUSIC(popcorn);
 DECLARE_MUSIC(dirge);
 
-// currently loaded map
+// contains current game map tiles for rendering
+unsigned char tileMap[736];
+// contains current game map state
 unsigned char levelMap[150];
 
 struct MapInfo currentInMemoryLevel;
-unsigned char tileMap[736];
 
 
 UBYTE getTileMapTile(UBYTE column, UBYTE row) NONBANKED {
@@ -141,9 +142,9 @@ void copyTileMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONB
 	SWITCH_ROM(__save);
 }
 
-void copyLevelMapToRam(const unsigned char *mapToLoad, uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
-	// uint8_t __save = CURRENT_BANK;
-	// SWITCH_ROM(mapToLoadBank);
+void copyLevelMapToRam(uint8_t mapToLoadBank, const unsigned char *mapToLoad, uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
+	uint8_t __save = CURRENT_BANK;
+	SWITCH_ROM(mapToLoadBank);
 	memcpy(levelMap, mapToLoad, 150);
 	int8_t i, j;
 	// fill up the first lines of the map with 2 lines 0s and 1 of 1s
@@ -184,7 +185,7 @@ void copyLevelMapToRam(const unsigned char *mapToLoad, uint8_t levelToLoadBank, 
 		// and skip a full line
 		offset = offset + tilesPerRow + 2;
 	}
-	// SWITCH_ROM(__save);
+	SWITCH_ROM(__save);
 	copyTileMapToRam(levelToLoadBank, levelToLoad);
 	InitScroll(levelToLoadBank, &currentInMemoryLevel, 0, 0);
 }
@@ -208,10 +209,6 @@ Sprite* activateBag(uint8_t bagcell) BANKED {
 void updateScore(uint16_t addScore) BANKED {
 	score += addScore;
 	paintScore();
-}
-
-uint8_t getEnemySpawnGapTimer(void) {
-	return enemySpawnGapBaseTimer - (difficultyLevel * enemySpawnGapDifficultyStep);
 }
 
 static void updateEmeraldSound(void) {
@@ -244,9 +241,27 @@ void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) NONBANKED {
 	levelMap[currentCell] += metaTile;
 }
 
+static void tryActivateBagAboveCell(UBYTE cellBelow) {
+	UBYTE bagCell;
+
+	if (cellBelow < mapMetaWidth) {
+		return;
+	}
+	if ((levelMap[cellBelow] & tunnelMask) == 0) {
+		return;
+	}
+	bagCell = cellBelow - mapMetaWidth;
+	if ((levelMap[bagCell] & metaTileBag) == 0) {
+		return;
+	}
+	activateBag(bagCell);
+}
+
 void runMapSideEffects(void) BANKED {
 	const UBYTE currentCell = getMapMetaTileArrayPosition(scroll_target->x, scroll_target->y);
 	const UBYTE currentMapValue = levelMap[currentCell];
+	const UBYTE previousCell = lastVisitedMetaCell;
+	tryActivateBagAboveCell(currentCell);
 	if (currentCell == lastVisitedMetaCell && (currentMapValue & metaTileGold) == 0) {
 		return;
 	}
@@ -296,22 +311,22 @@ void runMapSideEffects(void) BANKED {
 		levelMap[lastVisitedMetaCell] |= oppositeDirection;
 	}
 
-	// we are under a bag, we need to activate it
-	if (currentCell > 14 && (levelMap[currentCell - mapMetaWidth] & metaTileBag)) {
-		activateBag(currentCell - mapMetaWidth);
+	tryActivateBagAboveCell(currentCell);
+	if (previousCell != currentCell) {
+		tryActivateBagAboveCell(previousCell);
 	}
 	lastVisitedMetaCell = currentCell;
 }
 
 static void resetLevelState(void) {
 	lastVisitedMetaCell = 0;
-	isDying = 0;
 	deathRespawnQueued = FALSE;
 	deathRespawnTimer = 0;
 	SpriteManagerReset();
 	enemyCountOnScreen = 0;
 	enemySpawned = 0;
-	spawnTimer = 0;
+	spawnTimer = enemyFirstSpawnTimer;
+	isDying = FALSE;
 	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 160);
 	paintScore();
 }
@@ -352,41 +367,41 @@ static void loadLevel(UBYTE level) {
 	// add first the spriteManager only then load the level
 	switch (level) {
 		case 0:
-			copyLevelMapToRam(levelDebugMap, BANK(levelDebug), &levelDebug);
+			copyLevelMapToRam(BANK(levelDebugMap), levelDebugMap, BANK(levelDebug), &levelDebug);
 			diamonds = 99;
 		break;
 		case 1:
-			copyLevelMapToRam(level1Map, BANK(level1), &level1);
+			copyLevelMapToRam(BANK(level1Map), level1Map, BANK(level1), &level1);
 			diamonds = 30;
 		break;
 		case 2: 
-			copyLevelMapToRam(level2Map, BANK(level2), &level2);
+			copyLevelMapToRam(BANK(level2Map), level2Map, BANK(level2), &level2);
 			diamonds = 41;
 		break;
 		case 3: 
-			copyLevelMapToRam(level3Map, BANK(level3), &level3);
+			copyLevelMapToRam(BANK(level3Map), level3Map, BANK(level3), &level3);
 			diamonds = 51;
 		break;
 		case 4: 
-			copyLevelMapToRam(level4Map, BANK(level4), &level4);
+			copyLevelMapToRam(BANK(level4Map), level4Map, BANK(level4), &level4);
 			diamonds = 65;
 		break;
 		case 5: {
-			copyLevelMapToRam(level5Map, BANK(level5), &level5);
+			copyLevelMapToRam(BANK(level5Map), level5Map, BANK(level5), &level5);
 			diamonds = 77;
 		} break;
 		case 6: {
 			// Level tilemaps are synthesized from levelMap, so later levels can
 			// reuse the same MapInfo metadata as long as the dimensions match.
-			copyLevelMapToRam(level6Map, BANK(level6), &level6);
+			copyLevelMapToRam(BANK(level6Map), level6Map, BANK(level6), &level6);
 			diamonds = 52;
 		} break;
 		case 7: {
-			copyLevelMapToRam(level7Map, BANK(level7), &level7);
+			copyLevelMapToRam(BANK(level7Map), level7Map, BANK(level7), &level7);
 			diamonds = 92;
 		} break;
 		case 8: {
-			copyLevelMapToRam(level8Map, BANK(level8), &level8);
+			copyLevelMapToRam(BANK(level8Map), level8Map, BANK(level8), &level8);
 			diamonds = 63;
 		} break;
 		default:
@@ -400,6 +415,8 @@ void START(void) {
 	NR51_REG = 0xFF; //Enables all channels (left and right)
 	NR50_REG = 0x77; //Max volume
 	lives = 3;
+	OBP0_REG = DMG_PALETTE(DMG_WHITE, DMG_LITE_GRAY, DMG_DARK_GRAY, DMG_BLACK); // normal palette
+    OBP1_REG = DMG_PALETTE(DMG_BLACK, DMG_WHITE, DMG_LITE_GRAY, DMG_DARK_GRAY); // bright palette
 	currentLevel = debugMode ? 0 : 1;
 	loadLevel(currentLevel);
 	PlayMusic(popcorn, 1);
@@ -433,7 +450,6 @@ void UPDATE(void) {
 		loadLevel(currentLevel);
 	}
 	if (spawnTimer == 0 && enemyCountOnScreen < enemyMaxOnScreen && enemySpawned < enemyMaxTotal) {
-		spawnTimer = getEnemySpawnGapTimer();
 		enemyCountOnScreen++;
 		enemySpawned++;
 		SpriteManagerAdd(SpriteEnemy, 232, 16);

@@ -10,3 +10,7 @@
 #define playerDeathNone 0
 #define playerDeathBounce 1
 #define playerDeathPreGraveWait 2
+#define playerDeathBagPinned 3
+
+BOOLEAN crushPlayerWithBag(uint16_t bagY) BANKED;
+void finalizePlayerBagCrush(void) BANKED;

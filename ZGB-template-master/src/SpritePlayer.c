@@ -6,10 +6,9 @@
 #include "SpriteFireball.h"
 #include "SpriteBag.h"
 #include "SpritePlayer.h"
+#include "Scroll.h"
 
 extern unsigned char levelMap[150];
-extern void runMapSideEffects(void);
-extern UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y);
 const UBYTE anim_walk_right[] = {4, 0, 1, 2, 1};
 const UBYTE anim_walk_down[] = {4, 3, 4, 5, 4};
 const UBYTE anim_walk_up[] = {4, 6, 7, 8, 7};
@@ -34,6 +33,9 @@ static const UBYTE deathBounceOffsets[] = {3, 5, 6, 6, 5, 3, 0};
 #define pushBagNoBag 0
 #define pushBagStarted 1
 #define pushBagBlocked 2
+#define moveNoStep 0
+#define moveAdvanced 1
+#define moveBlockedByBag 2
 
 UBYTE direction;
 UBYTE oppositeDirection;
@@ -94,8 +96,59 @@ static void beginTestDeathSequence(void) {
 	SetSpriteAnim(THIS, anim_dead, 15);
 }
 
+BOOLEAN crushPlayerWithBag(uint16_t bagY) BANKED {
+    if (scroll_target == 0 ||
+        scroll_target->marked_for_removal ||
+        scroll_target->custom_data[death_state] == playerDeathPreGraveWait ||
+        isDying) {
+        return FALSE;
+    }
+
+    if (scroll_target->custom_data[death_state] == playerDeathBagPinned) {
+        if ((uint16_t)(bagY + 6) > scroll_target->y) {
+            scroll_target->y = (uint8_t)(bagY + 6);
+        }
+        return TRUE;
+    }
+
+    if (scroll_target->custom_data[death_state] != playerDeathNone) {
+        return FALSE;
+    }
+
+    if ((uint16_t)(bagY + 6) > scroll_target->y) {
+        scroll_target->y = (uint8_t)(bagY + 6);
+    }
+    if (!infiniteLives && lives > 0) {
+        lives--;
+    }
+    updateScore(0);
+    scroll_target->custom_data[death_state] = playerDeathBagPinned;
+    scroll_target->custom_data[death_timer] = 0;
+    scroll_target->custom_data[death_step] = 0;
+    scroll_target->custom_data[death_base_y] = (UBYTE)scroll_target->y;
+    SetSpriteAnim(scroll_target, anim_dead, 15);
+    return TRUE;
+}
+
+void finalizePlayerBagCrush(void) BANKED {
+    if (scroll_target == 0 ||
+        scroll_target->marked_for_removal ||
+        scroll_target->custom_data[death_state] != playerDeathBagPinned) {
+        return;
+    }
+
+    beginDeathFreeze();
+    scroll_target->custom_data[death_state] = playerDeathBounce;
+    scroll_target->custom_data[death_timer] = 0;
+    scroll_target->custom_data[death_step] = 0;
+    scroll_target->custom_data[death_base_y] = (UBYTE)scroll_target->y;
+    SetSpriteAnim(scroll_target, anim_dead, 15);
+}
+
 static void updateDeathSequence(void) {
 	switch (THIS->custom_data[death_state]) {
+        case playerDeathBagPinned:
+            return;
 		case playerDeathBounce:
 			if (THIS->custom_data[death_timer] > 0) {
 				THIS->custom_data[death_timer]--;
@@ -132,6 +185,9 @@ static void updateDeathSequence(void) {
 }
 
 void START(void) {
+    if(_cpu != CGB_TYPE){
+        SPRITE_SET_PALETTE(THIS,1);
+    }
     setDirection(J_RIGHT);
     setRechargeTime(0);
     THIS->custom_data[death_state] = playerDeathNone;
@@ -232,38 +288,90 @@ static UBYTE tryPushStaticBag(void) {
     return pushBagStarted;
 }
 
-static void updatePosition(void) {
+static BOOLEAN overlapsMetaSprite(UBYTE x1, UBYTE y1, UBYTE x2, UBYTE y2) {
+    return x1 < (UBYTE)(x2 + largeTileSize) &&
+        (UBYTE)(x1 + largeTileSize) > x2 &&
+        y1 < (UBYTE)(y2 + largeTileSize) &&
+        (UBYTE)(y1 + largeTileSize) > y2;
+}
+
+static BOOLEAN verticalMoveHitsActiveBag(UBYTE nextY) {
+    uint8_t i;
+    Sprite* spr;
+
+    SPRITEMANAGER_ITERATE(i, spr) {
+        if (spr->type == SpriteBag &&
+            spr->custom_data[bagStatus] != stateFalling &&
+            overlapsMetaSprite(THIS->x, nextY, spr->x, spr->y)) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+static BOOLEAN verticalMoveHitsStaticBag(UBYTE nextY) {
+    UBYTE edgeY;
+
+    if (THIS->x < mapBoundLeft || THIS->x > mapBoundRight || nextY < mapBoundUp || nextY > mapBoundDown) {
+        return FALSE;
+    }
+    edgeY = direction == J_UP ? nextY : (UBYTE)(nextY + largeTileSize - 1);
+    return (levelMap[getMapMetaTileArrayPosition(THIS->x, edgeY)] & metaTileBag) != 0;
+}
+
+static BOOLEAN verticalMoveBlockedByBag(UBYTE nextY) {
+    return verticalMoveHitsStaticBag(nextY) || verticalMoveHitsActiveBag(nextY);
+}
+
+static UBYTE updatePosition(void) {
+    UBYTE nextY;
+
     THIS->custom_data[movement_accumulator] += 4;
     if (THIS->custom_data[movement_accumulator] < 5) {
-        return;
+        return moveNoStep;
     }
     THIS->custom_data[movement_accumulator] -= 5;
     switch (direction) {
         case J_UP:
             if (THIS->y > mapBoundUp) {
-                THIS->y --;
+                nextY = THIS->y - 1;
+                if (verticalMoveBlockedByBag(nextY)) {
+                    THIS->custom_data[movement_accumulator] = 0;
+                    return moveBlockedByBag;
+                }
+                THIS->y = nextY;
+                return moveAdvanced;
             }
             break;
         case J_DOWN:
             if (THIS->y < mapBoundDown) {
-                THIS->y ++;
+                nextY = THIS->y + 1;
+                if (verticalMoveBlockedByBag(nextY)) {
+                    THIS->custom_data[movement_accumulator] = 0;
+                    return moveBlockedByBag;
+                }
+                THIS->y = nextY;
+                return moveAdvanced;
             }
             break;
         case J_LEFT:
             if (THIS->x > mapBoundLeft) {
                 THIS->x--;
+                return moveAdvanced;
             }
             break;
         case J_RIGHT:
             if (THIS->x < mapBoundRight) {
                 THIS->x ++;
+                return moveAdvanced;
             }
             break;
     }
+    return moveNoStep;
 }
 
 static void updateAnimation(void) {
-    BOOLEAN recharging = getRechargeTime() > 0;
+    uint16_t recharging = getRechargeTime() > 0;
 
     switch (direction) {
         case J_UP:
@@ -340,6 +448,8 @@ static void updateMapTiles(void) {
 }
 
 void UPDATE(void) {
+    UBYTE moveResult = moveNoStep;
+
     if (THIS->custom_data[death_state] != playerDeathNone) {
         updateDeathSequence();
         return;
@@ -405,8 +515,9 @@ void UPDATE(void) {
            setDirection(J_RIGHT);
         }
 	}
+    uint16_t rechargeTime = getRechargeTime();
     if(KEY_PRESSED(J_A)) {
-        if (getRechargeTime() == 0) {
+        if (rechargeTime == 0) {
             uint8_t spriteX = 0;
             uint8_t spriteY = 0;
             setRechargeTime(getFireRechargeFrames());
@@ -439,10 +550,9 @@ void UPDATE(void) {
             }
         }
 	}
-    if (getRechargeTime() > 0) {
-        uint16_t rechargeTime = getRechargeTime() - 1;
-        setRechargeTime(rechargeTime);
-        if (rechargeTime == 0) {
+    if (rechargeTime > 0) {
+        setRechargeTime(rechargeTime - 1);
+        if (rechargeTime == 1) {
             updateAnimation();
         }
     }
@@ -456,11 +566,18 @@ void UPDATE(void) {
         }
     }
     if (moving) {
-        updatePosition();
         updateAnimation();
-        updateMapTiles();
-        runMapSideEffects();
+        moveResult = updatePosition();
+        if (moveResult == moveAdvanced) {
+            updateMapTiles();
+            runMapSideEffects();
+        } else if (moveResult == moveBlockedByBag) {
+            moving = FALSE;
+        }
     } else {
+        THIS->custom_data[movement_accumulator] = 0;
+    }
+    if (!moving) {
         THIS->custom_data[movement_accumulator] = 0;
     }
 }
