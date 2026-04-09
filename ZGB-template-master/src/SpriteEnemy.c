@@ -98,6 +98,10 @@ static BOOLEAN isEnemyAligned(void) {
     return MOD_FOR_LARGE_TILE(THIS->x - mapBoundLeft) == 0 && MOD_FOR_LARGE_TILE(THIS->y - mapBoundUp) == 0;
 }
 
+static BOOLEAN tunnelAllowsDirection(UBYTE tunnel, UBYTE direction) {
+    return (tunnel & oppositeDirectionBit(direction)) != 0;
+}
+
 static BOOLEAN followCrushingBag(void) {
     uint8_t i;
     Sprite* spr;
@@ -128,22 +132,57 @@ static UBYTE getEnemyCurrentTunnel(void) {
 }
 
 static BOOLEAN enemyCanMove(UBYTE direction, UBYTE tunnel) {
-    if ((tunnel & oppositeDirectionBit(direction)) == 0) {
-        return FALSE;
-    }
+    UBYTE currentCell;
+    UBYTE nextCell;
+    UBYTE currentColumn;
+    UBYTE currentRow;
 
+    currentCell = getMapMetaTileArrayPosition(THIS->x, THIS->y);
+    currentColumn = currentCell % mapMetaWidth;
+    currentRow = currentCell / mapMetaWidth;
     switch (direction) {
         case J_LEFT:
-            return THIS->x > mapBoundLeft;
+            if (THIS->x <= mapBoundLeft || currentColumn == 0) {
+                return FALSE;
+            }
+            nextCell = currentCell - 1;
+            break;
         case J_RIGHT:
-            return THIS->x < mapBoundRight;
+            if (THIS->x >= mapBoundRight || currentColumn == mapMetaWidth - 1) {
+                return FALSE;
+            }
+            nextCell = currentCell + 1;
+            break;
         case J_UP:
-            return THIS->y > mapBoundUp;
+            if (THIS->y <= mapBoundUp || currentRow == 0) {
+                return FALSE;
+            }
+            nextCell = currentCell - mapMetaWidth;
+            break;
         case J_DOWN:
-            return THIS->y < mapBoundDown;
+            if (THIS->y >= mapBoundDown || currentRow == mapMetaHeight - 1) {
+                return FALSE;
+            }
+            nextCell = currentCell + mapMetaWidth;
+            break;
         default:
             return FALSE;
     }
+    return tunnelAllowsDirection(tunnel, direction) ||
+        tunnelAllowsDirection(levelMap[nextCell], direction);
+}
+
+static UBYTE tryPushBagAhead(void) {
+    UBYTE direction = THIS->custom_data[enemy_direction];
+
+    if (!isEnemyAligned() || THIS->custom_data[mode] != nobMode) {
+        return pushBagNoBag;
+    }
+    if (direction != J_LEFT && direction != J_RIGHT) {
+        return pushBagNoBag;
+    }
+
+    return tryPushBagChainFromCell(getMapMetaTileArrayPosition(THIS->x, THIS->y), direction);
 }
 
 static void consumeGoldAtCurrentCell(void) {
@@ -262,6 +301,11 @@ void UPDATE(void) {
             setEnemyMode(nobMode);
         }
         chooseEnemyDirection();
+        if (tryPushBagAhead() == pushBagBlocked) {
+            THIS->custom_data[enemy_direction] = oppositeDirectionBit(THIS->custom_data[enemy_direction]);
+            THIS->custom_data[movement_accumulator] = 0;
+            return;
+        }
         consumeGoldAtCurrentCell();
     }
     THIS->custom_data[movement_accumulator] += 4;

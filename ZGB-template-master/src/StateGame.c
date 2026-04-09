@@ -10,6 +10,7 @@
 #include "Sounds.h"
 #include "Music.h"
 #include "StateGame.h"
+#include "SpriteBag.h"
 #include "SpritePlayer.h"
 
 IMPORT_MAP(levelDebug);
@@ -46,6 +47,8 @@ extern const unsigned char levelDebugMap[150];
 
 extern uint8_t fx_00[];
 extern void __mute_mask_fx_00;
+extern uint8_t fx_01[];
+extern void __mute_mask_fx_01;
 extern uint8_t spawnTimer;
 
 // options
@@ -69,6 +72,10 @@ uint8_t emeraldDuration = EMERALD_DING_GAP_DURATION;
 uint8_t emeraldScaleTimer = 0;
 uint8_t emeraldFreq[] = { fxC_4, fxD_4, fxE_4, fxF_4, fxG_4, fxA_4, fxB_4, fxC_5 };
 uint8_t emeraldFreqIndex = 0;
+static const uint8_t goldSoundLowFreq[] = { fxC_4, fxD_4, fxE_4, fxF_4 };
+static const uint8_t goldSoundHighFreq[] = { fxC_5, fxB_4, fxA_4, fxG_4 };
+static uint8_t goldSoundStep = 0;
+static uint8_t goldSoundGapTimer = 0;
 
 uint8_t lastVisitedMetaCell = 0;
 
@@ -205,6 +212,83 @@ Sprite* activateBag(uint8_t bagcell) BANKED {
 	return bag;
 }
 
+UBYTE tryPushBagChainFromCell(UBYTE currentCell, UBYTE direction) BANKED {
+	UBYTE bagCells[mapMetaWidth];
+	Sprite* activatedBags[mapMetaWidth];
+	UBYTE chainCount = 0;
+	UBYTE currentColumn = currentCell % mapMetaWidth;
+	UBYTE bagCell;
+	UBYTE destinationCell;
+	UBYTE destinationValue;
+	UBYTE scanColumn;
+	UBYTE idx;
+
+	if (direction == J_LEFT) {
+		if (currentColumn == 0) {
+			return pushBagNoBag;
+		}
+		bagCell = currentCell - 1;
+	} else if (direction == J_RIGHT) {
+		if (currentColumn == mapMetaWidth - 1) {
+			return pushBagNoBag;
+		}
+		bagCell = currentCell + 1;
+	} else {
+		return pushBagNoBag;
+	}
+
+	if ((levelMap[bagCell] & metaTileBag) == 0) {
+		return pushBagNoBag;
+	}
+
+	destinationCell = bagCell;
+	scanColumn = bagCell % mapMetaWidth;
+	while ((levelMap[destinationCell] & metaTileBag) != 0) {
+		if (chainCount == mapMetaWidth) {
+			return pushBagBlocked;
+		}
+		bagCells[chainCount++] = destinationCell;
+		if (direction == J_LEFT) {
+			if (scanColumn == 0) {
+				return pushBagBlocked;
+			}
+			destinationCell--;
+			scanColumn--;
+		} else {
+			if (scanColumn == mapMetaWidth - 1) {
+				return pushBagBlocked;
+			}
+			destinationCell++;
+			scanColumn++;
+		}
+	}
+
+	destinationValue = levelMap[destinationCell];
+	if ((destinationValue & (metaTileBag | metaTileEmerald | metaTileGold)) != 0) {
+		return pushBagBlocked;
+	}
+
+	for (idx = 0; idx != chainCount; ++idx) {
+		activatedBags[idx] = 0;
+	}
+
+	for (idx = chainCount; idx != 0; --idx) {
+		Sprite* bagSprite = activateBag(bagCells[idx - 1]);
+		if (bagSprite == 0) {
+			while (idx < chainCount) {
+				restoreStaticBag(activatedBags[idx]);
+				idx++;
+			}
+			return pushBagBlocked;
+		}
+		bagSprite->custom_data[bagDirection] = direction;
+		setBagState(bagSprite, statePushing);
+		activatedBags[idx - 1] = bagSprite;
+	}
+
+	return pushBagStarted;
+}
+
 
 void updateScore(uint16_t addScore) BANKED {
 	score += addScore;
@@ -228,6 +312,31 @@ static void updateEmeraldSound(void) {
 			emeraldLoop--;
 		}
 	}
+}
+
+static void triggerGoldSound(void) {
+	goldSoundStep = 0;
+	goldSoundGapTimer = 0;
+}
+
+static void updateGoldSound(void) {
+	UBYTE pairIndex;
+
+	if (goldSoundStep >= (sizeof(goldSoundLowFreq) * 2u)) {
+		return;
+	}
+	if (goldSoundGapTimer > 0) {
+		goldSoundGapTimer--;
+		return;
+	}
+
+	pairIndex = goldSoundStep >> 1;
+	fx_01[fxNotePos] = (goldSoundStep & 1u) == 0 ?
+		goldSoundHighFreq[pairIndex] :
+		goldSoundLowFreq[pairIndex];
+	ExecuteSFX(CURRENT_BANK, fx_01, SFX_MUTE_MASK(fx_01), SFX_PRIORITY_NORMAL);
+	goldSoundStep++;
+	goldSoundGapTimer = 3;
 }
 
 UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y) NONBANKED {
@@ -269,6 +378,7 @@ void runMapSideEffects(void) BANKED {
 		const UBYTE x = TILE_FROM_PIXEL(scroll_target->x);
 		const UBYTE y = TILE_FROM_PIXEL(scroll_target->y);
 		updateScore(scoreGold);
+		triggerGoldSound();
 		levelMap[currentCell] &= tunnelMask;
 		levelMap[currentCell] |= direction;
 		updateVideoMemAndMap(x, y, tileBlack);
@@ -319,9 +429,22 @@ void runMapSideEffects(void) BANKED {
 }
 
 static void resetLevelState(void) {
+	uint8_t i;
+	Sprite* spr;
+
 	lastVisitedMetaCell = 0;
 	deathRespawnQueued = FALSE;
 	deathRespawnTimer = 0;
+	if (isDying) {
+		SPRITEMANAGER_ITERATE(i, spr) {
+			if (!spr->marked_for_removal &&
+				spr->type == SpriteBag &&
+				(spr->custom_data[bagStatus] == stateShaking ||
+				 spr->custom_data[bagStatus] == statePushing)) {
+				restoreStaticBag(spr);
+			}
+		}
+	}
 	SpriteManagerReset();
 	enemyCountOnScreen = 0;
 	enemySpawned = 0;
@@ -456,4 +579,5 @@ void UPDATE(void) {
 		paintScore();
 	}
 	updateEmeraldSound();
+	updateGoldSound();
 }

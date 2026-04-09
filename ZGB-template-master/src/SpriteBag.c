@@ -154,6 +154,31 @@ static void crushEnemiesUnderBag(void) {
     }
 }
 
+static void scareEnemiesBelowBag(void) {
+    UBYTE bagColumn;
+    uint8_t i;
+    Sprite* spr;
+
+    if (THIS->x < mapBoundLeft || THIS->x > mapBoundRight) {
+        return;
+    }
+
+    bagColumn = LARGE_TILE_FROM_PIXEL(THIS->x - mapBoundLeft);
+    SPRITEMANAGER_ITERATE(i, spr) {
+        if (!spr->marked_for_removal &&
+            spr->type == SpriteEnemy &&
+            spr->custom_data[enemy_direction] == J_UP &&
+            spr->custom_data[mode] != deadMode &&
+            spr->custom_data[mode] != waitMode &&
+            spr->custom_data[mode] != crushedMode &&
+            spr->y >= THIS->y &&
+            LARGE_TILE_FROM_PIXEL(spr->x - mapBoundLeft) == bagColumn) {
+            spr->custom_data[enemy_direction] = J_DOWN;
+            spr->custom_data[movement_accumulator] = 0;
+        }
+    }
+}
+
 static UBYTE overlapAmount(UINT16 startA, UINT8 sizeA, UINT16 startB, UINT8 sizeB) {
     UINT16 endA = startA + sizeA;
     UINT16 endB = startB + sizeB;
@@ -239,6 +264,7 @@ void UPDATE(void) {
         }
     // else if is falling down as a bag or as a pile of gold
     } else if (THIS->custom_data[bagStatus] == stateFalling && THIS->y <= mapBoundDown) {
+        scareEnemiesBelowBag();
         if (isBagAlignedToMetaCell(THIS) == FALSE) {
             THIS->custom_data[bagFallCounter]++;
             THIS->y++;

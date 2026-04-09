@@ -30,9 +30,6 @@ const UBYTE anim_dead[] = {1, 24};
 
 static const UBYTE deathBounceOffsets[] = {3, 5, 6, 6, 5, 3, 0};
 
-#define pushBagNoBag 0
-#define pushBagStarted 1
-#define pushBagBlocked 2
 #define moveNoStep 0
 #define moveAdvanced 1
 #define moveBlockedByBag 2
@@ -203,89 +200,13 @@ static BOOLEAN isRowDisaligned(void) {
 }
 
 static UBYTE tryPushStaticBag(void) {
-    UBYTE bagCells[mapMetaWidth];
-    Sprite* activatedBags[mapMetaWidth];
-    UBYTE chainCount = 0;
-    UBYTE currentCell;
-    UBYTE currentColumn;
-    UBYTE bagCell;
-    UBYTE destinationCell;
-    UBYTE destinationValue;
-    UBYTE scanColumn;
-    UBYTE idx;
-
     if (direction != J_LEFT && direction != J_RIGHT) {
         return pushBagNoBag;
     }
     if (isRowDisaligned() || isColumnDisaligned()) {
         return pushBagNoBag;
     }
-
-    currentCell = getMapMetaTileArrayPosition(THIS->x, THIS->y);
-    currentColumn = currentCell % mapMetaWidth;
-
-    if (direction == J_LEFT) {
-        if (currentColumn == 0) {
-            return pushBagNoBag;
-        }
-        bagCell = currentCell - 1;
-    } else {
-        if (currentColumn == mapMetaWidth - 1) {
-            return pushBagNoBag;
-        }
-        bagCell = currentCell + 1;
-    }
-
-    if ((levelMap[bagCell] & metaTileBag) == 0) {
-        return pushBagNoBag;
-    }
-
-    destinationCell = bagCell;
-    scanColumn = bagCell % mapMetaWidth;
-    while ((levelMap[destinationCell] & metaTileBag) != 0) {
-        if (chainCount == mapMetaWidth) {
-            return pushBagBlocked;
-        }
-        bagCells[chainCount++] = destinationCell;
-        if (direction == J_LEFT) {
-            if (scanColumn == 0) {
-                return pushBagBlocked;
-            }
-            destinationCell--;
-            scanColumn--;
-        } else {
-            if (scanColumn == mapMetaWidth - 1) {
-                return pushBagBlocked;
-            }
-            destinationCell++;
-            scanColumn++;
-        }
-    }
-
-    destinationValue = levelMap[destinationCell];
-    if ((destinationValue & (metaTileBag | metaTileEmerald | metaTileGold)) != 0) {
-        return pushBagBlocked;
-    }
-
-    for (idx = 0; idx != chainCount; ++idx) {
-        activatedBags[idx] = 0;
-    }
-
-    for (idx = chainCount; idx != 0; --idx) {
-        Sprite* bagSprite = activateBag(bagCells[idx - 1]);
-        if (bagSprite == 0) {
-            while (idx < chainCount) {
-                restoreStaticBag(activatedBags[idx]);
-                idx++;
-            }
-            return pushBagBlocked;
-        }
-        bagSprite->custom_data[bagDirection] = direction;
-        setBagState(bagSprite, statePushing);
-        activatedBags[idx - 1] = bagSprite;
-    }
-
-    return pushBagStarted;
+    return tryPushBagChainFromCell(getMapMetaTileArrayPosition(THIS->x, THIS->y), direction);
 }
 
 static BOOLEAN overlapsMetaSprite(UBYTE x1, UBYTE y1, UBYTE x2, UBYTE y2) {

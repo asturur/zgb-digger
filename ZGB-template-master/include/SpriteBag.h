@@ -8,6 +8,10 @@
 #define stateFalling 3
 #define statePushing 4
 
+#define pushBagNoBag 0
+#define pushBagStarted 1
+#define pushBagBlocked 2
+
 #define bagStatus 0
 #define bagStateTimer 1
 #define bagFallCounter 2
