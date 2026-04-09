@@ -154,6 +154,12 @@ This means new work should usually extend or correct existing gameplay code, not
   - calling ordinary cross-file gameplay helpers is unsafe unless you have explicitly designed the bank switch
 - ZGB switches banks when entering sprite `START/UPDATE/DESTROY` handlers and state `START/UPDATE` handlers. In addition, `BANKED` functions are bank-safe call targets because the runtime/compiler handles the bank switch. Plain C calls between autobanked gameplay files are not automatically banked unless the target is actually `BANKED`.
 - A bug confirmed during bag-to-gold work: `SpriteGold` was placed in ROM bank `02` while shared helpers in `StateGame.c` such as `updateVideoMemAndMap()`, `checkTilesFor()`, and `addOnMap()` were in ROM bank `01`. Direct calls from `SpriteGold` to those helpers crashed until the shared helpers were moved to `NONBANKED`.
+- Another confirmed crash cause: a monster in ROM bank `02` called a plain helper for spawn timing that lived in ROM bank `01`. Moving that helper back into the monster file as a `static` same-file helper fixed the crash.
+- Crash triage rule: when gameplay suddenly crashes, locks up, or behaves nonsensically after a code change, investigate banking first before assuming the gameplay logic is wrong. In this repo, a plain cross-file call from one autobanked gameplay module into another is a common first suspect.
+- For crash investigation, check these questions early:
+  - did a helper move from same-file `static` scope into another gameplay file
+  - is a plain cross-file function call reaching an autobanked module without `BANKED` or `NONBANKED`
+  - did a previously safe call become unsafe because unrelated growth moved files into different ROM banks
 - Do not rely on two gameplay files staying in the same bank just because the current build happens to place them together. With `N_BANKS = A`, that can change after unrelated code or asset growth.
 - Prefer this structure for new gameplay code:
   - keep sprite-private or state-private logic as `static` functions inside the owning `.c`

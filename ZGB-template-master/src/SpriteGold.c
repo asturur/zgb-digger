@@ -82,6 +82,9 @@ static BOOLEAN goldShouldExpireSoon(void) {
 }
 
 void START(void) {
+    if(_cpu != CGB_TYPE){
+        SPRITE_SET_PALETTE(THIS,1);
+    }
     THIS->custom_data[goldStatus] = stateCrumbling;
     setGoldTimer(goldCrumbleTime);
     SetSpriteAnim(THIS, gold_crumbling, 10);

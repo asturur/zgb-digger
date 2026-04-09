@@ -187,6 +187,9 @@ static void updateDeathSequence(void) {
 }
 
 void START(void) {
+    if(_cpu != CGB_TYPE){
+        SPRITE_SET_PALETTE(THIS,1);
+    }
     setDirection(J_RIGHT);
     setRechargeTime(0);
     THIS->custom_data[death_state] = playerDeathNone;

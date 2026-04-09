@@ -11,8 +11,8 @@ const UBYTE bag_shake[] = {4, 0, 1, 0, 2};
 const UBYTE bag_fall[] = {1, 3};
 const UBYTE bag_static[] = {1, 0};
 
-#define playerCrushMinHorizontalOverlap 1
-#define playerCrushMinVerticalOverlap 1
+#define playerCrushMinHorizontalOverlap 4
+#define playerCrushMinVerticalOverlap 2
 // const UBYTE bag_gold_fall_start[] = {3, 6, 5, 4};
 
 // CUSTOM_DATA usage

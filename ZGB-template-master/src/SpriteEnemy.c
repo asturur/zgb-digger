@@ -188,6 +188,9 @@ static void chooseEnemyDirection(void) {
 }
 
 void START(void) {
+    if(_cpu != CGB_TYPE){
+        SPRITE_SET_PALETTE(THIS,1);
+    }
     spawnTimer = getEnemySpawnGapTimer();
     setEnemyMode(waitMode);
     THIS->custom_data[enemy_direction] = J_LEFT;
