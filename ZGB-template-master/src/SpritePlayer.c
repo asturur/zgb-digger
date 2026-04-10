@@ -216,6 +216,47 @@ static BOOLEAN overlapsMetaSprite(UBYTE x1, UBYTE y1, UBYTE x2, UBYTE y2) {
         (UBYTE)(y1 + largeTileSize) > y2;
 }
 
+static Sprite* findHorizontalActiveBagAhead(UBYTE nextX) {
+    uint8_t i;
+    Sprite* spr;
+
+    SPRITEMANAGER_ITERATE(i, spr) {
+        if (!spr->marked_for_removal &&
+            spr->type == SpriteBag &&
+            spr->custom_data[bagStatus] != stateFalling &&
+            overlapsMetaSprite(nextX, THIS->y, spr->x, spr->y)) {
+            return spr;
+        }
+    }
+    return 0;
+}
+
+static UBYTE tryPushActiveBag(void) {
+    Sprite* bag;
+    UBYTE nextX;
+
+    if (direction != J_LEFT && direction != J_RIGHT) {
+        return pushBagNoBag;
+    }
+    if (isRowDisaligned() || isColumnDisaligned()) {
+        return pushBagNoBag;
+    }
+
+    nextX = direction == J_LEFT ? (UBYTE)(THIS->x - 1) : (UBYTE)(THIS->x + 1);
+    bag = findHorizontalActiveBagAhead(nextX);
+    if (bag == 0) {
+        return pushBagNoBag;
+    }
+
+    if (bag->custom_data[bagStatus] != statePushing) {
+        setBagState(bag, statePushing);
+    }
+    bag->custom_data[bagDirection] = direction;
+    bag->custom_data[bagPushDistance] = largeTileSize;
+    bag->custom_data[bagMovementAccumulator] = 0;
+    return pushBagStarted;
+}
+
 static BOOLEAN verticalMoveHitsActiveBag(UBYTE nextY) {
     uint8_t i;
     Sprite* spr;
@@ -479,6 +520,9 @@ void UPDATE(void) {
     }
     if (moving && !isRowDisaligned() && !isColumnDisaligned() && (direction == J_LEFT || direction == J_RIGHT)) {
         UBYTE pushResult = tryPushStaticBag();
+        if (pushResult == pushBagNoBag) {
+            pushResult = tryPushActiveBag();
+        }
         if (pushResult == pushBagBlocked) {
             moving = FALSE;
             if (changeDirection) {
