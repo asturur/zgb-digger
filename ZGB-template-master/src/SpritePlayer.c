@@ -420,9 +420,9 @@ void UPDATE(void) {
         beginTestDeathSequence();
         return;
     }
-    if (isDying) {
-			return;
-		}
+    if (isDying || paused) {
+		return;
+	}
     BOOLEAN moving = FALSE;
     BOOLEAN changeDirection = FALSE;
     if (KEY_PRESSED(J_UP)) {

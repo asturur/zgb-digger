@@ -7,7 +7,6 @@
 
 extern unsigned char levelMap[150];
 extern uint8_t enemyCountOnScreen;
-extern uint8_t isDying;
 extern UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y);
 
 const UBYTE nob_walk[] = {4, 0, 1, 2, 1};
@@ -307,7 +306,7 @@ void START(void) {
 
 
 void UPDATE(void) {
-    if (isDying) {
+    if (isDying || paused) {
         return;
     }
     if (THIS->custom_data[mode] == deadMode) {

@@ -96,7 +96,7 @@ void UPDATE(void) {
     uint8_t state = THIS->custom_data[goldStatus];
     uint16_t timer = getGoldTimer();
 
-    if (isDying) {
+    if (isDying || paused) {
         return;
     }
 

@@ -8,6 +8,7 @@
 #include <string.h>
 #include <Sound.h>
 #include "Sounds.h"
+#include "Keys.h"
 #include "Music.h"
 #include "StateGame.h"
 #include "SpriteBag.h"
@@ -57,6 +58,7 @@ BOOLEAN invincibility = FALSE;
 BOOLEAN debugMode = FALSE;
 
 //
+BOOLEAN paused = FALSE;
 UBYTE currentLevel = 0;
 UBYTE difficultyLevel = 0;
 uint16_t score = 0;
@@ -133,6 +135,20 @@ static void paintScore(void) {
 		UPDATE_HUD_TILE(7 + i, 0, lives >= i ? lifeFont : 0);
 	}
 	UPDATE_HUD_TILE(14, 0, scoreFontOffset + enemyCountOnScreen);
+}
+
+static void togglePause(void) {
+	paused = !paused;
+	if (paused) {
+        UPDATE_HUD_TILE(1, 0, scoreFontOffset);
+		UPDATE_HUD_TILE(2, 0, scoreFontOffset);
+		UPDATE_HUD_TILE(3, 0, scoreFontOffset);
+		UPDATE_HUD_TILE(4, 0, scoreFontOffset);
+		UPDATE_HUD_TILE(5, 0, scoreFontOffset);
+		UPDATE_HUD_TILE(6, 0, scoreFontOffset);
+	} else {
+		paintScore();
+	}
 }
 
 void copyTileMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
@@ -549,6 +565,12 @@ void START(void) {
 }
 
 void UPDATE(void) {
+	if (KEY_TICKED(J_START) && !isDying) {
+		togglePause();
+	}
+	if (paused) {
+		return;
+	}
 	if (isDying) {
 		if (deathRespawnQueued) {
 			if (deathRespawnTimer > 0) {

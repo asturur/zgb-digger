@@ -83,3 +83,4 @@ extern unsigned char levelMap[150];
 extern uint8_t isDying;
 extern BOOLEAN infiniteLives;
 extern uint8_t lives;
+extern BOOLEAN paused;

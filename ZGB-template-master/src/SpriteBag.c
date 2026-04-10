@@ -260,7 +260,7 @@ void START(void) {
 }
 
 void UPDATE(void) {
-    if (isDying) {
+    if (isDying || paused) {
         return;
     }
     if (THIS->custom_data[bagStatus] == stateStatic) {
