@@ -68,6 +68,13 @@ static BOOLEAN isBagAlignedToMetaCell(Sprite* bag) {
         MOD_FOR_LARGE_TILE(bag->y - mapBoundUp) == 0;
 }
 
+static BOOLEAN overlapsMetaSprite(UBYTE x1, UBYTE y1, UBYTE x2, UBYTE y2) {
+    return x1 < (UBYTE)(x2 + largeTileSize) &&
+        (UBYTE)(x1 + largeTileSize) > x2 &&
+        y1 < (UBYTE)(y2 + largeTileSize) &&
+        (UBYTE)(y1 + largeTileSize) > y2;
+}
+
 static BOOLEAN bagCanFallInCellBelow(Sprite* bag) {
     UBYTE cellBelow;
     if (bag->y >= mapBoundDown) {
@@ -117,6 +124,17 @@ void restoreStaticBag(Sprite* bag) BANKED {
 }
 
 static void movePushingBag(void) {
+    if (isBagAlignedToMetaCell(THIS)) {
+        UBYTE pushDirection = THIS->custom_data[bagDirection];
+        UBYTE pushResult = tryPushBagChainFromCell(getMapMetaTileArrayPosition(THIS->x, THIS->y), pushDirection);
+
+        if (pushResult == pushBagBlocked) {
+            THIS->custom_data[bagPushDistance] = 0;
+            THIS->custom_data[bagMovementAccumulator] = 0;
+            return;
+        }
+    }
+
     THIS->custom_data[bagMovementAccumulator] += 4;
     if (THIS->custom_data[bagMovementAccumulator] < 5) {
         return;

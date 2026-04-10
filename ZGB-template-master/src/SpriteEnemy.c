@@ -102,6 +102,13 @@ static BOOLEAN tunnelAllowsDirection(UBYTE tunnel, UBYTE direction) {
     return (tunnel & oppositeDirectionBit(direction)) != 0;
 }
 
+static BOOLEAN overlapsMetaSprite(UBYTE x1, UBYTE y1, UBYTE x2, UBYTE y2) {
+    return x1 < (UBYTE)(x2 + largeTileSize) &&
+        (UBYTE)(x1 + largeTileSize) > x2 &&
+        y1 < (UBYTE)(y2 + largeTileSize) &&
+        (UBYTE)(y1 + largeTileSize) > y2;
+}
+
 static BOOLEAN followCrushingBag(void) {
     uint8_t i;
     Sprite* spr;
@@ -183,6 +190,43 @@ static UBYTE tryPushBagAhead(void) {
     }
 
     return tryPushBagChainFromCell(getMapMetaTileArrayPosition(THIS->x, THIS->y), direction);
+}
+
+static BOOLEAN activeBagAheadBlocksEnemy(void) {
+    UBYTE direction = THIS->custom_data[enemy_direction];
+    UBYTE nextX;
+    uint8_t i;
+    Sprite* spr;
+
+    if (!isEnemyAligned()) {
+        return FALSE;
+    }
+    if (direction != J_LEFT && direction != J_RIGHT) {
+        return FALSE;
+    }
+
+    nextX = direction == J_LEFT ? (UBYTE)(THIS->x - 1) : (UBYTE)(THIS->x + 1);
+
+    SPRITEMANAGER_ITERATE(i, spr) {
+        if (spr->marked_for_removal ||
+            spr->type != SpriteBag ||
+            spr->custom_data[bagStatus] == stateFalling) {
+            continue;
+        }
+        if (!overlapsMetaSprite(nextX, THIS->y, spr->x, spr->y)) {
+            continue;
+        }
+
+        if (spr->custom_data[bagStatus] != statePushing) {
+            return TRUE;
+        }
+
+        if (spr->custom_data[bagDirection] != direction) {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
 }
 
 static void consumeGoldAtCurrentCell(void) {
@@ -301,6 +345,11 @@ void UPDATE(void) {
             setEnemyMode(nobMode);
         }
         chooseEnemyDirection();
+        if (activeBagAheadBlocksEnemy()) {
+            THIS->custom_data[enemy_direction] = oppositeDirectionBit(THIS->custom_data[enemy_direction]);
+            THIS->custom_data[movement_accumulator] = 0;
+            return;
+        }
         if (tryPushBagAhead() == pushBagBlocked) {
             THIS->custom_data[enemy_direction] = oppositeDirectionBit(THIS->custom_data[enemy_direction]);
             THIS->custom_data[movement_accumulator] = 0;
