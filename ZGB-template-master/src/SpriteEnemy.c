@@ -191,17 +191,17 @@ static UBYTE tryPushBagAhead(void) {
     return tryPushBagChainFromCell(getMapMetaTileArrayPosition(THIS->x, THIS->y), direction);
 }
 
-static BOOLEAN activeBagAheadBlocksEnemy(void) {
+static UBYTE tryPushActiveBagAhead(void) {
     UBYTE direction = THIS->custom_data[enemy_direction];
     UBYTE nextX;
     uint8_t i;
     Sprite* spr;
 
     if (!isEnemyAligned()) {
-        return FALSE;
+        return pushBagNoBag;
     }
     if (direction != J_LEFT && direction != J_RIGHT) {
-        return FALSE;
+        return pushBagNoBag;
     }
 
     nextX = direction == J_LEFT ? (UBYTE)(THIS->x - 1) : (UBYTE)(THIS->x + 1);
@@ -215,17 +215,10 @@ static BOOLEAN activeBagAheadBlocksEnemy(void) {
         if (!overlapsMetaSprite(nextX, THIS->y, spr->x, spr->y)) {
             continue;
         }
-
-        if (spr->custom_data[bagStatus] != statePushing) {
-            return TRUE;
-        }
-
-        if (spr->custom_data[bagDirection] != direction) {
-            return TRUE;
-        }
+        return pushActiveBag(spr, direction, bagPushOwnerEnemy);
     }
 
-    return FALSE;
+    return pushBagNoBag;
 }
 
 static void consumeGoldAtCurrentCell(void) {
@@ -340,16 +333,19 @@ void UPDATE(void) {
         THIS->custom_data[mode_timer]++;
     }
     if (isEnemyAligned()) {
+        UBYTE activePushResult;
+
         if (THIS->custom_data[mode] == hobMode && THIS->custom_data[mode_timer] > (30 + (difficultyLevel << 1))) {
             setEnemyMode(nobMode);
         }
         chooseEnemyDirection();
-        if (activeBagAheadBlocksEnemy()) {
+        activePushResult = tryPushActiveBagAhead();
+        if (activePushResult == pushBagBlocked) {
             THIS->custom_data[enemy_direction] = oppositeDirectionBit(THIS->custom_data[enemy_direction]);
             THIS->custom_data[movement_accumulator] = 0;
             return;
         }
-        if (tryPushBagAhead() == pushBagBlocked) {
+        if (activePushResult == pushBagNoBag && tryPushBagAhead() == pushBagBlocked) {
             THIS->custom_data[enemy_direction] = oppositeDirectionBit(THIS->custom_data[enemy_direction]);
             THIS->custom_data[movement_accumulator] = 0;
             return;

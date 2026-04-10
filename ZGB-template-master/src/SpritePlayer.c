@@ -247,14 +247,7 @@ static UBYTE tryPushActiveBag(void) {
     if (bag == 0) {
         return pushBagNoBag;
     }
-
-    if (bag->custom_data[bagStatus] != statePushing) {
-        setBagState(bag, statePushing);
-    }
-    bag->custom_data[bagDirection] = direction;
-    bag->custom_data[bagPushDistance] = largeTileSize;
-    bag->custom_data[bagMovementAccumulator] = 0;
-    return pushBagStarted;
+    return pushActiveBag(bag, direction, bagPushOwnerPlayer);
 }
 
 static BOOLEAN verticalMoveHitsActiveBag(UBYTE nextY) {

@@ -108,13 +108,43 @@ void setBagState(Sprite* bag, UBYTE bagState) BANKED {
             SetSpriteAnim(bag, bag_fall, 15);
             break;
         case statePushing:
-            bag->custom_data[bagStateTimer] = largeTileSize;
+            bag->custom_data[bagPushOwner] = bagPushOwnerNone;
             bag->custom_data[bagFallCounter] = 0;
             bag->custom_data[bagPushDistance] = largeTileSize;
             bag->custom_data[bagMovementAccumulator] = 0;
             SetSpriteAnim(bag, bag_static, 15);
             break;
     }
+}
+
+UBYTE pushActiveBag(Sprite* bag, UBYTE direction, UBYTE owner) BANKED {
+    if (bag == 0 || bag->marked_for_removal || bag->type != SpriteBag) {
+        return pushBagNoBag;
+    }
+    if (bag->custom_data[bagStatus] == stateFalling) {
+        return pushBagBlocked;
+    }
+    if (bag->custom_data[bagStatus] != statePushing) {
+        setBagState(bag, statePushing);
+        bag->custom_data[bagDirection] = direction;
+        bag->custom_data[bagPushOwner] = owner;
+        return pushBagStarted;
+    }
+    if (bag->custom_data[bagDirection] == direction) {
+        if (bag->custom_data[bagPushOwner] < owner) {
+            bag->custom_data[bagPushOwner] = owner;
+        }
+        bag->custom_data[bagPushDistance] = largeTileSize;
+        return pushBagStarted;
+    }
+    if (owner > bag->custom_data[bagPushOwner]) {
+        bag->custom_data[bagDirection] = direction;
+        bag->custom_data[bagPushOwner] = owner;
+        bag->custom_data[bagPushDistance] = largeTileSize;
+        bag->custom_data[bagMovementAccumulator] = 0;
+        return pushBagStarted;
+    }
+    return pushBagBlocked;
 }
 
 void restoreStaticBag(Sprite* bag) BANKED {
