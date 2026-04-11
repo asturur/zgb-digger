@@ -25,7 +25,7 @@ void UPDATE(void) {
     uint8_t i;
 	Sprite* spr;
 
-    if (isDying) {
+    if (isDying || paused) {
         return;
     }
 

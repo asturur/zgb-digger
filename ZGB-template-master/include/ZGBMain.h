@@ -2,6 +2,7 @@
 #define ZGBMAIN_H
 
 #define STATES \
+_STATE(StateSplashZGB)\
 _STATE(StateMenu)\
 _STATE(StateOptions)\
 _STATE(StateGame)\

@@ -68,6 +68,13 @@ static BOOLEAN isBagAlignedToMetaCell(Sprite* bag) {
         MOD_FOR_LARGE_TILE(bag->y - mapBoundUp) == 0;
 }
 
+static BOOLEAN overlapsMetaSprite(UBYTE x1, UBYTE y1, UBYTE x2, UBYTE y2) {
+    return x1 < (UBYTE)(x2 + largeTileSize) &&
+        (UBYTE)(x1 + largeTileSize) > x2 &&
+        y1 < (UBYTE)(y2 + largeTileSize) &&
+        (UBYTE)(y1 + largeTileSize) > y2;
+}
+
 static BOOLEAN bagCanFallInCellBelow(Sprite* bag) {
     UBYTE cellBelow;
     if (bag->y >= mapBoundDown) {
@@ -101,13 +108,43 @@ void setBagState(Sprite* bag, UBYTE bagState) BANKED {
             SetSpriteAnim(bag, bag_fall, 15);
             break;
         case statePushing:
-            bag->custom_data[bagStateTimer] = largeTileSize;
+            bag->custom_data[bagPushOwner] = bagPushOwnerNone;
             bag->custom_data[bagFallCounter] = 0;
             bag->custom_data[bagPushDistance] = largeTileSize;
             bag->custom_data[bagMovementAccumulator] = 0;
             SetSpriteAnim(bag, bag_static, 15);
             break;
     }
+}
+
+UBYTE pushActiveBag(Sprite* bag, UBYTE direction, UBYTE owner) BANKED {
+    if (bag == 0 || bag->marked_for_removal || bag->type != SpriteBag) {
+        return pushBagNoBag;
+    }
+    if (bag->custom_data[bagStatus] == stateFalling) {
+        return pushBagBlocked;
+    }
+    if (bag->custom_data[bagStatus] != statePushing) {
+        setBagState(bag, statePushing);
+        bag->custom_data[bagDirection] = direction;
+        bag->custom_data[bagPushOwner] = owner;
+        return pushBagStarted;
+    }
+    if (bag->custom_data[bagDirection] == direction) {
+        if (bag->custom_data[bagPushOwner] < owner) {
+            bag->custom_data[bagPushOwner] = owner;
+        }
+        bag->custom_data[bagPushDistance] = largeTileSize;
+        return pushBagStarted;
+    }
+    if (owner > bag->custom_data[bagPushOwner]) {
+        bag->custom_data[bagDirection] = direction;
+        bag->custom_data[bagPushOwner] = owner;
+        bag->custom_data[bagPushDistance] = largeTileSize;
+        bag->custom_data[bagMovementAccumulator] = 0;
+        return pushBagStarted;
+    }
+    return pushBagBlocked;
 }
 
 void restoreStaticBag(Sprite* bag) BANKED {
@@ -117,6 +154,17 @@ void restoreStaticBag(Sprite* bag) BANKED {
 }
 
 static void movePushingBag(void) {
+    if (isBagAlignedToMetaCell(THIS)) {
+        UBYTE pushDirection = THIS->custom_data[bagDirection];
+        UBYTE pushResult = tryPushBagChainFromCell(getMapMetaTileArrayPosition(THIS->x, THIS->y), pushDirection);
+
+        if (pushResult == pushBagBlocked) {
+            THIS->custom_data[bagPushDistance] = 0;
+            THIS->custom_data[bagMovementAccumulator] = 0;
+            return;
+        }
+    }
+
     THIS->custom_data[bagMovementAccumulator] += 4;
     if (THIS->custom_data[bagMovementAccumulator] < 5) {
         return;
@@ -150,6 +198,31 @@ static void crushEnemiesUnderBag(void) {
             if (CheckCollision(THIS, spr)) {
                 crushEnemy(spr);
             }
+        }
+    }
+}
+
+static void scareEnemiesBelowBag(void) {
+    UBYTE bagColumn;
+    uint8_t i;
+    Sprite* spr;
+
+    if (THIS->x < mapBoundLeft || THIS->x > mapBoundRight) {
+        return;
+    }
+
+    bagColumn = LARGE_TILE_FROM_PIXEL(THIS->x - mapBoundLeft);
+    SPRITEMANAGER_ITERATE(i, spr) {
+        if (!spr->marked_for_removal &&
+            spr->type == SpriteEnemy &&
+            spr->custom_data[enemy_direction] == J_UP &&
+            spr->custom_data[mode] != deadMode &&
+            spr->custom_data[mode] != waitMode &&
+            spr->custom_data[mode] != crushedMode &&
+            spr->y >= THIS->y &&
+            LARGE_TILE_FROM_PIXEL(spr->x - mapBoundLeft) == bagColumn) {
+            spr->custom_data[enemy_direction] = J_DOWN;
+            spr->custom_data[movement_accumulator] = 0;
         }
     }
 }
@@ -217,7 +290,7 @@ void START(void) {
 }
 
 void UPDATE(void) {
-    if (isDying) {
+    if (isDying || paused) {
         return;
     }
     if (THIS->custom_data[bagStatus] == stateStatic) {
@@ -239,6 +312,7 @@ void UPDATE(void) {
         }
     // else if is falling down as a bag or as a pile of gold
     } else if (THIS->custom_data[bagStatus] == stateFalling && THIS->y <= mapBoundDown) {
+        scareEnemiesBelowBag();
         if (isBagAlignedToMetaCell(THIS) == FALSE) {
             THIS->custom_data[bagFallCounter]++;
             THIS->y++;
