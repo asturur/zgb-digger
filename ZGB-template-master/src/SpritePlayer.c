@@ -30,9 +30,6 @@ const UBYTE anim_dead[] = {1, 24};
 
 static const UBYTE deathBounceOffsets[] = {3, 5, 6, 6, 5, 3, 0};
 
-#define pushBagNoBag 0
-#define pushBagStarted 1
-#define pushBagBlocked 2
 #define moveNoStep 0
 #define moveAdvanced 1
 #define moveBlockedByBag 2
@@ -203,16 +200,40 @@ static BOOLEAN isRowDisaligned(void) {
 }
 
 static UBYTE tryPushStaticBag(void) {
-    UBYTE bagCells[mapMetaWidth];
-    Sprite* activatedBags[mapMetaWidth];
-    UBYTE chainCount = 0;
-    UBYTE currentCell;
-    UBYTE currentColumn;
-    UBYTE bagCell;
-    UBYTE destinationCell;
-    UBYTE destinationValue;
-    UBYTE scanColumn;
-    UBYTE idx;
+    if (direction != J_LEFT && direction != J_RIGHT) {
+        return pushBagNoBag;
+    }
+    if (isRowDisaligned() || isColumnDisaligned()) {
+        return pushBagNoBag;
+    }
+    return tryPushBagChainFromCell(getMapMetaTileArrayPosition(THIS->x, THIS->y), direction);
+}
+
+static BOOLEAN overlapsMetaSprite(UBYTE x1, UBYTE y1, UBYTE x2, UBYTE y2) {
+    return x1 < (UBYTE)(x2 + largeTileSize) &&
+        (UBYTE)(x1 + largeTileSize) > x2 &&
+        y1 < (UBYTE)(y2 + largeTileSize) &&
+        (UBYTE)(y1 + largeTileSize) > y2;
+}
+
+static Sprite* findHorizontalActiveBagAhead(UBYTE nextX) {
+    uint8_t i;
+    Sprite* spr;
+
+    SPRITEMANAGER_ITERATE(i, spr) {
+        if (!spr->marked_for_removal &&
+            spr->type == SpriteBag &&
+            spr->custom_data[bagStatus] != stateFalling &&
+            overlapsMetaSprite(nextX, THIS->y, spr->x, spr->y)) {
+            return spr;
+        }
+    }
+    return 0;
+}
+
+static UBYTE tryPushActiveBag(void) {
+    Sprite* bag;
+    UBYTE nextX;
 
     if (direction != J_LEFT && direction != J_RIGHT) {
         return pushBagNoBag;
@@ -221,78 +242,12 @@ static UBYTE tryPushStaticBag(void) {
         return pushBagNoBag;
     }
 
-    currentCell = getMapMetaTileArrayPosition(THIS->x, THIS->y);
-    currentColumn = currentCell % mapMetaWidth;
-
-    if (direction == J_LEFT) {
-        if (currentColumn == 0) {
-            return pushBagNoBag;
-        }
-        bagCell = currentCell - 1;
-    } else {
-        if (currentColumn == mapMetaWidth - 1) {
-            return pushBagNoBag;
-        }
-        bagCell = currentCell + 1;
-    }
-
-    if ((levelMap[bagCell] & metaTileBag) == 0) {
+    nextX = direction == J_LEFT ? (UBYTE)(THIS->x - 1) : (UBYTE)(THIS->x + 1);
+    bag = findHorizontalActiveBagAhead(nextX);
+    if (bag == 0) {
         return pushBagNoBag;
     }
-
-    destinationCell = bagCell;
-    scanColumn = bagCell % mapMetaWidth;
-    while ((levelMap[destinationCell] & metaTileBag) != 0) {
-        if (chainCount == mapMetaWidth) {
-            return pushBagBlocked;
-        }
-        bagCells[chainCount++] = destinationCell;
-        if (direction == J_LEFT) {
-            if (scanColumn == 0) {
-                return pushBagBlocked;
-            }
-            destinationCell--;
-            scanColumn--;
-        } else {
-            if (scanColumn == mapMetaWidth - 1) {
-                return pushBagBlocked;
-            }
-            destinationCell++;
-            scanColumn++;
-        }
-    }
-
-    destinationValue = levelMap[destinationCell];
-    if ((destinationValue & (metaTileBag | metaTileEmerald | metaTileGold)) != 0) {
-        return pushBagBlocked;
-    }
-
-    for (idx = 0; idx != chainCount; ++idx) {
-        activatedBags[idx] = 0;
-    }
-
-    for (idx = chainCount; idx != 0; --idx) {
-        Sprite* bagSprite = activateBag(bagCells[idx - 1]);
-        if (bagSprite == 0) {
-            while (idx < chainCount) {
-                restoreStaticBag(activatedBags[idx]);
-                idx++;
-            }
-            return pushBagBlocked;
-        }
-        bagSprite->custom_data[bagDirection] = direction;
-        setBagState(bagSprite, statePushing);
-        activatedBags[idx - 1] = bagSprite;
-    }
-
-    return pushBagStarted;
-}
-
-static BOOLEAN overlapsMetaSprite(UBYTE x1, UBYTE y1, UBYTE x2, UBYTE y2) {
-    return x1 < (UBYTE)(x2 + largeTileSize) &&
-        (UBYTE)(x1 + largeTileSize) > x2 &&
-        y1 < (UBYTE)(y2 + largeTileSize) &&
-        (UBYTE)(y1 + largeTileSize) > y2;
+    return pushActiveBag(bag, direction, bagPushOwnerPlayer);
 }
 
 static BOOLEAN verticalMoveHitsActiveBag(UBYTE nextY) {
@@ -458,9 +413,9 @@ void UPDATE(void) {
         beginTestDeathSequence();
         return;
     }
-    if (isDying) {
-			return;
-		}
+    if (isDying || paused) {
+		return;
+	}
     BOOLEAN moving = FALSE;
     BOOLEAN changeDirection = FALSE;
     if (KEY_PRESSED(J_UP)) {
@@ -558,6 +513,9 @@ void UPDATE(void) {
     }
     if (moving && !isRowDisaligned() && !isColumnDisaligned() && (direction == J_LEFT || direction == J_RIGHT)) {
         UBYTE pushResult = tryPushStaticBag();
+        if (pushResult == pushBagNoBag) {
+            pushResult = tryPushActiveBag();
+        }
         if (pushResult == pushBagBlocked) {
             moving = FALSE;
             if (changeDirection) {

@@ -8,12 +8,21 @@
 #define stateFalling 3
 #define statePushing 4
 
+#define pushBagNoBag 0
+#define pushBagStarted 1
+#define pushBagBlocked 2
+
 #define bagStatus 0
 #define bagStateTimer 1
 #define bagFallCounter 2
 #define bagDirection 3
 #define bagPushDistance 4
 #define bagMovementAccumulator 5
+
+#define bagPushOwner bagStateTimer
+#define bagPushOwnerNone 0
+#define bagPushOwnerEnemy 1
+#define bagPushOwnerPlayer 2
 
 // tiles numbers for bag on black
 #define bagTL 22
@@ -25,3 +34,4 @@
 
 void setBagState(Sprite* bag, UBYTE bagState) BANKED;
 void restoreStaticBag(Sprite* bag) BANKED;
+UBYTE pushActiveBag(Sprite* bag, UBYTE direction, UBYTE owner) BANKED;
