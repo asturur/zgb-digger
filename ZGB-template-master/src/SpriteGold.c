@@ -13,11 +13,6 @@
 #define goldTimerLo 1
 #define goldTimerHi 2
 
-#define goldTL 18
-#define goldBL 19
-#define goldTR 20
-#define goldBR 21
-
 
 const UBYTE gold_crumbling[] = {1, 0};
 const UBYTE gold_static[] = {1, 0};

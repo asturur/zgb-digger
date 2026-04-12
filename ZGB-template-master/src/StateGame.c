@@ -24,6 +24,7 @@ IMPORT_MAP(level6);
 IMPORT_MAP(level7);
 IMPORT_MAP(level8);
 IMPORT_MAP(hud);
+IMPORT_TILES(commonTiles);
 
 
 extern const UBYTE direction;
@@ -163,6 +164,8 @@ void copyTileMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONB
 	currentInMemoryLevel.data = tileMap;
 	currentInMemoryLevel.width = 32;
 	currentInMemoryLevel.height = 23;
+	currentInMemoryLevel.extra_tiles_bank = BANK(commonTiles);
+    currentInMemoryLevel.extra_tiles = &commonTiles;
 	// if (levelToLoad->attributes) memcpy(map_attr, levelToLoad->attributes, current_level.width * current_level.height); else memset(map_attr, 0, sizeof(map_attr));
 	SWITCH_ROM(__save);
 }
