@@ -37,6 +37,18 @@
 #define tileBagBL 8
 #define tileBagBR 9
 
+// tiles for gold on black
+#define goldTL 10
+#define goldBL 11
+#define goldTR 12
+#define goldBR 13
+
+// tiles for bag on black
+#define bagTL 14
+#define bagTR 15
+#define bagBL 16
+#define bagBR 17
+
 #define tunnelMask 0x0F
 
 #define metaTileEmerald 16
@@ -68,6 +80,7 @@ void updateScore(uint16_t addScore) BANKED;
 BOOLEAN checkTilesFor(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
 UBYTE getTileMapTile(UBYTE column, UBYTE row) NONBANKED;
 UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y) NONBANKED;
+BOOLEAN isMetaCellOpen(UBYTE cell) NONBANKED;
 void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) NONBANKED;
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
 void runMapSideEffects(void) BANKED;

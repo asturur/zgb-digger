@@ -85,7 +85,7 @@ static BOOLEAN bagCanFallInCellBelow(Sprite* bag) {
     }
     cellBelow = getMapMetaTileArrayPosition(bag->x, bag->y) + mapMetaWidth;
     return (levelMap[cellBelow] & metaTileBag) == 0 &&
-        (levelMap[cellBelow] & tunnelMask) != 0;
+        isMetaCellOpen(cellBelow);
 }
 
 void setBagState(Sprite* bag, UBYTE bagState) BANKED {

@@ -25,10 +25,6 @@
 #define bagPushOwnerPlayer 2
 
 // tiles numbers for bag on black
-#define bagTL 22
-#define bagTR 23
-#define bagBL 24
-#define bagBR 25
 #define bagOnGrass FALSE
 #define bagOnTunnel TRUE
 
