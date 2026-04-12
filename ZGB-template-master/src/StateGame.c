@@ -21,6 +21,8 @@ IMPORT_MAP(level5);
 IMPORT_MAP(level6);
 IMPORT_MAP(level7);
 IMPORT_MAP(level8);
+IMPORT_MAP(hud);
+
 
 extern const UBYTE direction;
 extern const UBYTE oppositeDirection;
@@ -420,7 +422,6 @@ void START(void) {
 	currentLevel = debugMode ? 0 : 1;
 	loadLevel(currentLevel);
 	PlayMusic(popcorn, 1);
-	IMPORT_MAP(hud);
 	INIT_HUD_EX(hud, 0, 8);
 	updateScore(0);
 }
