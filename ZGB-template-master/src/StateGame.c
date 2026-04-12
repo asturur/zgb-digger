@@ -366,6 +366,15 @@ UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y) NONBANKED {
 	return row * mapMetaWidth + column;
 }
 
+BOOLEAN isMetaCellOpen(UBYTE cell) NONBANKED {
+	const UBYTE column = (UBYTE)(cell % mapMetaWidth);
+	const UBYTE row = (UBYTE)(cell / mapMetaWidth);
+	const UBYTE tileColumn = (UBYTE)(1 + (column << 1));
+	const UBYTE tileRow = (UBYTE)(2 + (row << 1));
+
+	return checkTilesFor(tileColumn, tileRow, tileBlack);
+}
+
 void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) NONBANKED {
 	const UBYTE currentCell = getMapMetaTileArrayPosition(x, y);
 	levelMap[currentCell] += metaTile;
@@ -377,7 +386,7 @@ static void tryActivateBagAboveCell(UBYTE cellBelow) {
 	if (cellBelow < mapMetaWidth) {
 		return;
 	}
-	if ((levelMap[cellBelow] & tunnelMask) == 0) {
+	if (!isMetaCellOpen(cellBelow)) {
 		return;
 	}
 	bagCell = cellBelow - mapMetaWidth;
@@ -387,11 +396,36 @@ static void tryActivateBagAboveCell(UBYTE cellBelow) {
 	activateBag(bagCell);
 }
 
+static void tryActivateBagsAbovePlayer(void) {
+	UBYTE cells[4];
+	UBYTE count = 0;
+	UBYTE i;
+	UBYTE cell;
+
+	if (scroll_target == 0 || scroll_target->marked_for_removal) {
+		return;
+	}
+
+	cells[count++] = getMapMetaTileArrayPosition(scroll_target->x, scroll_target->y);
+	cells[count++] = getMapMetaTileArrayPosition((uint16_t)(scroll_target->x + largeTileSize - 1), scroll_target->y);
+	cells[count++] = getMapMetaTileArrayPosition(scroll_target->x, (uint16_t)(scroll_target->y + largeTileSize - 1));
+	cells[count++] = getMapMetaTileArrayPosition((uint16_t)(scroll_target->x + largeTileSize - 1), (uint16_t)(scroll_target->y + largeTileSize - 1));
+
+	for (i = 0; i != count; ++i) {
+		cell = cells[i];
+		if ((i > 0 && cell == cells[0]) ||
+			(i > 1 && cell == cells[1]) ||
+			(i > 2 && cell == cells[2])) {
+			continue;
+		}
+		tryActivateBagAboveCell(cell);
+	}
+}
+
 void runMapSideEffects(void) BANKED {
 	const UBYTE currentCell = getMapMetaTileArrayPosition(scroll_target->x, scroll_target->y);
 	const UBYTE currentMapValue = levelMap[currentCell];
-	const UBYTE previousCell = lastVisitedMetaCell;
-	tryActivateBagAboveCell(currentCell);
+	tryActivateBagsAbovePlayer();
 	if (currentCell == lastVisitedMetaCell && (currentMapValue & metaTileGold) == 0) {
 		return;
 	}
@@ -440,11 +474,6 @@ void runMapSideEffects(void) BANKED {
 		// we update the previous cell for the opposite direciton, so is a full tunnel
 		
 		levelMap[lastVisitedMetaCell] |= oppositeDirection;
-	}
-
-	tryActivateBagAboveCell(currentCell);
-	if (previousCell != currentCell) {
-		tryActivateBagAboveCell(previousCell);
 	}
 	lastVisitedMetaCell = currentCell;
 }
