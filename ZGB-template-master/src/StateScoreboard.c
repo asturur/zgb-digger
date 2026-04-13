@@ -25,6 +25,8 @@
 #define spawnGoldText (spawnGold + 60)
 #define spawnEmerald (spawnGoldText + 30)
 #define spawnEmeraldText (spawnEmerald + 60)
+#define spawnBonus (spawnEmeraldText + 30)
+#define spawnBonusText (spawnBonus + 60)
 
 IMPORT_TILES(font);
 IMPORT_MAP(scoreBoard);
@@ -40,6 +42,7 @@ static Sprite* enemyHob;
 static Sprite* digger;
 
 void START(void) {
+	OBP0_REG = DMG_PALETTE(DMG_WHITE, DMG_LITE_GRAY, DMG_DARK_GRAY, DMG_BLACK); // normal palette
 	OBP1_REG = DMG_PALETTE(DMG_BLACK, DMG_WHITE, DMG_LITE_GRAY, DMG_DARK_GRAY); // bright palette
 	splash_timer = 0;
 	move_bkg(0, 0);
@@ -48,7 +51,7 @@ void START(void) {
 	MoveScroll(0, 0);
 	INIT_FONT(font, PRINT_BKG);
 
-	PRINT(startLeft, 4, "HI SCORES");
+	PRINT(startLeft, 3, " HI SCORES");
 	PRINT(startLeft, 4, "... 000000");
 	PRINT(startLeft, 5, "... 000000");
 	PRINT(startLeft, 6, "... 000000");
@@ -65,6 +68,7 @@ void START(void) {
 	// PRINT(11, 12, "  EMERALD");
 	// PRINT(11, 14, "  BONUS");
 }
+UBYTE spriteStaticMode = 1; 
 
 void UPDATE(void) {
 	if (splash_timer < 60000) {
@@ -94,21 +98,29 @@ void UPDATE(void) {
 			SetSpriteAnim(digger, anim_walk_left, 15);
 		break;
 		case spawnDiggerText:
-		SetSpriteAnim(digger, anim_walk_right, 15);
+			SetSpriteAnim(digger, anim_walk_right, 15);
 			PRINT(startRight, 8, "  DIGGER");
 		break;
 		case spawnGold:
-
+		    spriteStaticMode = 2;
+			SpriteManagerAddEx(SpriteStaticobj, leftDestination - 1, 28 + 16 * 3, &spriteStaticMode);
 		break;
 		case spawnGoldText:
-		SetSpriteAnim(digger, anim_walk_right, 15);
 			PRINT(startRight, 10, "  GOLD");
 		break;
 		case spawnEmerald:
-
+			spriteStaticMode = 1;
+			SpriteManagerAddEx(SpriteStaticobj, leftDestination - 1, 28 + 16 * 4, &spriteStaticMode);
 		break;
 		case spawnEmeraldText:
 			PRINT(startRight, 12, "  EMERALD");
+		break;
+		case spawnBonus:
+			spriteStaticMode = 3;
+			SpriteManagerAddEx(SpriteStaticobj, leftDestination - 1, 28 + 16 * 5, &spriteStaticMode);
+		break;
+		case spawnBonusText:
+			PRINT(startRight, 14, "  BONUS");
 		break;
 	}
 
