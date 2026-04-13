@@ -26,7 +26,7 @@ static BOOLEAN enemyUsesHobAnimation(Sprite* enemy) {
         enemy->anim_data == hob_dies;
 }
 
-static void setEnemyModeFor(Sprite* enemy, UBYTE enemyMode) {
+void setEnemyModeFor(Sprite* enemy, UBYTE enemyMode) BANKED {
     BOOLEAN useHobDeathAnim = enemyUsesHobAnimation(enemy);
     enemy->custom_data[mode] = enemyMode;
 
@@ -49,6 +49,12 @@ static void setEnemyModeFor(Sprite* enemy, UBYTE enemyMode) {
         case crushedMode:
             enemy->custom_data[mode_timer] = 0;
             SetSpriteAnim(enemy, useHobDeathAnim ? hob_dies : nob_dies, 15);
+        case scoreboardNobMode:
+            enemy->custom_data[mode_timer] = 0;
+            SetSpriteAnim(enemy, nob_walk, 15);
+        case scoreboardHobMode:
+            enemy->custom_data[mode_timer] = 0;
+            SetSpriteAnim(enemy, hob_walk, 15);
         break;
     }
 }
@@ -290,6 +296,7 @@ void START(void) {
     }
     spawnTimer = getEnemySpawnGapTimer();
     setEnemyMode(waitMode);
+    
     THIS->custom_data[enemy_direction] = J_LEFT;
     THIS->custom_data[movement_accumulator] = 20;
     THIS->lim_x = 256;
@@ -299,7 +306,7 @@ void START(void) {
 
 
 void UPDATE(void) {
-    if (isDying || paused) {
+    if (isDying || paused || THIS->custom_data[mode] == scoreboardHobMode || THIS->custom_data[mode] == scoreboardNobMode) {
         return;
     }
     if (THIS->custom_data[mode] == deadMode) {

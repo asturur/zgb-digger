@@ -4,6 +4,7 @@
 #define STATES \
 _STATE(StateSplashZGB)\
 _STATE(StateMenu)\
+_STATE(StateScoreboard)\
 _STATE(StateOptions)\
 _STATE(StateGame)\
 STATE_DEF_END
