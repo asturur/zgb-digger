@@ -44,6 +44,9 @@ static Sprite* digger;
 void START(void) {
 	OBP0_REG = DMG_PALETTE(DMG_WHITE, DMG_LITE_GRAY, DMG_DARK_GRAY, DMG_BLACK); // normal palette
 	OBP1_REG = DMG_PALETTE(DMG_BLACK, DMG_WHITE, DMG_LITE_GRAY, DMG_DARK_GRAY); // bright palette
+	enemyNob = 0;
+	enemyHob = 0;
+	digger = 0;
 	splash_timer = 0;
 	move_bkg(0, 0);
 
@@ -80,25 +83,33 @@ void UPDATE(void) {
 	switch (splash_timer) {
 		case spawnNob: 
 			enemyNob = SpriteManagerAdd(SpriteEnemy, leftSpawnPoint, 28);
-			setEnemyModeFor(enemyNob, scoreboardNobMode);
+			if (enemyNob != 0) {
+				setEnemyModeFor(enemyNob, scoreboardNobMode);
+			}
 		break;
 		case spawnNobText:
 			PRINT(startRight, 4, "  NOBBIN");
 		break;
 		case spawnHob:
 			enemyHob = SpriteManagerAdd(SpriteEnemy, leftSpawnPoint, 28 + 16);
-			setEnemyModeFor(enemyHob, scoreboardHobMode);
+			if (enemyHob != 0) {
+				setEnemyModeFor(enemyHob, scoreboardHobMode);
+			}
 		break;
 		case spawnHobText:
 			PRINT(startRight, 6, "  HOBBIN");
 		break;
 		case spawnDigger:
 			digger = SpriteManagerAdd(SpritePlayer, leftSpawnPoint, 28 + 16 * 2);
-			digger->custom_data[death_state] = playerDeathScoreboardMode;
-			SetSpriteAnim(digger, anim_walk_left, 15);
+			if (digger != 0) {
+				digger->custom_data[death_state] = playerDeathScoreboardMode;
+				SetSpriteAnim(digger, anim_walk_left, 15);
+			}
 		break;
 		case spawnDiggerText:
-			SetSpriteAnim(digger, anim_walk_right, 15);
+			if (digger != 0) {
+				SetSpriteAnim(digger, anim_walk_right, 15);
+			}
 			PRINT(startRight, 8, "  DIGGER");
 		break;
 		case spawnGold:
@@ -124,21 +135,21 @@ void UPDATE(void) {
 		break;
 	}
 
-	if (enemyNob->x >= leftDestination) {
+	if (enemyNob != 0 && enemyNob->x >= leftDestination) {
 		enemyNob->custom_data[enemy_movement_accumulator] += 4;
     	if (enemyNob->custom_data[enemy_movement_accumulator] >= 25) {
         	enemyNob->custom_data[enemy_movement_accumulator] -= 5;
 			enemyNob->x--;
     	}
 	}
-	if (enemyHob->x >= leftDestination) {
+	if (enemyHob != 0 && enemyHob->x >= leftDestination) {
 		enemyHob->custom_data[enemy_movement_accumulator] += 4;
     	if (enemyHob->custom_data[enemy_movement_accumulator] >= 25) {
         	enemyHob->custom_data[enemy_movement_accumulator] -= 5;
 			enemyHob->x--;
     	}
 	}	
-	if (digger->x >= leftDestination) {
+	if (digger != 0 && digger->x >= leftDestination) {
 		digger->custom_data[player_movement_accumulator] += 4;
     	if (digger->custom_data[player_movement_accumulator] >= 25) {
         	digger->custom_data[player_movement_accumulator] -= 5;
