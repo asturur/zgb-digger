@@ -222,7 +222,7 @@ static void scareEnemiesBelowBag(void) {
             spr->y >= THIS->y &&
             LARGE_TILE_FROM_PIXEL(spr->x - mapBoundLeft) == bagColumn) {
             spr->custom_data[enemy_direction] = J_DOWN;
-            spr->custom_data[movement_accumulator] = 0;
+            spr->custom_data[enemy_movement_accumulator] = 0;
         }
     }
 }

@@ -4,6 +4,7 @@
 #include "Keys.h"
 #include "Palette.h"
 #include "ZGBMain.h"
+#include <gb/gb.h> 
 
 IMPORT_MAP(splash_zgb);
 
@@ -12,6 +13,8 @@ IMPORT_MAP(splash_zgb);
 UINT16 splash_timer;
 
 void START(void) {
+	OBP0_REG = DMG_PALETTE(DMG_WHITE, DMG_LITE_GRAY, DMG_DARK_GRAY, DMG_BLACK); // normal palette
+    OBP1_REG = DMG_PALETTE(DMG_BLACK, DMG_WHITE, DMG_LITE_GRAY, DMG_DARK_GRAY); // bright palette
 	splash_timer = SPLASH_SCREEN_TIMEOUT * 60;
 	SetBorderColor(RGB(0, 0, 0));
 	InitScroll(BANK(splash_zgb), &splash_zgb, 0, 0);

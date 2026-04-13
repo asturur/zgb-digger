@@ -188,7 +188,7 @@ void START(void) {
     setDirection(J_RIGHT);
     setRechargeTime(0);
     THIS->custom_data[death_state] = playerDeathNone;
-    THIS->custom_data[movement_accumulator] = 0;
+    THIS->custom_data[player_movement_accumulator] = 0;
 }
 
 static BOOLEAN isColumnDisaligned(void) {
@@ -281,17 +281,17 @@ static BOOLEAN verticalMoveBlockedByBag(UBYTE nextY) {
 static UBYTE updatePosition(void) {
     UBYTE nextY;
 
-    THIS->custom_data[movement_accumulator] += 4;
-    if (THIS->custom_data[movement_accumulator] < 5) {
+    THIS->custom_data[player_movement_accumulator] += 4;
+    if (THIS->custom_data[player_movement_accumulator] < 5) {
         return moveNoStep;
     }
-    THIS->custom_data[movement_accumulator] -= 5;
+    THIS->custom_data[player_movement_accumulator] -= 5;
     switch (direction) {
         case J_UP:
             if (THIS->y > mapBoundUp) {
                 nextY = THIS->y - 1;
                 if (verticalMoveBlockedByBag(nextY)) {
-                    THIS->custom_data[movement_accumulator] = 0;
+                    THIS->custom_data[player_movement_accumulator] = 0;
                     return moveBlockedByBag;
                 }
                 THIS->y = nextY;
@@ -302,7 +302,7 @@ static UBYTE updatePosition(void) {
             if (THIS->y < mapBoundDown) {
                 nextY = THIS->y + 1;
                 if (verticalMoveBlockedByBag(nextY)) {
-                    THIS->custom_data[movement_accumulator] = 0;
+                    THIS->custom_data[player_movement_accumulator] = 0;
                     return moveBlockedByBag;
                 }
                 THIS->y = nextY;
@@ -404,6 +404,10 @@ static void updateMapTiles(void) {
 
 void UPDATE(void) {
     UBYTE moveResult = moveNoStep;
+
+    if (THIS->custom_data[death_state] == playerDeathScoreboardMode) {
+        return;
+    }
 
     if (THIS->custom_data[death_state] != playerDeathNone) {
         updateDeathSequence();
@@ -533,10 +537,10 @@ void UPDATE(void) {
             moving = FALSE;
         }
     } else {
-        THIS->custom_data[movement_accumulator] = 0;
+        THIS->custom_data[player_movement_accumulator] = 0;
     }
     if (!moving) {
-        THIS->custom_data[movement_accumulator] = 0;
+        THIS->custom_data[player_movement_accumulator] = 0;
     }
 }
 

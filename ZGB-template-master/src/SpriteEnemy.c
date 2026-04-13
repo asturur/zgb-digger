@@ -49,9 +49,11 @@ void setEnemyModeFor(Sprite* enemy, UBYTE enemyMode) BANKED {
         case crushedMode:
             enemy->custom_data[mode_timer] = 0;
             SetSpriteAnim(enemy, useHobDeathAnim ? hob_dies : nob_dies, 15);
+        break;
         case scoreboardNobMode:
             enemy->custom_data[mode_timer] = 0;
             SetSpriteAnim(enemy, nob_walk, 15);
+        break;
         case scoreboardHobMode:
             enemy->custom_data[mode_timer] = 0;
             SetSpriteAnim(enemy, hob_walk, 15);
@@ -273,7 +275,7 @@ static void chooseEnemyDirection(void) {
     for (idx = 0; idx != 3; ++idx) {
         if (enemyCanMove(priorities[idx], tunnel)) {
             THIS->custom_data[enemy_direction] = priorities[idx];
-            THIS->custom_data[movement_accumulator] = 0;
+            THIS->custom_data[enemy_movement_accumulator] = 0;
             break;
         }
     }
@@ -298,7 +300,7 @@ void START(void) {
     setEnemyMode(waitMode);
     
     THIS->custom_data[enemy_direction] = J_LEFT;
-    THIS->custom_data[movement_accumulator] = 20;
+    THIS->custom_data[enemy_movement_accumulator] = 20;
     THIS->lim_x = 256;
     THIS->lim_y = 256;
 }
@@ -349,21 +351,21 @@ void UPDATE(void) {
         activePushResult = tryPushActiveBagAhead();
         if (activePushResult == pushBagBlocked) {
             THIS->custom_data[enemy_direction] = oppositeDirectionBit(THIS->custom_data[enemy_direction]);
-            THIS->custom_data[movement_accumulator] = 0;
+            THIS->custom_data[enemy_movement_accumulator] = 0;
             return;
         }
         if (activePushResult == pushBagNoBag && tryPushBagAhead() == pushBagBlocked) {
             THIS->custom_data[enemy_direction] = oppositeDirectionBit(THIS->custom_data[enemy_direction]);
-            THIS->custom_data[movement_accumulator] = 0;
+            THIS->custom_data[enemy_movement_accumulator] = 0;
             return;
         }
         consumeGoldAtCurrentCell();
     }
-    THIS->custom_data[movement_accumulator] += 4;
-    if (THIS->custom_data[movement_accumulator] < 25) {
+    THIS->custom_data[enemy_movement_accumulator] += 4;
+    if (THIS->custom_data[enemy_movement_accumulator] < 25) {
         return;
     }
-    THIS->custom_data[movement_accumulator] -= 5;
+    THIS->custom_data[enemy_movement_accumulator] -= 5;
     switch (THIS->custom_data[enemy_direction]) {
         case J_LEFT:
             if (THIS->x > mapBoundLeft) {

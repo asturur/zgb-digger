@@ -19,7 +19,7 @@
 // #define timerQty 2
 #define enemy_direction 3
 #define frightned 4
-#define movement_accumulator 6
+#define enemy_movement_accumulator 6
 // #define deathTimer 7
 
 #define enemySpawnGapBaseTimer 180
