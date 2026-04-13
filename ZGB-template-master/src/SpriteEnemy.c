@@ -26,7 +26,7 @@ static BOOLEAN enemyUsesHobAnimation(Sprite* enemy) {
         enemy->anim_data == hob_dies;
 }
 
-static void setEnemyModeFor(Sprite* enemy, UBYTE enemyMode) {
+void setEnemyModeFor(Sprite* enemy, UBYTE enemyMode) BANKED {
     BOOLEAN useHobDeathAnim = enemyUsesHobAnimation(enemy);
     enemy->custom_data[mode] = enemyMode;
 
@@ -49,6 +49,14 @@ static void setEnemyModeFor(Sprite* enemy, UBYTE enemyMode) {
         case crushedMode:
             enemy->custom_data[mode_timer] = 0;
             SetSpriteAnim(enemy, useHobDeathAnim ? hob_dies : nob_dies, 15);
+        break;
+        case scoreboardNobMode:
+            enemy->custom_data[mode_timer] = 0;
+            SetSpriteAnim(enemy, nob_walk, 15);
+        break;
+        case scoreboardHobMode:
+            enemy->custom_data[mode_timer] = 0;
+            SetSpriteAnim(enemy, hob_walk, 15);
         break;
     }
 }
@@ -267,7 +275,7 @@ static void chooseEnemyDirection(void) {
     for (idx = 0; idx != 3; ++idx) {
         if (enemyCanMove(priorities[idx], tunnel)) {
             THIS->custom_data[enemy_direction] = priorities[idx];
-            THIS->custom_data[movement_accumulator] = 0;
+            THIS->custom_data[enemy_movement_accumulator] = 0;
             break;
         }
     }
@@ -290,8 +298,9 @@ void START(void) {
     }
     spawnTimer = getEnemySpawnGapTimer();
     setEnemyMode(waitMode);
+    
     THIS->custom_data[enemy_direction] = J_LEFT;
-    THIS->custom_data[movement_accumulator] = 20;
+    THIS->custom_data[enemy_movement_accumulator] = 20;
     THIS->lim_x = 256;
     THIS->lim_y = 256;
 }
@@ -299,7 +308,7 @@ void START(void) {
 
 
 void UPDATE(void) {
-    if (isDying || paused) {
+    if (isDying || paused || THIS->custom_data[mode] == scoreboardHobMode || THIS->custom_data[mode] == scoreboardNobMode) {
         return;
     }
     if (THIS->custom_data[mode] == deadMode) {
@@ -342,21 +351,21 @@ void UPDATE(void) {
         activePushResult = tryPushActiveBagAhead();
         if (activePushResult == pushBagBlocked) {
             THIS->custom_data[enemy_direction] = oppositeDirectionBit(THIS->custom_data[enemy_direction]);
-            THIS->custom_data[movement_accumulator] = 0;
+            THIS->custom_data[enemy_movement_accumulator] = 0;
             return;
         }
         if (activePushResult == pushBagNoBag && tryPushBagAhead() == pushBagBlocked) {
             THIS->custom_data[enemy_direction] = oppositeDirectionBit(THIS->custom_data[enemy_direction]);
-            THIS->custom_data[movement_accumulator] = 0;
+            THIS->custom_data[enemy_movement_accumulator] = 0;
             return;
         }
         consumeGoldAtCurrentCell();
     }
-    THIS->custom_data[movement_accumulator] += 4;
-    if (THIS->custom_data[movement_accumulator] < 25) {
+    THIS->custom_data[enemy_movement_accumulator] += 4;
+    if (THIS->custom_data[enemy_movement_accumulator] < 25) {
         return;
     }
-    THIS->custom_data[movement_accumulator] -= 5;
+    THIS->custom_data[enemy_movement_accumulator] -= 5;
     switch (THIS->custom_data[enemy_direction]) {
         case J_LEFT:
             if (THIS->x > mapBoundLeft) {

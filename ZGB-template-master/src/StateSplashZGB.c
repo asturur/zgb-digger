@@ -4,6 +4,7 @@
 #include "Keys.h"
 #include "Palette.h"
 #include "ZGBMain.h"
+#include <gb/gb.h> 
 
 IMPORT_MAP(splash_zgb);
 
