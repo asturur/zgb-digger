@@ -121,6 +121,23 @@ static BOOLEAN cellHasExit(UBYTE cell, UBYTE moveDirection) {
     }
 }
 
+static BOOLEAN cellIsFullyOpenForEntrance(UBYTE cell, UBYTE moveDirection) {
+    const UBYTE tunnel = tunnelMap[cell];
+
+    switch (moveDirection) {
+        case J_LEFT:
+            return (tunnel & 0x0C) == 0x0C;
+        case J_RIGHT:
+            return (tunnel & 0x03) == 0x03;
+        case J_UP:
+            return (tunnel & 0xC0) == 0xC0;
+        case J_DOWN:
+            return (tunnel & 0x30) == 0x30;
+        default:
+            return FALSE;
+    }
+}
+
 static BOOLEAN overlapsMetaSprite(UBYTE x1, UBYTE y1, UBYTE x2, UBYTE y2) {
     return x1 < (UBYTE)(x2 + largeTileSize) &&
         (UBYTE)(x1 + largeTileSize) > x2 &&
@@ -182,6 +199,10 @@ static BOOLEAN enemyCanMove(UBYTE direction) {
         default:
             return FALSE;
     }
+    if (!cellIsFullyOpenForEntrance(nextCell, direction)) {
+        return FALSE;
+    }
+
     return cellHasExit(currentCell, direction) ||
         cellHasExit(nextCell, oppositeDirectionBit(direction));
 }
