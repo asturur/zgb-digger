@@ -5,7 +5,6 @@
 #include "ZGBMain.h"
 #include "StateGame.h"
 
-extern unsigned char levelMap[150];
 extern uint8_t enemyCountOnScreen;
 extern UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y);
 
@@ -105,8 +104,38 @@ static BOOLEAN isEnemyAligned(void) {
     return MOD_FOR_LARGE_TILE(THIS->x - mapBoundLeft) == 0 && MOD_FOR_LARGE_TILE(THIS->y - mapBoundUp) == 0;
 }
 
-static BOOLEAN tunnelAllowsDirection(UBYTE tunnel, UBYTE direction) {
-    return (tunnel & oppositeDirectionBit(direction)) != 0;
+static BOOLEAN cellHasExit(UBYTE cell, UBYTE moveDirection) {
+    const UBYTE tunnel = tunnelMap[cell];
+
+    switch (moveDirection) {
+        case J_LEFT:
+            return (tunnel & 0x01) != 0;
+        case J_RIGHT:
+            return (tunnel & 0x08) != 0;
+        case J_UP:
+            return (tunnel & 0x10) != 0;
+        case J_DOWN:
+            return (tunnel & 0x80) != 0;
+        default:
+            return FALSE;
+    }
+}
+
+static BOOLEAN cellIsFullyOpenForEntrance(UBYTE cell, UBYTE moveDirection) {
+    const UBYTE tunnel = tunnelMap[cell];
+
+    switch (moveDirection) {
+        case J_LEFT:
+            return (tunnel & 0x0C) == 0x0C;
+        case J_RIGHT:
+            return (tunnel & 0x03) == 0x03;
+        case J_UP:
+            return (tunnel & 0xC0) == 0xC0;
+        case J_DOWN:
+            return (tunnel & 0x30) == 0x30;
+        default:
+            return FALSE;
+    }
 }
 
 static BOOLEAN overlapsMetaSprite(UBYTE x1, UBYTE y1, UBYTE x2, UBYTE y2) {
@@ -133,19 +162,7 @@ static BOOLEAN followCrushingBag(void) {
     return FALSE;
 }
 
-static UBYTE getEnemyCurrentTunnel(void) {
-
-    UBYTE currentCell;
-
-    if (THIS->x < mapBoundLeft || THIS->y < mapBoundUp || THIS->x > mapBoundRight || THIS->y > mapBoundDown) {
-        return 0;
-    }
-
-    currentCell = getMapMetaTileArrayPosition(THIS->x, THIS->y);
-	return levelMap[currentCell];
-}
-
-static BOOLEAN enemyCanMove(UBYTE direction, UBYTE tunnel) {
+static BOOLEAN enemyCanMove(UBYTE direction) {
     UBYTE currentCell;
     UBYTE nextCell;
     UBYTE currentColumn;
@@ -182,8 +199,12 @@ static BOOLEAN enemyCanMove(UBYTE direction, UBYTE tunnel) {
         default:
             return FALSE;
     }
-    return tunnelAllowsDirection(tunnel, direction) ||
-        tunnelAllowsDirection(levelMap[nextCell], direction);
+    if (!cellIsFullyOpenForEntrance(nextCell, direction)) {
+        return FALSE;
+    }
+
+    return cellHasExit(currentCell, direction) ||
+        cellHasExit(nextCell, oppositeDirectionBit(direction));
 }
 
 static UBYTE tryPushBagAhead(void) {
@@ -231,35 +252,27 @@ static UBYTE tryPushActiveBagAhead(void) {
 
 static void consumeGoldAtCurrentCell(void) {
     UBYTE currentCell;
-    UBYTE column;
-    UBYTE row;
 
     if (!isEnemyAligned()) {
         return;
     }
 
     currentCell = getMapMetaTileArrayPosition(THIS->x, THIS->y);
-    if ((levelMap[currentCell] & metaTileGold) == 0) {
+    if (itemMap[currentCell] != itemGold) {
         return;
     }
 
-    levelMap[currentCell] &= tunnelMask;
-    column = TILE_FROM_PIXEL(THIS->x);
-    row = TILE_FROM_PIXEL(THIS->y);
-    updateVideoMemAndMap(column, row, tileBlack);
-    updateVideoMemAndMap(column + 1, row, tileBlack);
-    updateVideoMemAndMap(column, row + 1, tileBlack);
-    updateVideoMemAndMap(column + 1, row + 1, tileBlack);
+    itemMap[currentCell] = itemNone;
+    renderMetaCell(currentCell);
 }
 
 static void chooseEnemyDirection(void) {
-    const UBYTE tunnel = getEnemyCurrentTunnel();
     const UBYTE currentDirection = THIS->custom_data[enemy_direction];
     const UBYTE reverseDirection = oppositeDirectionBit(currentDirection);
     UBYTE priorities[3];
     UBYTE idx;
 
-    if (enemyCanMove(currentDirection, tunnel)) {
+    if (enemyCanMove(currentDirection)) {
         return;
     }
 
@@ -273,7 +286,7 @@ static void chooseEnemyDirection(void) {
     priorities[2] = reverseDirection;
 
     for (idx = 0; idx != 3; ++idx) {
-        if (enemyCanMove(priorities[idx], tunnel)) {
+        if (enemyCanMove(priorities[idx])) {
             THIS->custom_data[enemy_direction] = priorities[idx];
             THIS->custom_data[enemy_movement_accumulator] = 0;
             break;

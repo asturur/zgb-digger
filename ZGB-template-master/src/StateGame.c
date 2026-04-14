@@ -26,9 +26,7 @@ IMPORT_MAP(level8);
 IMPORT_MAP(hud);
 IMPORT_TILES(commonTiles);
 
-
 extern const UBYTE direction;
-extern const UBYTE oppositeDirection;
 
 BANKREF_EXTERN(level1Map)
 extern const unsigned char level1Map[150];
@@ -93,20 +91,46 @@ static uint16_t deathRespawnTimer = 0;
 DECLARE_MUSIC(popcorn);
 DECLARE_MUSIC(dirge);
 
+#define META_CELL_TILE_COLUMN(CELL) ((UBYTE)(1 + (((CELL) % mapMetaWidth) << 1)))
+#define META_CELL_TILE_ROW(CELL) ((UBYTE)(2 + (((CELL) / mapMetaWidth) << 1)))
+
 // contains current game map tiles for rendering
 unsigned char tileMap[736];
-// contains current game map state
-unsigned char levelMap[150];
+unsigned char itemMap[150];
+unsigned char tunnelMap[150];
 
 struct MapInfo currentInMemoryLevel;
 
+static UBYTE countItemsOnMap(UBYTE item) {
+	UBYTE cell;
+	UBYTE count = 0;
 
-UBYTE getTileMapTile(UBYTE column, UBYTE row) NONBANKED {
-	// Use the RAM mirror for gameplay checks instead of reading live VRAM.
-	if (column >= tilesPerRow || row >= tilesPerColumn) {
-		return tileGrass;
+	for (cell = 0; cell != 150; ++cell) {
+		if (itemMap[cell] == item) {
+			count++;
+		}
 	}
-	return tileMap[row * tilesPerRow + column];
+
+	return count;
+}
+
+static UBYTE legacySeedToTunnel(UBYTE seed) NONBANKED {
+	UBYTE tunnel = 0;
+
+	if ((seed & legacySeedTunnelLeft) != 0) {
+		tunnel |= 0x03;
+	}
+	if ((seed & legacySeedTunnelRight) != 0) {
+		tunnel |= 0x0C;
+	}
+	if ((seed & legacySeedTunnelUp) != 0) {
+		tunnel |= 0x30;
+	}
+	if ((seed & legacySeedTunnelDown) != 0) {
+		tunnel |= 0xC0;
+	}
+
+	return tunnel;
 }
 
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED {
@@ -114,11 +138,117 @@ void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED {
     tileMap[row * tilesPerRow + column] = type;
 }
 
-BOOLEAN checkTilesFor(UBYTE column, UBYTE row, UBYTE type) NONBANKED {
-    return getTileMapTile(column, row) == type ||
-        getTileMapTile(column + 1, row) == type || 
-        getTileMapTile(column, row + 1) == type || 
-        getTileMapTile(column + 1, row + 1) == type;
+void renderMetaCell(UBYTE cell) BANKED {
+	UBYTE tiles[4];
+	const UBYTE tileColumn = META_CELL_TILE_COLUMN(cell);
+	const UBYTE tileRow = META_CELL_TILE_ROW(cell);
+	const UBYTE item = itemMap[cell];
+	const UBYTE tunnel = tunnelMap[cell];
+
+	if (item == itemEmerald) {
+		tiles[0] = tileEmeraldTL;
+		tiles[1] = tileEmeraldTR;
+		tiles[2] = tileEmeraldBL;
+		tiles[3] = tileEmeraldBR;
+	} else if (item == itemBag) {
+		if (tunnel != 0) {
+			tiles[0] = bagTL;
+			tiles[1] = bagTR;
+			tiles[2] = bagBL;
+			tiles[3] = bagBR;
+		} else {
+			tiles[0] = tileBagTL;
+			tiles[1] = tileBagTR;
+			tiles[2] = tileBagBL;
+			tiles[3] = tileBagBR;
+		}
+	} else if (item == itemGold || item == itemBonus) {
+		tiles[0] = goldTL;
+		tiles[1] = goldTR;
+		tiles[2] = goldBL;
+		tiles[3] = goldBR;
+	} else if (tunnel == 0) {
+		tiles[0] = tileGrass;
+		tiles[1] = tileGrass;
+		tiles[2] = tileGrass;
+		tiles[3] = tileGrass;
+	} else {
+		tiles[0] = tileBlack;
+		tiles[1] = tileBlack;
+		tiles[2] = tileBlack;
+		tiles[3] = tileBlack;
+	}
+
+	updateVideoMemAndMap(tileColumn, tileRow, tiles[0]);
+	updateVideoMemAndMap(tileColumn + 1, tileRow, tiles[1]);
+	updateVideoMemAndMap(tileColumn, tileRow + 1, tiles[2]);
+	updateVideoMemAndMap(tileColumn + 1, tileRow + 1, tiles[3]);
+}
+
+static BOOLEAN tryGetAdjacentCell(UBYTE cell, UBYTE moveDirection, UBYTE* adjacentCell) NONBANKED {
+	const UBYTE column = (UBYTE)(cell % mapMetaWidth);
+	const UBYTE row = (UBYTE)(cell / mapMetaWidth);
+
+	switch (moveDirection) {
+		case J_LEFT:
+			if (column == 0) {
+				return FALSE;
+			}
+			*adjacentCell = cell - 1;
+			return TRUE;
+		case J_RIGHT:
+			if (column == mapMetaWidth - 1) {
+				return FALSE;
+			}
+			*adjacentCell = cell + 1;
+			return TRUE;
+		case J_UP:
+			if (row == 0) {
+				return FALSE;
+			}
+			*adjacentCell = cell - mapMetaWidth;
+			return TRUE;
+		case J_DOWN:
+			if (row == mapMetaHeight - 1) {
+				return FALSE;
+			}
+			*adjacentCell = cell + mapMetaWidth;
+			return TRUE;
+		default:
+			return FALSE;
+	}
+}
+
+void openTunnelConnection(UBYTE fromCell, UBYTE moveDirection) NONBANKED {
+	UBYTE adjacentCell;
+
+	if (!tryGetAdjacentCell(fromCell, moveDirection, &adjacentCell)) {
+		return;
+	}
+
+	switch (moveDirection) {
+		case J_LEFT:
+			tunnelMap[fromCell] |= 0x03;
+			tunnelMap[adjacentCell] |= 0x0C;
+			break;
+		case J_RIGHT:
+			tunnelMap[fromCell] |= 0x0C;
+			tunnelMap[adjacentCell] |= 0x03;
+			break;
+		case J_UP:
+			tunnelMap[fromCell] |= 0x30;
+			tunnelMap[adjacentCell] |= 0xC0;
+			break;
+		case J_DOWN:
+			tunnelMap[fromCell] |= 0xC0;
+			tunnelMap[adjacentCell] |= 0x30;
+			break;
+		default:
+			return;
+	}
+
+	renderMetaCell(fromCell);
+	renderMetaCell(adjacentCell);
 }
 
 static void paintScore(void) {
@@ -172,46 +302,66 @@ void copyTileMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONB
 
 void copyLevelMapToRam(uint8_t mapToLoadBank, const unsigned char *mapToLoad, uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
 	uint8_t __save = CURRENT_BANK;
+	UBYTE cell;
+
 	SWITCH_ROM(mapToLoadBank);
-	memcpy(levelMap, mapToLoad, 150);
-	int8_t i, j;
+	memset(itemMap, itemNone, sizeof(itemMap));
+	memset(tunnelMap, 0, sizeof(tunnelMap));
 	// fill up the first lines of the map with 2 lines 0s and 1 of 1s
 	memset(tileMap, 0, hudSize);
 	memset(tileMap + hudSize, 1, tilesPerRow * 22);
-	uint8_t metaTile;
-	// third row start at hudS, we skip the first tile
-	uint16_t offset = hudSize + tilesPerRow + 1;
 
-	// loop the map
-	for (i = 0; i < mapMetaHeight; i++) {
-		for (j = 0; j < mapMetaWidth; j++) {
-			metaTile = levelMap[i * mapMetaWidth + j];
-			if (metaTile > metaTileGallery && metaTile < metaTileEmerald) {
-				// fill in four 0 tiles, the black gallery
-				// at current row
-				tileMap[offset] = tileBlack;
-				tileMap[offset + 1] = tileBlack;
-				// at next row
-				tileMap[offset + tilesPerRow] = tileBlack;
-				tileMap[offset + tilesPerRow + 1] = tileBlack;
-			} else if (metaTile == metaTileEmerald) {
-				tileMap[offset] = tileEmeraldTL;
-				tileMap[offset + 1] = tileEmeraldTR;
-				// at next row
-				tileMap[offset + tilesPerRow] = tileEmeraldBL;
-				tileMap[offset + tilesPerRow + 1] = tileEmeraldBR;
-			} else if (metaTile == metaTileBag) {
-				tileMap[offset] = tileBagTL;
-				tileMap[offset + 1] = tileBagTR;
-				// at next row
-				tileMap[offset + tilesPerRow] = tileBagBL;
-				tileMap[offset + tilesPerRow + 1] = tileBagBR;
-			}
-			offset += 2;
+	for (cell = 0; cell != 150; ++cell) {
+		UBYTE renderedTiles[4];
+		const UBYTE seed = mapToLoad[cell];
+		const UBYTE tileColumn = META_CELL_TILE_COLUMN(cell);
+		const UBYTE tileRow = META_CELL_TILE_ROW(cell);
+
+		tunnelMap[cell] = legacySeedToTunnel(seed);
+		if (seed == seedItemEmerald) {
+			itemMap[cell] = itemEmerald;
+		} else if (seed == seedItemBag) {
+			itemMap[cell] = itemBag;
 		}
-		// skip last column the 31st and the 1st of next line
-		// and skip a full line
-		offset = offset + tilesPerRow + 2;
+
+		if (itemMap[cell] == itemEmerald) {
+			renderedTiles[0] = tileEmeraldTL;
+			renderedTiles[1] = tileEmeraldTR;
+			renderedTiles[2] = tileEmeraldBL;
+			renderedTiles[3] = tileEmeraldBR;
+		} else if (itemMap[cell] == itemBag) {
+			if (tunnelMap[cell] != 0) {
+				renderedTiles[0] = bagTL;
+				renderedTiles[1] = bagTR;
+				renderedTiles[2] = bagBL;
+				renderedTiles[3] = bagBR;
+			} else {
+				renderedTiles[0] = tileBagTL;
+				renderedTiles[1] = tileBagTR;
+				renderedTiles[2] = tileBagBL;
+				renderedTiles[3] = tileBagBR;
+			}
+		} else if (itemMap[cell] == itemGold || itemMap[cell] == itemBonus) {
+			renderedTiles[0] = goldTL;
+			renderedTiles[1] = goldTR;
+			renderedTiles[2] = goldBL;
+			renderedTiles[3] = goldBR;
+		} else if (tunnelMap[cell] == 0) {
+			renderedTiles[0] = tileGrass;
+			renderedTiles[1] = tileGrass;
+			renderedTiles[2] = tileGrass;
+			renderedTiles[3] = tileGrass;
+		} else {
+			renderedTiles[0] = tileBlack;
+			renderedTiles[1] = tileBlack;
+			renderedTiles[2] = tileBlack;
+			renderedTiles[3] = tileBlack;
+		}
+        uint16_t tileNum = tileRow * tilesPerRow + tileColumn;
+		tileMap[tileNum] = renderedTiles[0];
+		tileMap[tileNum + 1] = renderedTiles[1];
+		tileMap[tileNum + tilesPerRow] = renderedTiles[2];
+		tileMap[tileNum + tilesPerRow + 1] = renderedTiles[3];
 	}
 	SWITCH_ROM(__save);
 	copyTileMapToRam(levelToLoadBank, levelToLoad);
@@ -228,7 +378,8 @@ Sprite* activateBag(uint8_t bagcell) BANKED {
 	uint8_t positionY = mapBoundUp + row * 16;
 	Sprite* bag = SpriteManagerAdd(SpriteBag, positionX, positionY);
 	if (bag != 0) {
-		levelMap[bagcell] -= metaTileBag;
+		itemMap[bagcell] = itemNone;
+		renderMetaCell(bagcell);
 	}
 	return bag;
 }
@@ -258,13 +409,13 @@ UBYTE tryPushBagChainFromCell(UBYTE currentCell, UBYTE direction) BANKED {
 		return pushBagNoBag;
 	}
 
-	if ((levelMap[bagCell] & metaTileBag) == 0) {
+	if (itemMap[bagCell] != itemBag) {
 		return pushBagNoBag;
 	}
 
 	destinationCell = bagCell;
 	scanColumn = bagCell % mapMetaWidth;
-	while ((levelMap[destinationCell] & metaTileBag) != 0) {
+	while (itemMap[destinationCell] == itemBag) {
 		if (chainCount == mapMetaWidth) {
 			return pushBagBlocked;
 		}
@@ -284,8 +435,8 @@ UBYTE tryPushBagChainFromCell(UBYTE currentCell, UBYTE direction) BANKED {
 		}
 	}
 
-	destinationValue = levelMap[destinationCell];
-	if ((destinationValue & (metaTileBag | metaTileEmerald | metaTileGold)) != 0) {
+	destinationValue = itemMap[destinationCell];
+	if (destinationValue != itemNone) {
 		return pushBagBlocked;
 	}
 
@@ -366,31 +517,17 @@ UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y) NONBANKED {
 	return row * mapMetaWidth + column;
 }
 
-BOOLEAN isMetaCellOpen(UBYTE cell) NONBANKED {
-	const UBYTE column = (UBYTE)(cell % mapMetaWidth);
-	const UBYTE row = (UBYTE)(cell / mapMetaWidth);
-	const UBYTE tileColumn = (UBYTE)(1 + (column << 1));
-	const UBYTE tileRow = (UBYTE)(2 + (row << 1));
-
-	return checkTilesFor(tileColumn, tileRow, tileBlack);
-}
-
-void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) NONBANKED {
-	const UBYTE currentCell = getMapMetaTileArrayPosition(x, y);
-	levelMap[currentCell] += metaTile;
-}
-
 static void tryActivateBagAboveCell(UBYTE cellBelow) {
 	UBYTE bagCell;
 
 	if (cellBelow < mapMetaWidth) {
 		return;
 	}
-	if (!isMetaCellOpen(cellBelow)) {
+	if (tunnelMap[cellBelow] == 0) {
 		return;
 	}
 	bagCell = cellBelow - mapMetaWidth;
-	if ((levelMap[bagCell] & metaTileBag) == 0) {
+	if (itemMap[bagCell] != itemBag) {
 		return;
 	}
 	activateBag(bagCell);
@@ -422,27 +559,34 @@ static void tryActivateBagsAbovePlayer(void) {
 	}
 }
 
+static UBYTE getPlayerLeadingMetaCell(void) {
+	uint16_t leadX = scroll_target->x;
+	uint16_t leadY = scroll_target->y;
+
+	if (direction == J_RIGHT) {
+		leadX = (uint16_t)(leadX + largeTileSize - 1);
+	} else if (direction == J_DOWN) {
+		leadY = (uint16_t)(leadY + largeTileSize - 1);
+	}
+
+	return getMapMetaTileArrayPosition(leadX, leadY);
+}
+
 void runMapSideEffects(void) BANKED {
-	const UBYTE currentCell = getMapMetaTileArrayPosition(scroll_target->x, scroll_target->y);
-	const UBYTE currentMapValue = levelMap[currentCell];
+	const UBYTE currentCell = getPlayerLeadingMetaCell();
+	const UBYTE currentItem = itemMap[currentCell];
 	tryActivateBagsAbovePlayer();
-	if (currentCell == lastVisitedMetaCell && (currentMapValue & metaTileGold) == 0) {
+	if (currentCell == lastVisitedMetaCell && currentItem != itemGold) {
 		return;
 	}
-	if ((currentMapValue & metaTileGold) != 0) {
-		const UBYTE x = TILE_FROM_PIXEL(scroll_target->x);
-		const UBYTE y = TILE_FROM_PIXEL(scroll_target->y);
+	if (currentItem == itemGold) {
 		updateScore(scoreGold);
 		triggerGoldSound();
-		levelMap[currentCell] &= tunnelMask;
-		levelMap[currentCell] |= direction;
-		updateVideoMemAndMap(x, y, tileBlack);
-		updateVideoMemAndMap(x + 1, y, tileBlack);
-		updateVideoMemAndMap(x, y + 1, tileBlack);
-		updateVideoMemAndMap(x + 1, y + 1, tileBlack);
+		itemMap[currentCell] = itemNone;
+		renderMetaCell(currentCell);
 	}
 	// we eat a gem
-	if (currentMapValue == metaTileEmerald) {
+	if (currentItem == itemEmerald) {
 		// set current FX to correct note
 		fx_00[fxNotePos] = emeraldFreq[emeraldFreqIndex];
 		// if we are at the highest frequency, score extra points
@@ -461,19 +605,8 @@ void runMapSideEffects(void) BANKED {
 
 		updateScore(scoreEmerald);
 		diamonds--;
-		levelMap[currentCell] = direction;
-	} else if ((currentMapValue & tunnelMask) <= 15) {
-		// we modify a tunnel flagging the bit of the walkable direction
-		// the direction bits have been chosen to match the gameboy const
-		// - 8 -   
-		// |   |
-		// 1   2
-		// |   |
-		// - 4 -
-		levelMap[currentCell] |= direction;
-		// we update the previous cell for the opposite direciton, so is a full tunnel
-		
-		levelMap[lastVisitedMetaCell] |= oppositeDirection;
+		itemMap[currentCell] = itemNone;
+		renderMetaCell(currentCell);
 	}
 	lastVisitedMetaCell = currentCell;
 }
@@ -545,37 +678,37 @@ static void loadLevel(UBYTE level) {
 		break;
 		case 1:
 			copyLevelMapToRam(BANK(level1Map), level1Map, BANK(level1), &level1);
-			diamonds = 30;
+			diamonds = countItemsOnMap(itemEmerald);
 		break;
 		case 2: 
 			copyLevelMapToRam(BANK(level2Map), level2Map, BANK(level2), &level2);
-			diamonds = 41;
+			diamonds = countItemsOnMap(itemEmerald);
 		break;
 		case 3: 
 			copyLevelMapToRam(BANK(level3Map), level3Map, BANK(level3), &level3);
-			diamonds = 51;
+			diamonds = countItemsOnMap(itemEmerald);
 		break;
 		case 4: 
 			copyLevelMapToRam(BANK(level4Map), level4Map, BANK(level4), &level4);
-			diamonds = 65;
+			diamonds = countItemsOnMap(itemEmerald);
 		break;
 		case 5: {
 			copyLevelMapToRam(BANK(level5Map), level5Map, BANK(level5), &level5);
-			diamonds = 77;
+			diamonds = countItemsOnMap(itemEmerald);
 		} break;
 		case 6: {
-			// Level tilemaps are synthesized from levelMap, so later levels can
+			// Level tilemaps are synthesized from the split runtime maps, so later levels can
 			// reuse the same MapInfo metadata as long as the dimensions match.
 			copyLevelMapToRam(BANK(level6Map), level6Map, BANK(level6), &level6);
-			diamonds = 52;
+			diamonds = countItemsOnMap(itemEmerald);
 		} break;
 		case 7: {
 			copyLevelMapToRam(BANK(level7Map), level7Map, BANK(level7), &level7);
-			diamonds = 92;
+			diamonds = countItemsOnMap(itemEmerald);
 		} break;
 		case 8: {
 			copyLevelMapToRam(BANK(level8Map), level8Map, BANK(level8), &level8);
-			diamonds = 63;
+			diamonds = countItemsOnMap(itemEmerald);
 		} break;
 		default:
 		break;

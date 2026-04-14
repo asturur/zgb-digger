@@ -23,7 +23,6 @@ const UBYTE bag_static[] = {1, 0};
 // 4 remaining push distance
 // 5 movement accumulator for future pushing
 
-extern unsigned char levelMap[150];
 extern const UBYTE direction;
 BOOLEAN crushPlayerWithBag(uint16_t bagY) BANKED;
 void finalizePlayerBagCrush(void) BANKED;
@@ -39,27 +38,10 @@ static BOOLEAN isPlayerTouchingBagFromBelow(void) {
         scroll_target->y == (uint16_t)(THIS->y + largeTileSize);
 }
 
-static void setBagTiles(UBYTE column, UBYTE row, UBYTE type) {
-    updateVideoMemAndMap(column, row, type);
-    updateVideoMemAndMap(column + 1, row, type);
-    updateVideoMemAndMap(column, row + 1, type);
-    updateVideoMemAndMap(column + 1, row + 1, type);
-}
-
-static void updateBagTiles(uint8_t tileType) {
-    UBYTE bagColumn = TILE_FROM_PIXEL(THIS->x);
-    UBYTE bagRow = TILE_FROM_PIXEL(THIS->y);
-    setBagTiles(bagColumn, bagRow, tileType);
-}
-
-static void deactivateBag(Sprite* bag, BOOLEAN onBlack) {
-	uint8_t column = TILE_FROM_PIXEL(bag->x);
-	uint8_t row = TILE_FROM_PIXEL(bag->y);
-	updateVideoMemAndMap(column, row, onBlack ? bagTL : tileBagTL);
-	updateVideoMemAndMap(column + 1, row, onBlack ? bagTR : tileBagTR);
-	updateVideoMemAndMap(column, row + 1, onBlack ? bagBL : tileBagBL);
-	updateVideoMemAndMap(column + 1, row + 1, onBlack ? bagBR : tileBagBR);
-	addOnMap(bag->x, bag->y, metaTileBag);
+static void deactivateBag(Sprite* bag) {
+	const UBYTE cell = getMapMetaTileArrayPosition(bag->x, bag->y);
+	itemMap[cell] = itemBag;
+	renderMetaCell(cell);
 	SpriteManagerRemoveSprite(bag);
 }
 
@@ -84,8 +66,8 @@ static BOOLEAN bagCanFallInCellBelow(Sprite* bag) {
         return FALSE;
     }
     cellBelow = getMapMetaTileArrayPosition(bag->x, bag->y) + mapMetaWidth;
-    return (levelMap[cellBelow] & metaTileBag) == 0 &&
-        isMetaCellOpen(cellBelow);
+    return itemMap[cellBelow] != itemBag &&
+        tunnelMap[cellBelow] != 0;
 }
 
 void setBagState(Sprite* bag, UBYTE bagState) BANKED {
@@ -148,9 +130,8 @@ UBYTE pushActiveBag(Sprite* bag, UBYTE direction, UBYTE owner) BANKED {
 }
 
 void restoreStaticBag(Sprite* bag) BANKED {
-    const UBYTE currentCell = getMapMetaTileArrayPosition(bag->x, bag->y);
     setBagState(bag, stateStatic);
-    deactivateBag(bag, (levelMap[currentCell] & tunnelMask) != 0 ? bagOnTunnel : bagOnGrass);
+    deactivateBag(bag);
 }
 
 static void movePushingBag(void) {
@@ -261,12 +242,11 @@ static void crushPlayerUnderBag(void) {
 }
 
 static void finalizePushedBag(void) {
-    const UBYTE currentCell = getMapMetaTileArrayPosition(THIS->x, THIS->y);
     if (bagCanFallInCellBelow(THIS)) {
         setBagState(THIS, stateFalling);
     } else {
         setBagState(THIS, stateStatic);
-        deactivateBag(THIS, (levelMap[currentCell] & tunnelMask) != 0 ? bagOnTunnel : bagOnGrass);
+        deactivateBag(THIS);
     }
 }
 
@@ -280,13 +260,7 @@ void START(void) {
     THIS->custom_data[bagMovementAccumulator] = 0;
     THIS->lim_x = 256;
     THIS->lim_y = 256;
-    UBYTE bagColumn = TILE_FROM_PIXEL(THIS->x);
-    UBYTE bagRow = TILE_FROM_PIXEL(THIS->y);
-    if (getTileMapTile(bagColumn, bagRow) >= bagTL) {
-        updateBagTiles(tileBlack);
-    } else {
-        updateBagTiles(tileGrass);
-    }
+    renderMetaCell(getMapMetaTileArrayPosition(THIS->x, THIS->y));
 }
 
 void UPDATE(void) {
@@ -320,16 +294,13 @@ void UPDATE(void) {
             crushPlayerUnderBag();
         } else {
             if (bagCanFallInCellBelow(THIS)) {
-                uint8_t column = TILE_FROM_PIXEL(THIS->x);
-                uint8_t row = 2 + TILE_FROM_PIXEL(THIS->y);
                 const UBYTE currentCell = getMapMetaTileArrayPosition(THIS->x, THIS->y);
                 UBYTE cellBelow = currentCell + mapMetaWidth;
-                if ((levelMap[cellBelow] & metaTileGold) != 0) {
-                    levelMap[cellBelow] &= (UBYTE)~metaTileGold;
+                if (itemMap[cellBelow] == itemGold) {
+                    itemMap[cellBelow] = itemNone;
+                    renderMetaCell(cellBelow);
                 }
-                levelMap[cellBelow] |= J_DOWN;
-                levelMap[currentCell] |= J_UP;
-                setBagTiles(column, row, tileBlack);
+                openTunnelConnection(currentCell, J_DOWN);
                 THIS->custom_data[bagFallCounter]++;
                 THIS->y++;
                 crushEnemiesUnderBag();
@@ -345,7 +316,7 @@ void UPDATE(void) {
                     THIS->custom_data[bagStatus] = stateStatic;
                     THIS->custom_data[bagFallCounter] = 0;
                     finalizePlayerBagCrush();
-                    deactivateBag(THIS, bagOnTunnel);
+                    deactivateBag(THIS);
                 }
             }
         }
