@@ -91,75 +91,15 @@ static uint16_t deathRespawnTimer = 0;
 DECLARE_MUSIC(popcorn);
 DECLARE_MUSIC(dirge);
 
+#define META_CELL_TILE_COLUMN(CELL) ((UBYTE)(1 + (((CELL) % mapMetaWidth) << 1)))
+#define META_CELL_TILE_ROW(CELL) ((UBYTE)(2 + (((CELL) / mapMetaWidth) << 1)))
+
 // contains current game map tiles for rendering
 unsigned char tileMap[736];
 unsigned char itemMap[150];
 unsigned char tunnelMap[150];
 
 struct MapInfo currentInMemoryLevel;
-
-#ifndef NDEBUG
-static BOOLEAN legacyTunnelSeedValidationFailed = FALSE;
-#endif
-
-static UBYTE getCellTileColumn(UBYTE cell) NONBANKED {
-	return (UBYTE)(1 + ((cell % mapMetaWidth) << 1));
-}
-
-static UBYTE getCellTileRow(UBYTE cell) NONBANKED {
-	return (UBYTE)(2 + ((cell / mapMetaWidth) << 1));
-}
-
-static void getRenderedMetaCellTiles(UBYTE item, UBYTE tunnel, UBYTE* outTiles) NONBANKED {
-	switch (item) {
-		case itemEmerald:
-			outTiles[0] = tileEmeraldTL;
-			outTiles[1] = tileEmeraldTR;
-			outTiles[2] = tileEmeraldBL;
-			outTiles[3] = tileEmeraldBR;
-			return;
-		case itemBag:
-			if (tunnel != 0) {
-				outTiles[0] = bagTL;
-				outTiles[1] = bagTR;
-				outTiles[2] = bagBL;
-				outTiles[3] = bagBR;
-			} else {
-				outTiles[0] = tileBagTL;
-				outTiles[1] = tileBagTR;
-				outTiles[2] = tileBagBL;
-				outTiles[3] = tileBagBR;
-			}
-			return;
-		case itemGold:
-			outTiles[0] = goldTL;
-			outTiles[1] = goldTR;
-			outTiles[2] = goldBL;
-			outTiles[3] = goldBR;
-			return;
-		case itemBonus:
-			outTiles[0] = goldTL;
-			outTiles[1] = goldTR;
-			outTiles[2] = goldBL;
-			outTiles[3] = goldBR;
-			return;
-		default:
-			break;
-	}
-
-	if (tunnel == 0) {
-		outTiles[0] = tileGrass;
-		outTiles[1] = tileGrass;
-		outTiles[2] = tileGrass;
-		outTiles[3] = tileGrass;
-		return;
-	}
-
-	outTiles[0] = tileBlack;
-	outTiles[1] = tileBlack;
-	outTiles[2] = tileBlack;
-	outTiles[3] = tileBlack;
-}
 
 static UBYTE countItemsOnMap(UBYTE item) {
 	UBYTE cell;
@@ -174,7 +114,7 @@ static UBYTE countItemsOnMap(UBYTE item) {
 	return count;
 }
 
-static UBYTE legacySeedToTunnel(UBYTE seed) {
+static UBYTE legacySeedToTunnel(UBYTE seed) NONBANKED {
 	UBYTE tunnel = 0;
 
 	if ((seed & J_LEFT) != 0) {
@@ -193,44 +133,52 @@ static UBYTE legacySeedToTunnel(UBYTE seed) {
 	return tunnel;
 }
 
-#ifndef NDEBUG
-static UBYTE tunnelToLegacyExitMask(UBYTE tunnel) {
-	UBYTE legacy = 0;
-
-	if ((tunnel & 0x01) != 0) {
-		legacy |= J_LEFT;
-	}
-	if ((tunnel & 0x08) != 0) {
-		legacy |= J_RIGHT;
-	}
-	if ((tunnel & 0x10) != 0) {
-		legacy |= J_UP;
-	}
-	if ((tunnel & 0x80) != 0) {
-		legacy |= J_DOWN;
-	}
-
-	return legacy;
-}
-
-static void validateLegacySeed(UBYTE seed, UBYTE tunnel) {
-	if ((seed & legacyTunnelMask) != tunnelToLegacyExitMask(tunnel)) {
-		legacyTunnelSeedValidationFailed = TRUE;
-	}
-}
-#endif
-
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED {
 	set_bkg_tile_xy(column, row, type);
     tileMap[row * tilesPerRow + column] = type;
 }
 
-void renderMetaCell(UBYTE cell) NONBANKED {
+void renderMetaCell(UBYTE cell) BANKED {
 	UBYTE tiles[4];
-	const UBYTE tileColumn = getCellTileColumn(cell);
-	const UBYTE tileRow = getCellTileRow(cell);
+	const UBYTE tileColumn = META_CELL_TILE_COLUMN(cell);
+	const UBYTE tileRow = META_CELL_TILE_ROW(cell);
+	const UBYTE item = itemMap[cell];
+	const UBYTE tunnel = tunnelMap[cell];
 
-	getRenderedMetaCellTiles(itemMap[cell], tunnelMap[cell], tiles);
+	if (item == itemEmerald) {
+		tiles[0] = tileEmeraldTL;
+		tiles[1] = tileEmeraldTR;
+		tiles[2] = tileEmeraldBL;
+		tiles[3] = tileEmeraldBR;
+	} else if (item == itemBag) {
+		if (tunnel != 0) {
+			tiles[0] = bagTL;
+			tiles[1] = bagTR;
+			tiles[2] = bagBL;
+			tiles[3] = bagBR;
+		} else {
+			tiles[0] = tileBagTL;
+			tiles[1] = tileBagTR;
+			tiles[2] = tileBagBL;
+			tiles[3] = tileBagBR;
+		}
+	} else if (item == itemGold || item == itemBonus) {
+		tiles[0] = goldTL;
+		tiles[1] = goldTR;
+		tiles[2] = goldBL;
+		tiles[3] = goldBR;
+	} else if (tunnel == 0) {
+		tiles[0] = tileGrass;
+		tiles[1] = tileGrass;
+		tiles[2] = tileGrass;
+		tiles[3] = tileGrass;
+	} else {
+		tiles[0] = tileBlack;
+		tiles[1] = tileBlack;
+		tiles[2] = tileBlack;
+		tiles[3] = tileBlack;
+	}
+
 	updateVideoMemAndMap(tileColumn, tileRow, tiles[0]);
 	updateVideoMemAndMap(tileColumn + 1, tileRow, tiles[1]);
 	updateVideoMemAndMap(tileColumn, tileRow + 1, tiles[2]);
@@ -336,7 +284,7 @@ static void togglePause(void) {
 	}
 }
 
-void copyTileMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) {
+void copyTileMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
 	uint8_t __save = CURRENT_BANK;
 	SWITCH_ROM(levelToLoadBank);
 	// copy everything
@@ -352,7 +300,7 @@ void copyTileMapToRam(uint8_t levelToLoadBank, struct MapInfo *levelToLoad) {
 	SWITCH_ROM(__save);
 }
 
-void copyLevelMapToRam(uint8_t mapToLoadBank, const unsigned char *mapToLoad, uint8_t levelToLoadBank, struct MapInfo *levelToLoad) {
+void copyLevelMapToRam(uint8_t mapToLoadBank, const unsigned char *mapToLoad, uint8_t levelToLoadBank, struct MapInfo *levelToLoad) NONBANKED {
 	uint8_t __save = CURRENT_BANK;
 	UBYTE cell;
 
@@ -366,8 +314,8 @@ void copyLevelMapToRam(uint8_t mapToLoadBank, const unsigned char *mapToLoad, ui
 	for (cell = 0; cell != 150; ++cell) {
 		UBYTE renderedTiles[4];
 		const UBYTE seed = mapToLoad[cell];
-		const UBYTE tileColumn = getCellTileColumn(cell);
-		const UBYTE tileRow = getCellTileRow(cell);
+		const UBYTE tileColumn = META_CELL_TILE_COLUMN(cell);
+		const UBYTE tileRow = META_CELL_TILE_ROW(cell);
 
 		tunnelMap[cell] = legacySeedToTunnel(seed);
 		if (seed == seedItemEmerald) {
@@ -376,11 +324,40 @@ void copyLevelMapToRam(uint8_t mapToLoadBank, const unsigned char *mapToLoad, ui
 			itemMap[cell] = itemBag;
 		}
 
-#ifndef NDEBUG
-		validateLegacySeed(seed, tunnelMap[cell]);
-#endif
+		if (itemMap[cell] == itemEmerald) {
+			renderedTiles[0] = tileEmeraldTL;
+			renderedTiles[1] = tileEmeraldTR;
+			renderedTiles[2] = tileEmeraldBL;
+			renderedTiles[3] = tileEmeraldBR;
+		} else if (itemMap[cell] == itemBag) {
+			if (tunnelMap[cell] != 0) {
+				renderedTiles[0] = bagTL;
+				renderedTiles[1] = bagTR;
+				renderedTiles[2] = bagBL;
+				renderedTiles[3] = bagBR;
+			} else {
+				renderedTiles[0] = tileBagTL;
+				renderedTiles[1] = tileBagTR;
+				renderedTiles[2] = tileBagBL;
+				renderedTiles[3] = tileBagBR;
+			}
+		} else if (itemMap[cell] == itemGold || itemMap[cell] == itemBonus) {
+			renderedTiles[0] = goldTL;
+			renderedTiles[1] = goldTR;
+			renderedTiles[2] = goldBL;
+			renderedTiles[3] = goldBR;
+		} else if (tunnelMap[cell] == 0) {
+			renderedTiles[0] = tileGrass;
+			renderedTiles[1] = tileGrass;
+			renderedTiles[2] = tileGrass;
+			renderedTiles[3] = tileGrass;
+		} else {
+			renderedTiles[0] = tileBlack;
+			renderedTiles[1] = tileBlack;
+			renderedTiles[2] = tileBlack;
+			renderedTiles[3] = tileBlack;
+		}
 
-		getRenderedMetaCellTiles(itemMap[cell], tunnelMap[cell], renderedTiles);
 		tileMap[tileRow * tilesPerRow + tileColumn] = renderedTiles[0];
 		tileMap[tileRow * tilesPerRow + tileColumn + 1] = renderedTiles[1];
 		tileMap[(tileRow + 1) * tilesPerRow + tileColumn] = renderedTiles[2];

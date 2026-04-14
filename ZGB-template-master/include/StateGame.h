@@ -86,7 +86,7 @@
 // utility functions
 void updateScore(uint16_t addScore) BANKED;
 UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y) NONBANKED;
-void renderMetaCell(UBYTE cell) NONBANKED;
+void renderMetaCell(UBYTE cell) BANKED;
 void openTunnelConnection(UBYTE fromCell, UBYTE direction) NONBANKED;
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
 void runMapSideEffects(void) BANKED;
