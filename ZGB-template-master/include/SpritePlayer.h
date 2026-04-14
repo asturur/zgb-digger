@@ -6,6 +6,7 @@
 #define death_timer 6
 #define death_step 4
 #define death_base_y 5
+#define player_last_dig_cell 7
 
 #define playerDeathNone 0
 #define playerDeathBounce 1

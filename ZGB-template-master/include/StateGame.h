@@ -49,13 +49,21 @@
 #define bagBL 16
 #define bagBR 17
 
-#define tunnelMask 0x0F
+#define tunnelHorizontalMask 0x0F
+#define tunnelVerticalMask 0xF0
 
-#define metaTileEmerald 16
-#define metaTileBag 32
-#define metaTileGold 64
-#define EM metaTileEmerald
-#define BG metaTileBag
+#define itemNone 0
+#define itemEmerald 1
+#define itemBag 2
+#define itemGold 3
+#define itemBonus 4
+
+#define seedItemEmerald 16
+#define seedItemBag 32
+#define seedItemGold 64
+#define legacyTunnelMask 0x0F
+#define EM seedItemEmerald
+#define BG seedItemBag
 #define mapMetaWidth 15
 #define mapMetaHeight 10
 #define metaTileGallery 0
@@ -77,11 +85,9 @@
 #define MOD_FOR_LARGE_TILE(X) ((X) & 0x0F)
 // utility functions
 void updateScore(uint16_t addScore) BANKED;
-BOOLEAN checkTilesFor(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
-UBYTE getTileMapTile(UBYTE column, UBYTE row) NONBANKED;
 UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y) NONBANKED;
-BOOLEAN isMetaCellOpen(UBYTE cell) NONBANKED;
-void addOnMap(uint16_t x, uint16_t y, uint8_t metaTile) NONBANKED;
+void renderMetaCell(UBYTE cell) NONBANKED;
+void openTunnelConnection(UBYTE fromCell, UBYTE direction) NONBANKED;
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
 void runMapSideEffects(void) BANKED;
 Sprite* activateBag(uint8_t bagcell) BANKED;
@@ -92,7 +98,8 @@ void queueDeathRespawn(uint16_t frames) BANKED;
 
 extern UBYTE currentLevel;
 extern UBYTE difficultyLevel;
-extern unsigned char levelMap[150];
+extern unsigned char itemMap[150];
+extern unsigned char tunnelMap[150];
 extern uint8_t isDying;
 extern BOOLEAN infiniteLives;
 extern uint8_t lives;

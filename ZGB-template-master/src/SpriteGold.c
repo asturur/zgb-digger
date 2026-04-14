@@ -21,24 +21,6 @@ const UBYTE gold_static[] = {1, 0};
 // 0 state
 // 1-2 16-bit timer
 
-static void createGoldBackground(void) {
-    UBYTE column = TILE_FROM_PIXEL(THIS->x);
-    UBYTE row = TILE_FROM_PIXEL(THIS->y);
-    updateVideoMemAndMap(column, row, goldTL);
-    updateVideoMemAndMap(column + 1, row, goldTR);
-    updateVideoMemAndMap(column, row + 1, goldBL);
-    updateVideoMemAndMap(column + 1, row + 1, goldBR);
-}
-
-static void clearGoldBackground(void) {
-    UBYTE column = TILE_FROM_PIXEL(THIS->x);
-    UBYTE row = TILE_FROM_PIXEL(THIS->y);
-    updateVideoMemAndMap(column, row, tileBlack);
-    updateVideoMemAndMap(column + 1, row, tileBlack);
-    updateVideoMemAndMap(column, row + 1, tileBlack);
-    updateVideoMemAndMap(column + 1, row + 1, tileBlack);
-}
-
 static uint16_t getGoldTimer(void) {
     return ((uint16_t)THIS->custom_data[goldTimerHi] << 8) | THIS->custom_data[goldTimerLo];
 }
@@ -72,8 +54,8 @@ static BOOLEAN goldShouldExpireSoon(void) {
     }
 
     cellBelow = currentRow * mapMetaWidth + currentColumn + mapMetaWidth;
-    return (levelMap[cellBelow] & metaTileBag) == 0 &&
-        (levelMap[cellBelow] & tunnelMask) != 0;
+    return itemMap[cellBelow] != itemBag &&
+        tunnelMap[cellBelow] != 0;
 }
 
 void START(void) {
@@ -97,9 +79,10 @@ void UPDATE(void) {
 
     if (state == stateCrumbling) {
         if (timer == 0) {
+            const UBYTE cell = getMapMetaTileArrayPosition(THIS->x, THIS->y);
             THIS->custom_data[goldStatus] = stateStatic;
-            createGoldBackground();
-            addOnMap(THIS->x, THIS->y, metaTileGold);
+            itemMap[cell] = itemGold;
+            renderMetaCell(cell);
             setGoldTimer(getGoldLifetimeFrames());
             SetSpriteAnim(THIS, gold_static, 10);
             SetVisible(THIS, FALSE);
@@ -109,7 +92,7 @@ void UPDATE(void) {
         return;
     }
 
-    if ((levelMap[getMapMetaTileArrayPosition(THIS->x, THIS->y)] & metaTileGold) == 0) {
+    if (itemMap[getMapMetaTileArrayPosition(THIS->x, THIS->y)] != itemGold) {
         SpriteManagerRemoveSprite(THIS);
         return;
     }
@@ -127,8 +110,10 @@ void UPDATE(void) {
 }
 
 void DESTROY(void) {
-    if ((levelMap[getMapMetaTileArrayPosition(THIS->x, THIS->y)] & metaTileGold) != 0) {
-        clearGoldBackground();
-        levelMap[getMapMetaTileArrayPosition(THIS->x, THIS->y)] &= tunnelMask;
+    const UBYTE cell = getMapMetaTileArrayPosition(THIS->x, THIS->y);
+
+    if (itemMap[cell] == itemGold) {
+        itemMap[cell] = itemNone;
+        renderMetaCell(cell);
     }
 }

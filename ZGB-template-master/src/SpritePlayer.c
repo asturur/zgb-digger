@@ -8,7 +8,6 @@
 #include "SpritePlayer.h"
 #include "Scroll.h"
 
-extern unsigned char levelMap[150];
 const UBYTE anim_walk_right[] = {4, 0, 1, 2, 1};
 const UBYTE anim_walk_down[] = {4, 3, 4, 5, 4};
 const UBYTE anim_walk_up[] = {4, 6, 7, 8, 7};
@@ -35,9 +34,6 @@ static const UBYTE deathBounceOffsets[] = {3, 5, 6, 6, 5, 3, 0};
 #define moveBlockedByBag 2
 
 UBYTE direction;
-UBYTE oppositeDirection;
-UBYTE column;
-UBYTE row;
 
 static uint16_t getRechargeTime(void) {
     return ((uint16_t)THIS->custom_data[recharge_time_hi] << 8) | THIS->custom_data[recharge_time_lo];
@@ -60,20 +56,6 @@ static uint16_t getFireRechargeFrames(void) {
 
 static void setDirection(UBYTE dir) {
   direction = dir;
-  switch (dir) {
-    case J_DOWN:
-        oppositeDirection = J_UP;
-        break;
-    case J_UP:
-        oppositeDirection = J_DOWN;
-        break;
-    case J_LEFT:
-        oppositeDirection = J_RIGHT;
-        break;
-    case J_RIGHT:
-        oppositeDirection = J_LEFT;
-        break;
-  }
 }
 
 static void beginTestDeathSequence(void) {
@@ -189,6 +171,7 @@ void START(void) {
     setRechargeTime(0);
     THIS->custom_data[death_state] = playerDeathNone;
     THIS->custom_data[player_movement_accumulator] = 0;
+    THIS->custom_data[player_last_dig_cell] = 0xFF;
 }
 
 static BOOLEAN isColumnDisaligned(void) {
@@ -271,7 +254,7 @@ static BOOLEAN verticalMoveHitsStaticBag(UBYTE nextY) {
         return FALSE;
     }
     edgeY = direction == J_UP ? nextY : (UBYTE)(nextY + largeTileSize - 1);
-    return (levelMap[getMapMetaTileArrayPosition(THIS->x, edgeY)] & metaTileBag) != 0;
+    return itemMap[getMapMetaTileArrayPosition(THIS->x, edgeY)] == itemBag;
 }
 
 static BOOLEAN verticalMoveBlockedByBag(UBYTE nextY) {
@@ -344,62 +327,70 @@ static void updateAnimation(void) {
     }
 }
 
-static void updateMapTiles(void) {
-    // position of digger is the TOP LEFT first pixel of the sprite.
-    // this check runs AFTER the digger has moved
-    uint8_t nextColumn = TILE_FROM_PIXEL(THIS->x);
-    uint8_t nextRow = TILE_FROM_PIXEL(THIS->y);
-    UBYTE tile, tileNext, target;
-    // TODO optimization: can i run this if only when necessary?
-    // if (nextColumn != column || nextRow != row || changeDirection) {
-        column = nextColumn;
-        row = nextRow;
-        switch(direction) {
-            case J_UP:
-                tile = getTileMapTile(column, row);
-                tileNext = getTileMapTile(column + 1, row);
-                if (tile != tileBlack) {
-                    updateVideoMemAndMap(column, row, tileBlack);
-                }
-                if (tileNext != tileBlack) {
-                    updateVideoMemAndMap(column + 1, row, tileBlack);
-                }
-                break;
-            case J_DOWN:
-                target = row + (MOD_FOR_TILE(THIS->y) ? 2 : 1);
-                tile = getTileMapTile(column, target);
-                tileNext = getTileMapTile(column + 1, target);
-                if (tile != tileBlack) {
-                    updateVideoMemAndMap(column, target, tileBlack);
-                }
-                if (tileNext != tileBlack) {
-                    updateVideoMemAndMap(column + 1, target, tileBlack);
-                }
-                break;
-            case J_LEFT:
-                // left is a good case, first pixel we cross we can clean up
-                tile = getTileMapTile(column, row);
-                tileNext = getTileMapTile(column, row + 1);
-                if (tile != tileBlack) {
-                    updateVideoMemAndMap(column, row, tileBlack);
-                }
-                if (tileNext != tileBlack) {
-                    updateVideoMemAndMap(column, row + 1, tileBlack);
-                }
-                break;
-            case J_RIGHT:
-                target = column + (MOD_FOR_TILE(THIS->x) ? 2 : 1);
-                tile = getTileMapTile(target, row);
-                tileNext = getTileMapTile(target, row + 1);
-                if (tile != tileBlack) {
-                    updateVideoMemAndMap(target, row, tileBlack);
-                }
-                if (tileNext != tileBlack) {
-                    updateVideoMemAndMap(target, row + 1, tileBlack);
-                }
-                break;
+static UBYTE getLeadingDigCell(void) {
+    uint16_t leadX = THIS->x;
+    uint16_t leadY = THIS->y;
+
+    if (direction == J_RIGHT) {
+        leadX = (uint16_t)(leadX + largeTileSize - 1);
+    } else if (direction == J_DOWN) {
+        leadY = (uint16_t)(leadY + largeTileSize - 1);
+    }
+
+    return getMapMetaTileArrayPosition(leadX, leadY);
+}
+
+static UBYTE getLeadingDigSlot(void) {
+    UBYTE offset;
+
+    if (direction == J_LEFT || direction == J_RIGHT) {
+        uint16_t leadX = THIS->x;
+        if (direction == J_RIGHT) {
+            leadX = (uint16_t)(leadX + largeTileSize - 1);
         }
-    // }
+        offset = MOD_FOR_LARGE_TILE(leadX - mapBoundLeft);
+    } else {
+        uint16_t leadY = THIS->y;
+        if (direction == J_DOWN) {
+            leadY = (uint16_t)(leadY + largeTileSize - 1);
+        }
+        offset = MOD_FOR_LARGE_TILE(leadY - mapBoundUp);
+    }
+
+    return offset >> 2;
+}
+
+static void extendTunnelProgress(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex) {
+    if (slotIndex > 3) {
+        slotIndex = 3;
+    }
+
+    switch (moveDirection) {
+        case J_LEFT:
+        case J_RIGHT:
+            tunnelMap[cell] |= (UBYTE)(1u << slotIndex);
+            break;
+        case J_UP:
+        case J_DOWN:
+            tunnelMap[cell] |= (UBYTE)(1u << (slotIndex + 4));
+            break;
+        default:
+            return;
+    }
+}
+
+static void updateTunnelProgress(void) {
+    const UBYTE currentDigCell = getLeadingDigCell();
+    const UBYTE currentDigSlot = getLeadingDigSlot();
+    const UBYTE previousDigCell = THIS->custom_data[player_last_dig_cell];
+
+    if (previousDigCell != 0xFF && previousDigCell != currentDigCell) {
+        openTunnelConnection(previousDigCell, direction);
+    }
+
+    extendTunnelProgress(currentDigCell, direction, currentDigSlot);
+    renderMetaCell(currentDigCell);
+    THIS->custom_data[player_last_dig_cell] = currentDigCell;
 }
 
 void UPDATE(void) {
@@ -531,7 +522,7 @@ void UPDATE(void) {
         updateAnimation();
         moveResult = updatePosition();
         if (moveResult == moveAdvanced) {
-            updateMapTiles();
+            updateTunnelProgress();
             runMapSideEffects();
         } else if (moveResult == moveBlockedByBag) {
             moving = FALSE;
