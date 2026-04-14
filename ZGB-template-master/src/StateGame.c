@@ -117,16 +117,16 @@ static UBYTE countItemsOnMap(UBYTE item) {
 static UBYTE legacySeedToTunnel(UBYTE seed) NONBANKED {
 	UBYTE tunnel = 0;
 
-	if ((seed & J_LEFT) != 0) {
+	if ((seed & legacySeedTunnelLeft) != 0) {
 		tunnel |= 0x03;
 	}
-	if ((seed & J_RIGHT) != 0) {
+	if ((seed & legacySeedTunnelRight) != 0) {
 		tunnel |= 0x0C;
 	}
-	if ((seed & J_UP) != 0) {
+	if ((seed & legacySeedTunnelUp) != 0) {
 		tunnel |= 0x30;
 	}
-	if ((seed & J_DOWN) != 0) {
+	if ((seed & legacySeedTunnelDown) != 0) {
 		tunnel |= 0xC0;
 	}
 
@@ -357,11 +357,11 @@ void copyLevelMapToRam(uint8_t mapToLoadBank, const unsigned char *mapToLoad, ui
 			renderedTiles[2] = tileBlack;
 			renderedTiles[3] = tileBlack;
 		}
-
-		tileMap[tileRow * tilesPerRow + tileColumn] = renderedTiles[0];
-		tileMap[tileRow * tilesPerRow + tileColumn + 1] = renderedTiles[1];
-		tileMap[(tileRow + 1) * tilesPerRow + tileColumn] = renderedTiles[2];
-		tileMap[(tileRow + 1) * tilesPerRow + tileColumn + 1] = renderedTiles[3];
+        uint16_t tileNum = tileRow * tilesPerRow + tileColumn;
+		tileMap[tileNum] = renderedTiles[0];
+		tileMap[tileNum + 1] = renderedTiles[1];
+		tileMap[tileNum + tilesPerRow] = renderedTiles[2];
+		tileMap[tileNum + tilesPerRow + 1] = renderedTiles[3];
 	}
 	SWITCH_ROM(__save);
 	copyTileMapToRam(levelToLoadBank, levelToLoad);
@@ -559,8 +559,21 @@ static void tryActivateBagsAbovePlayer(void) {
 	}
 }
 
+static UBYTE getPlayerLeadingMetaCell(void) {
+	uint16_t leadX = scroll_target->x;
+	uint16_t leadY = scroll_target->y;
+
+	if (direction == J_RIGHT) {
+		leadX = (uint16_t)(leadX + largeTileSize - 1);
+	} else if (direction == J_DOWN) {
+		leadY = (uint16_t)(leadY + largeTileSize - 1);
+	}
+
+	return getMapMetaTileArrayPosition(leadX, leadY);
+}
+
 void runMapSideEffects(void) BANKED {
-	const UBYTE currentCell = getMapMetaTileArrayPosition(scroll_target->x, scroll_target->y);
+	const UBYTE currentCell = getPlayerLeadingMetaCell();
 	const UBYTE currentItem = itemMap[currentCell];
 	tryActivateBagsAbovePlayer();
 	if (currentCell == lastVisitedMetaCell && currentItem != itemGold) {

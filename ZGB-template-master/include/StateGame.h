@@ -49,6 +49,13 @@
 #define bagBL 16
 #define bagBR 17
 
+// tunnels with walls
+#define leftWall 18
+#define rightWall 19
+#define topWall 20
+#define bottomWall 21
+
+
 #define tunnelHorizontalMask 0x0F
 #define tunnelVerticalMask 0xF0
 
@@ -62,6 +69,10 @@
 #define seedItemBag 32
 #define seedItemGold 64
 #define legacyTunnelMask 0x0F
+#define legacySeedTunnelLeft 0x01
+#define legacySeedTunnelRight 0x02
+#define legacySeedTunnelDown 0x04
+#define legacySeedTunnelUp 0x08
 #define EM seedItemEmerald
 #define BG seedItemBag
 #define mapMetaWidth 15
