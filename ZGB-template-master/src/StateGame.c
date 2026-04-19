@@ -261,38 +261,67 @@ void determineDigTiles(
 			tiles[3] = tileRightWall;
 			break;
 
-		// CORNERS
-		// Corner cell open to the left and up.
+		// PARTIALLY DUG FROM 2 DIRECTION
+		// Single tile fully dug top-left tile.
 		case ( tunnelHorizontalStep12 | tunnelVerticalStep12 ):
 		    tiles[0] = tileBlack;
-			tiles[1] = tileRightWall;
-		    tiles[2] = tileBottomWall;
-			tiles[3] = tileBottomRightWall;
+			tiles[1] = tileBottomRightWall;
+		    tiles[2] = tileBottomRightWall;
 		    break;
 
-		// Corner cell open to the right and up.
+		// Single tile fully dug top-right tile.
 		case ( tunnelHorizontalStep34 | tunnelVerticalStep12 ):
-		    tiles[0] = tileLeftWall;
+		    tiles[0] = tileBottomLeftWall;
 			tiles[1] = tileBlack;
-		    tiles[2] = tileBottomLeftWall;
-			tiles[3] = tileBottomWall;
+			tiles[3] = tileBottomLeftWall;
 		    break;
 
-		// Corner cell open to the right and down.
+		// Single tile fully dug bottom-right tile.
 		case ( tunnelHorizontalStep34 | tunnelVerticalStep34 ):
-		    tiles[0] = tileTopLeftWall;
-			tiles[1] = tileTopWall;
-		    tiles[2] = tileLeftWall;
+			tiles[1] = tileTopLeftWall;
+		    tiles[2] = tileTopLeftWall;
 			tiles[3] = tileBlack;
 		    break;
 
-		// Corner cell open to the left and down.
+		// Single tile fully dug bottom-left tile.
 		case ( tunnelHorizontalStep12 | tunnelVerticalStep34 ):
-		    tiles[0] = tileTopWall;
-			tiles[1] = tileTopRightWall;
+		    tiles[0] = tileTopRightWall;
 		    tiles[2] = tileBlack;
-			tiles[3] = tileRightWall;
+			tiles[3] = tileTopRightWall;
 		    break;
+
+		// MIXED FULL TILE PLUS HALF TILE
+		// Fully dug top-left tile plus a half-dug top-right extension.
+		case ( tunnelHorizontalStep123 | tunnelVerticalStep123 ):
+			tiles[0] = tileBlack;
+			tiles[1] = tileHalfDigLeftTop;
+			tiles[2] = tileBottomWall;
+			tiles[3] = tileGrass;
+			break;
+
+		// Fully dug top-right tile plus a half-dug top-left extension.
+		case ( tunnelHorizontalStep234 | tunnelVerticalStep123 ):
+			tiles[0] = tileHalfDigRightTop;
+			tiles[1] = tileBlack;
+			tiles[2] = tileGrass;
+			tiles[3] = tileBottomWall;
+			break;
+
+		// Fully dug top-left tile plus a half-dug bottom-left extension.
+		case ( tunnelHorizontalStep123 | tunnelVerticalStep234 ):
+			tiles[0] = tileBlack;
+			tiles[1] = tileRightWall;
+			tiles[2] = tileHalfDigTopLeft;
+			tiles[3] = tileGrass;
+			break;
+
+		// Fully dug top-right tile plus a half-dug bottom-right extension.
+		case ( tunnelHorizontalStep234 | tunnelVerticalStep234 ):
+			tiles[0] = tileLeftWall;
+			tiles[1] = tileBlack;
+			tiles[2] = tileGrass;
+			tiles[3] = tileHalfDigTopRight;
+			break;
 
 		// T JUNCTIONS
 		// Tee cell open left, right, and up.
