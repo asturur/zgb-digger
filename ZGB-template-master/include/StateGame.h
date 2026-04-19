@@ -71,12 +71,6 @@
 #define tileHalfDigTopRight 36
 #define tileHalfDigBottomRight 37
 
-// Temporary compatibility aliases for older live-dig code paths.
-#define tileHalfDigLeft tileHalfDigLeftTop
-#define tileHalfDigRight tileHalfDigRightTop
-#define tileHalfDigTop tileHalfDigTopLeft
-#define tileHalfDigBottom tileHalfDigBottomLeft
-
 #define tunnelHorizontalMask 0x0F
 #define tunnelVerticalMask 0xF0
 
@@ -151,7 +145,7 @@ void determineDigTiles(
     UBYTE bottomCell,
     UBYTE leftCell,
     UBYTE* tiles
-) NONBANKED;
+) BANKED;
 void openTunnelConnection(UBYTE fromCell, UBYTE direction) NONBANKED;
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
 void runMapSideEffects(void) BANKED;

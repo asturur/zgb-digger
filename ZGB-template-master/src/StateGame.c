@@ -56,7 +56,7 @@ extern uint8_t spawnTimer;
 // options
 BOOLEAN infiniteLives = FALSE;
 BOOLEAN invincibility = FALSE;
-BOOLEAN debugMode = FALSE;
+BOOLEAN debugMode = TRUE;
 
 //
 BOOLEAN paused = FALSE;
@@ -147,7 +147,7 @@ void determineDigTiles(
 	UBYTE bottomCell,
 	UBYTE leftCell,
 	UBYTE* tiles
-) NONBANKED {
+) BANKED {
 	(void)topCell;
 	(void)rightCell;
 	(void)bottomCell;
@@ -384,204 +384,258 @@ void determineDigTiles(
 			tiles[2] = tileHalfDigLeftBottom;
             break;
 			// Digged one top, one right
-			case (tunnelVerticalStep1 | tunnelHorizontalStep4):
-			    tiles[0] = tileHalfDigTopLeft;
-				tiles[1] = tileDig75BottomLeft;
-				tiles[3] = tileHalfDigRightBottom;
-	            break;
+		case (tunnelVerticalStep1 | tunnelHorizontalStep4):
+			tiles[0] = tileHalfDigTopLeft;
+			tiles[1] = tileDig75BottomLeft;
+			tiles[3] = tileHalfDigRightBottom;
+			break;
 
-			// REACHABLE BUT NOT YET TILED
-			// 1/4 left, 1/4 right.
-			case (tunnelHorizontalStep1 | tunnelHorizontalStep4):
-				break;
+		// 1/4 left, 1/4 right.
+		case (tunnelHorizontalStep1 | tunnelHorizontalStep4):
+			tiles[0] = tileHalfDigLeftTop;
+			tiles[1] = tileHalfDigRightTop;
+		    tiles[2] = tileHalfDigLeftBottom;
+			tiles[3] = tileHalfDigRightBottom;
+			break;
 
-			// 1/2 left, 1/4 right.
-			case (tunnelHorizontalStep12 | tunnelHorizontalStep4):
-				break;
+		// 1/2 left, 1/4 right.
+		case (tunnelHorizontalStep12 | tunnelHorizontalStep4):
+			tiles[0] = tileTopWall;
+			tiles[1] = tileHalfDigRightTop;
+			tiles[2] = tileBottomWall;
+			tiles[3] = tileHalfDigRightBottom;
+			break;
 
-			// 1/4 left, 1/2 right.
-			case (tunnelHorizontalStep1 | tunnelHorizontalStep34):
-				break;
+		// 1/4 left, 1/2 right.
+		case (tunnelHorizontalStep1 | tunnelHorizontalStep34):
+			tiles[0] = tileHalfDigLeftTop;
+			tiles[1] = tileTopWall;
+			tiles[2] = tileHalfDigLeftBottom;
+			tiles[3] = tileBottomWall;
+			break;
 
-			// 1/2 left, 1/4 top.
-			case (tunnelVerticalStep1 | tunnelHorizontalStep12):
-				break;
+		// 1/2 left, 1/4 top.
+		case (tunnelVerticalStep1 | tunnelHorizontalStep12):
+			tiles[0] = tileBlack;
+			tiles[1] = tileHalfDigTopRight;
+			tiles[2] = tileBottomRightWall;
+			break;
 
-			// 1/4 left, 1/4 right, 1/4 top.
-			case (tunnelVerticalStep1 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
-				break;
+		// 1/4 left, 1/4 right, 1/4 top.
+		case (tunnelVerticalStep1 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
+			tiles[0] = tileDig75BottomRight;
+			tiles[1] = tileDig75BottomLeft;
+			tiles[2] = tileHalfDigLeftBottom;
+			tiles[3] = tileHalfDigRightBottom;
+			break;
 
-			// 1/2 left, 1/4 right, 1/4 top.
-			case (tunnelVerticalStep1 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
-				break;
+		// 1/2 left, 1/4 right, 1/4 top.
+		case (tunnelVerticalStep1 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
+			tiles[0] = tileBlack;
+			tiles[1] = tileDig75BottomLeft;
+			tiles[2] = tileLeftWall;
+			tiles[3] = tileHalfDigRightBottom;
+			break;
 
-			// 1/2 right, 1/4 top.
-			case (tunnelVerticalStep1 | tunnelHorizontalStep34):
-				break;
+		// 1/2 right, 1/4 top.
+		case (tunnelVerticalStep1 | tunnelHorizontalStep34):
+			tiles[0] = tileHalfDigTopLeft;
+			tiles[1] = tileBlack;
+			tiles[3] = tileLeftWall;
+			break;
 
-			// 1/4 left, 1/2 right, 1/4 top.
-			case (tunnelVerticalStep1 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
-				break;
+		// 1/4 left, 1/2 right, 1/4 top.
+		case (tunnelVerticalStep1 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
+			tiles[0] = tileDig75BottomRight;
+			tiles[1] = tileBlack;
+			tiles[2] = tileHalfDigLeftBottom;
+			tiles[3] = tileLeftWall;
+			break;
 
-			// 1/4 left, 1/2 top.
-			case (tunnelVerticalStep12 | tunnelHorizontalStep1):
-				break;
+		// 1/4 left, 1/2 top.
+		case (tunnelVerticalStep12 | tunnelHorizontalStep1):
+			tiles[0] = tileBlack;
+			tiles[1] = tileBottomWall;
+			tiles[2] = tileHalfDigLeftBottom;
+			break;
 
-			// 1/4 right, 1/2 top.
-			case (tunnelVerticalStep12 | tunnelHorizontalStep4):
-				break;
+		// 1/4 right, 1/2 top.
+		case (tunnelVerticalStep12 | tunnelHorizontalStep4):
+			tiles[0] = tileBottomWall;
+			tiles[1] = tileBlack;
+			tiles[3] = tileHalfDigRightBottom;
+			break;
 
-			// 1/4 left, 1/4 right, 1/2 top.
-			case (tunnelVerticalStep12 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
-				break;
+		// 1/4 left, 1/4 right, 1/2 top.
+		case (tunnelVerticalStep12 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
+			tiles[0] = tileBlack;
+			tiles[1] = tileBlack;
+			tiles[2] = tileHalfDigLeftBottom;
+			tiles[3] = tileHalfDigRightBottom;
+			break;
 
-			// 1/2 left, 1/4 right, 1/2 top.
-			case (tunnelVerticalStep12 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
-				break;
+		// 1/2 left, 1/4 right, 1/2 top.
+		case (tunnelVerticalStep12 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
+			tiles[0] = tileBlack;
+			tiles[1] = tileBlack;
+			tiles[2] = tileBlack;
+			tiles[3] = tileHalfDigRightBottom;
+			break;
 
-			// 1/4 left, 1/2 right, 1/2 top.
-			case (tunnelVerticalStep12 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
-				break;
+		// 1/4 left, 1/2 right, 1/2 top.
+		case (tunnelVerticalStep12 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
+			tiles[0] = tileBlack;
+			tiles[1] = tileBlack;
+			tiles[2] = tileHalfDigLeftBottom;
+			tiles[3] = tileBlack;
+			break;
 
-			// 1/2 left, 1/4 bottom.
-			case (tunnelVerticalStep4 | tunnelHorizontalStep12):
-				break;
+		// 1/2 left, 1/4 bottom.
+		case (tunnelVerticalStep4 | tunnelHorizontalStep12):
+			tiles[0] = tileRightWall;
+			tiles[2] = tileDig75TopRight;
+			tiles[3] = tileHalfDigBottomRight;
+			break;
 
-			// 1/4 left, 1/4 right, 1/4 bottom.
-			case (tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
-				break;
+		// 1/4 left, 1/4 right, 1/4 bottom.
+		case (tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
+			tiles[0] = tileHalfDigLeftTop;
+			tiles[1] = tileHalfDigRightTop;
+			tiles[2] = tileDig75TopRight;
+			tiles[3] = tileDig75TopLeft;
+			break;
 
-			// 1/2 left, 1/4 right, 1/4 bottom.
-			case (tunnelVerticalStep4 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
-				break;
+		// 1/2 left, 1/4 right, 1/4 bottom.
+		case (tunnelVerticalStep4 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
+			break;
 
-			// 1/2 right, 1/4 bottom.
-			case (tunnelVerticalStep4 | tunnelHorizontalStep34):
-				break;
+		// 1/2 right, 1/4 bottom.
+		case (tunnelVerticalStep4 | tunnelHorizontalStep34):
+			break;
 
-			// 1/4 left, 1/2 right, 1/4 bottom.
-			case (tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
-				break;
+		// 1/4 left, 1/2 right, 1/4 bottom.
+		case (tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
+			break;
 
-			// 1/4 top, 1/4 bottom.
-			case (tunnelVerticalStep1 | tunnelVerticalStep4):
-				break;
+		// 1/4 top, 1/4 bottom.
+		case (tunnelVerticalStep1 | tunnelVerticalStep4):
+			break;
 
-			// 1/4 left, 1/4 top, 1/4 bottom.
-			case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep1):
-				break;
+		// 1/4 left, 1/4 top, 1/4 bottom.
+		case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep1):
+			break;
 
-			// 1/2 left, 1/4 top, 1/4 bottom.
-			case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep12):
-				break;
+		// 1/2 left, 1/4 top, 1/4 bottom.
+		case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep12):
+			break;
 
-			// 1/4 right, 1/4 top, 1/4 bottom.
-			case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep4):
-				break;
+		// 1/4 right, 1/4 top, 1/4 bottom.
+		case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep4):
+			break;
 
-			// 1/4 left, 1/4 right, 1/4 top, 1/4 bottom.
-			case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
-				break;
+		// 1/4 left, 1/4 right, 1/4 top, 1/4 bottom.
+		case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
+			break;
 
-			// 1/2 left, 1/4 right, 1/4 top, 1/4 bottom.
-			case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
-				break;
+		// 1/2 left, 1/4 right, 1/4 top, 1/4 bottom.
+		case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
+			break;
 
-			// 1/2 right, 1/4 top, 1/4 bottom.
-			case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep34):
-				break;
+		// 1/2 right, 1/4 top, 1/4 bottom.
+		case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep34):
+			break;
 
-			// 1/4 left, 1/2 right, 1/4 top, 1/4 bottom.
-			case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
-				break;
+		// 1/4 left, 1/2 right, 1/4 top, 1/4 bottom.
+		case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
+			break;
 
-			// 1/2 top, 1/4 bottom.
-			case (tunnelVerticalStep12 | tunnelVerticalStep4):
-				break;
+		// 1/2 top, 1/4 bottom.
+		case (tunnelVerticalStep12 | tunnelVerticalStep4):
+			break;
 
-			// 1/4 left, 1/2 top, 1/4 bottom.
-			case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep1):
-				break;
+		// 1/4 left, 1/2 top, 1/4 bottom.
+		case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep1):
+			break;
 
-			// 1/2 left, 1/2 top, 1/4 bottom.
-			case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep12):
-				break;
+		// 1/2 left, 1/2 top, 1/4 bottom.
+		case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep12):
+			break;
 
-			// 1/4 right, 1/2 top, 1/4 bottom.
-			case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep4):
-				break;
+		// 1/4 right, 1/2 top, 1/4 bottom.
+		case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep4):
+			break;
 
-			// 1/4 left, 1/4 right, 1/2 top, 1/4 bottom.
-			case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
-				break;
+		// 1/4 left, 1/4 right, 1/2 top, 1/4 bottom.
+		case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
+			break;
 
-			// 1/2 left, 1/4 right, 1/2 top, 1/4 bottom.
-			case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
-				break;
+		// 1/2 left, 1/4 right, 1/2 top, 1/4 bottom.
+		case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
+			break;
 
-			// 1/2 right, 1/2 top, 1/4 bottom.
-			case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep34):
-				break;
+		// 1/2 right, 1/2 top, 1/4 bottom.
+		case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep34):
+			break;
 
-			// 1/4 left, 1/2 right, 1/2 top, 1/4 bottom.
-			case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
-				break;
+		// 1/4 left, 1/2 right, 1/2 top, 1/4 bottom.
+		case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
+			break;
 
-			// 1/4 left, 1/2 bottom.
-			case (tunnelVerticalStep34 | tunnelHorizontalStep1):
-				break;
+		// 1/4 left, 1/2 bottom.
+		case (tunnelVerticalStep34 | tunnelHorizontalStep1):
+			break;
 
-			// 1/4 right, 1/2 bottom.
-			case (tunnelVerticalStep34 | tunnelHorizontalStep4):
-				break;
+		// 1/4 right, 1/2 bottom.
+		case (tunnelVerticalStep34 | tunnelHorizontalStep4):
+			break;
 
-			// 1/4 left, 1/4 right, 1/2 bottom.
-			case (tunnelVerticalStep34 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
-				break;
+		// 1/4 left, 1/4 right, 1/2 bottom.
+		case (tunnelVerticalStep34 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
+			break;
 
-			// 1/2 left, 1/4 right, 1/2 bottom.
-			case (tunnelVerticalStep34 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
-				break;
+		// 1/2 left, 1/4 right, 1/2 bottom.
+		case (tunnelVerticalStep34 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
+			break;
 
-			// 1/4 left, 1/2 right, 1/2 bottom.
-			case (tunnelVerticalStep34 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
-				break;
+		// 1/4 left, 1/2 right, 1/2 bottom.
+		case (tunnelVerticalStep34 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
+			break;
 
-			// 1/4 top, 1/2 bottom.
-			case (tunnelVerticalStep1 | tunnelVerticalStep34):
-				break;
+		// 1/4 top, 1/2 bottom.
+		case (tunnelVerticalStep1 | tunnelVerticalStep34):
+			break;
 
-			// 1/4 left, 1/4 top, 1/2 bottom.
-			case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep1):
-				break;
+		// 1/4 left, 1/4 top, 1/2 bottom.
+		case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep1):
+			break;
 
-			// 1/2 left, 1/4 top, 1/2 bottom.
-			case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep12):
-				break;
+		// 1/2 left, 1/4 top, 1/2 bottom.
+		case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep12):
+			break;
 
-			// 1/4 right, 1/4 top, 1/2 bottom.
-			case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep4):
-				break;
+		// 1/4 right, 1/4 top, 1/2 bottom.
+		case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep4):
+			break;
 
-			// 1/4 left, 1/4 right, 1/4 top, 1/2 bottom.
-			case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
-				break;
+		// 1/4 left, 1/4 right, 1/4 top, 1/2 bottom.
+		case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
+			break;
 
-			// 1/2 left, 1/4 right, 1/4 top, 1/2 bottom.
-			case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
-				break;
+		// 1/2 left, 1/4 right, 1/4 top, 1/2 bottom.
+		case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
+			break;
 
-			// 1/2 right, 1/4 top, 1/2 bottom.
-			case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep34):
-				break;
+		// 1/2 right, 1/4 top, 1/2 bottom.
+		case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep34):
+			break;
 
-			// 1/4 left, 1/2 right, 1/4 top, 1/2 bottom.
-			case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
-				break;
+		// 1/4 left, 1/2 right, 1/4 top, 1/2 bottom.
+		case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
+			break;
 
-			// Any other byte is currently treated as unknown or invalid tunnel topology.
-			default:
-				break;
+		// Any other byte is currently treated as unknown or invalid tunnel topology.
+		default:
+			break;
 	}
 }
 
