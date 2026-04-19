@@ -116,8 +116,6 @@ static UBYTE countItemsOnMap(UBYTE item) {
 
 static UBYTE legacySeedToTunnel(UBYTE seed) NONBANKED {
 	UBYTE tunnel = 0;
-	const UBYTE hasHorizontalTunnel = seed & (legacySeedTunnelLeft | legacySeedTunnelRight);
-	const UBYTE hasVerticalTunnel = seed & (legacySeedTunnelUp | legacySeedTunnelDown);
 
 	if ((seed & legacySeedTunnelLeft) != 0) {
 		tunnel |= tunnelHorizontalStep12;
@@ -132,37 +130,14 @@ static UBYTE legacySeedToTunnel(UBYTE seed) NONBANKED {
 		tunnel |= tunnelVerticalStep34;
 	}
 
-	if (hasHorizontalTunnel != 0) {
+	if ((tunnel & tunnelHorizontalCenterMask) == tunnelHorizontalCenterMask) {
 		tunnel |= tunnelVerticalCenterMask;
 	}
-	if (hasVerticalTunnel != 0) {
+	if ((tunnel & tunnelVerticalCenterMask) == tunnelVerticalCenterMask) {
 		tunnel |= tunnelHorizontalCenterMask;
 	}
 
 	return tunnel;
-}
-
-static UBYTE getTunnelTileForQuadrant(
-	UBYTE tunnel,
-	UBYTE horizontalMask,
-	UBYTE verticalMask,
-	UBYTE verticalWallTile,
-	UBYTE horizontalWallTile,
-	UBYTE cornerWallTile
-) NONBANKED {
-	const UBYTE horizontalOpen = (tunnel & horizontalMask) == horizontalMask;
-	const UBYTE verticalOpen = (tunnel & verticalMask) == verticalMask;
-
-	if (horizontalOpen && verticalOpen) {
-		return tileBlack;
-	}
-	if (horizontalOpen) {
-		return horizontalWallTile;
-	}
-	if (verticalOpen) {
-		return verticalWallTile;
-	}
-	return cornerWallTile;
 }
 
 void determineDigTiles(
@@ -190,13 +165,13 @@ void determineDigTiles(
 
 		// HORIZONTAL
 		// Horizontal cell being dug from the left, first quarter opened.
-		case (tunnelVerticalCenterMask | tunnelHorizontalStep1 ):
+		case tunnelHorizontalStep1:
 			tiles[0] = tileHalfDigLeftTop;
 			tiles[2] = tileHalfDigLeftBottom;
 			break;
 
 		// Horizontal cell open on the left tile only, or left horizontal dead-end.
-		case (tunnelVerticalCenterMask | tunnelHorizontalStep12 ):
+		case tunnelHorizontalStep12:
 			tiles[0] = tileTopRightWall;
 			tiles[2] = tileBottomRightWall;
 			break;
@@ -218,13 +193,13 @@ void determineDigTiles(
 			break;
 
 		// Horizontal cell being dug from the right, first quarter opened.
-		case (tunnelVerticalCenterMask | tunnelHorizontalStep4):
+		case tunnelHorizontalStep4:
 			tiles[1] = tileHalfDigRightTop;
 			tiles[3] = tileHalfDigRightBottom;
 			break;
 
 		// Horizontal cell open on the right tile only, or right horizontal dead-end.
-		case (tunnelVerticalCenterMask | tunnelHorizontalStep34):
+		case tunnelHorizontalStep34:
 			tiles[1] = tileTopLeftWall;
 			tiles[3] = tileBottomLeftWall;
 			break;
@@ -239,13 +214,13 @@ void determineDigTiles(
 
 		// VERTICAL
 		// Vertical cell being dug from the top, first quarter opened.
-		case (tunnelHorizontalCenterMask | tunnelVerticalStep1):
+		case tunnelVerticalStep1:
 			tiles[0] = tileHalfDigTopLeft;
 			tiles[1] = tileHalfDigTopRight;
 			break;
 
 		// Vertical cell open on the top tile only, or top vertical dead-end.
-		case (tunnelHorizontalCenterMask | tunnelVerticalStep12):
+		case tunnelVerticalStep12:
 			tiles[0] = tileBottomLeftWall;
 			tiles[1] = tileBottomRightWall;
 			break;
@@ -267,13 +242,13 @@ void determineDigTiles(
 			break;
 
 		// Vertical cell being dug from the bottom, first quarter opened.
-		case (tunnelHorizontalCenterMask | tunnelVerticalStep4):
+		case tunnelVerticalStep4:
 			tiles[2] = tileHalfDigBottomLeft;
 			tiles[3] = tileHalfDigBottomRight;
 			break;
 
 		// Vertical cell open on the bottom tile only, or bottom vertical dead-end.
-		case (tunnelHorizontalCenterMask | tunnelVerticalStep34):
+		case tunnelVerticalStep34:
 			tiles[2] = tileTopLeftWall;
 			tiles[3] = tileTopRightWall;
 			break;
@@ -288,7 +263,7 @@ void determineDigTiles(
 
 		// CORNERS
 		// Corner cell open to the left and up.
-		case ( tunnelHorizontalStep123 | tunnelVerticalStep123 ):
+		case ( tunnelHorizontalStep12 | tunnelVerticalStep12 ):
 		    tiles[0] = tileBlack;
 			tiles[1] = tileRightWall;
 		    tiles[2] = tileBottomWall;
@@ -296,7 +271,7 @@ void determineDigTiles(
 		    break;
 
 		// Corner cell open to the right and up.
-		case ( tunnelHorizontalStep234 | tunnelVerticalStep123 ):
+		case ( tunnelHorizontalStep34 | tunnelVerticalStep12 ):
 		    tiles[0] = tileLeftWall;
 			tiles[1] = tileBlack;
 		    tiles[2] = tileBottomLeftWall;
@@ -304,7 +279,7 @@ void determineDigTiles(
 		    break;
 
 		// Corner cell open to the right and down.
-		case ( tunnelHorizontalStep234 | tunnelVerticalStep234 ):
+		case ( tunnelHorizontalStep34 | tunnelVerticalStep34 ):
 		    tiles[0] = tileTopLeftWall;
 			tiles[1] = tileTopWall;
 		    tiles[2] = tileLeftWall;
@@ -312,7 +287,7 @@ void determineDigTiles(
 		    break;
 
 		// Corner cell open to the left and down.
-		case ( tunnelHorizontalStep123 | tunnelVerticalStep234 ):
+		case ( tunnelHorizontalStep12 | tunnelVerticalStep34 ):
 		    tiles[0] = tileTopWall;
 			tiles[1] = tileTopRightWall;
 		    tiles[2] = tileBlack;
@@ -365,13 +340,25 @@ void determineDigTiles(
 		case (tunnelVerticalStep4 | tunnelHorizontalStep4):
 		    tiles[1] = tileHalfDigRightTop;
 			tiles[2] = tileHalfDigBottomLeft;
-			tiles[3] = tileDig75BottomRight;
+			tiles[3] = tileDig75TopLeft;
             break;
 		// Digged one  bottom, one left
 		case (tunnelVerticalStep4 | tunnelHorizontalStep1):
 		    tiles[0] = tileHalfDigLeftTop;
-			tiles[2] = tileDig75BottomLeft;
+			tiles[2] = tileDig75TopRight;
 			tiles[3] = tileHalfDigBottomRight;
+            break;
+		// Digged one top, one left
+		case (tunnelVerticalStep1 | tunnelHorizontalStep1):
+		    tiles[0] = tileDig75BottomRight;
+			tiles[1] = tileHalfDigTopRight;
+			tiles[2] = tileHalfDigLeftBottom;
+            break;
+		// Digged one top, one right
+		case (tunnelVerticalStep1 | tunnelHorizontalStep4):
+		    tiles[0] = tileHalfDigTopLeft;
+			tiles[1] = tileDig75BottomLeft;
+			tiles[3] = tileHalfDigRightBottom;
             break;
 		// Any other byte is currently treated as unknown or invalid tunnel topology.
 		default:
@@ -469,26 +456,39 @@ void openTunnelConnection(UBYTE fromCell, UBYTE moveDirection) NONBANKED {
 		return;
 	}
 
-	switch (moveDirection) {
-		case J_LEFT:
-			tunnelMap[fromCell] |= tunnelHorizontalStep12 | tunnelVerticalCenterMask;
-			tunnelMap[adjacentCell] |= tunnelHorizontalStep34 | tunnelVerticalCenterMask;
-			break;
-		case J_RIGHT:
-			tunnelMap[fromCell] |= tunnelHorizontalStep34 | tunnelVerticalCenterMask;
-			tunnelMap[adjacentCell] |= tunnelHorizontalStep12 | tunnelVerticalCenterMask;
-			break;
-		case J_UP:
-			tunnelMap[fromCell] |= tunnelVerticalStep12 | tunnelHorizontalCenterMask;
-			tunnelMap[adjacentCell] |= tunnelVerticalStep34 | tunnelHorizontalCenterMask;
-			break;
-		case J_DOWN:
-			tunnelMap[fromCell] |= tunnelVerticalStep34 | tunnelHorizontalCenterMask;
-			tunnelMap[adjacentCell] |= tunnelVerticalStep12 | tunnelHorizontalCenterMask;
-			break;
-		default:
-			return;
-	}
+		switch (moveDirection) {
+			case J_LEFT:
+				tunnelMap[fromCell] |= tunnelHorizontalStep12;
+				tunnelMap[adjacentCell] |= tunnelHorizontalStep34;
+				break;
+			case J_RIGHT:
+				tunnelMap[fromCell] |= tunnelHorizontalStep34;
+				tunnelMap[adjacentCell] |= tunnelHorizontalStep12;
+				break;
+			case J_UP:
+				tunnelMap[fromCell] |= tunnelVerticalStep12;
+				tunnelMap[adjacentCell] |= tunnelVerticalStep34;
+				break;
+			case J_DOWN:
+				tunnelMap[fromCell] |= tunnelVerticalStep34;
+				tunnelMap[adjacentCell] |= tunnelVerticalStep12;
+				break;
+			default:
+				return;
+		}
+
+		if ((tunnelMap[fromCell] & tunnelHorizontalCenterMask) == tunnelHorizontalCenterMask) {
+			tunnelMap[fromCell] |= tunnelVerticalCenterMask;
+		}
+		if ((tunnelMap[fromCell] & tunnelVerticalCenterMask) == tunnelVerticalCenterMask) {
+			tunnelMap[fromCell] |= tunnelHorizontalCenterMask;
+		}
+		if ((tunnelMap[adjacentCell] & tunnelHorizontalCenterMask) == tunnelHorizontalCenterMask) {
+			tunnelMap[adjacentCell] |= tunnelVerticalCenterMask;
+		}
+		if ((tunnelMap[adjacentCell] & tunnelVerticalCenterMask) == tunnelVerticalCenterMask) {
+			tunnelMap[adjacentCell] |= tunnelHorizontalCenterMask;
+		}
 
 	renderMetaCell(fromCell);
 	renderMetaCell(adjacentCell);

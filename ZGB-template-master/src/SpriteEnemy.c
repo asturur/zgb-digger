@@ -326,13 +326,17 @@ static void extendEnemyTunnelProgress(UBYTE cell, UBYTE moveDirection, UBYTE slo
     switch (moveDirection) {
         case J_LEFT:
         case J_RIGHT:
-            tunnelMap[cell] |= tunnelVerticalCenterMask;
             tunnelMap[cell] |= getEnemyHorizontalDigStepMask(slotIndex);
+            if ((tunnelMap[cell] & tunnelHorizontalCenterMask) == tunnelHorizontalCenterMask) {
+                tunnelMap[cell] |= tunnelVerticalCenterMask;
+            }
             break;
         case J_UP:
         case J_DOWN:
-            tunnelMap[cell] |= tunnelHorizontalCenterMask;
             tunnelMap[cell] |= getEnemyVerticalDigStepMask(slotIndex);
+            if ((tunnelMap[cell] & tunnelVerticalCenterMask) == tunnelVerticalCenterMask) {
+                tunnelMap[cell] |= tunnelHorizontalCenterMask;
+            }
             break;
         default:
             return;

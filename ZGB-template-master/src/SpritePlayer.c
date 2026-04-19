@@ -33,9 +33,6 @@ static const UBYTE deathBounceOffsets[] = {3, 5, 6, 6, 5, 3, 0};
 #define moveAdvanced 1
 #define moveBlockedByBag 2
 
-#define META_CELL_TILE_COLUMN(CELL) ((UBYTE)(1 + (((CELL) % mapMetaWidth) << 1)))
-#define META_CELL_TILE_ROW(CELL) ((UBYTE)(2 + (((CELL) / mapMetaWidth) << 1)))
-
 UBYTE direction;
 static UBYTE activeDigDirection;
 
@@ -388,13 +385,17 @@ static void extendTunnelProgress(UBYTE cell, UBYTE moveDirection, UBYTE slotInde
     switch (moveDirection) {
         case J_LEFT:
         case J_RIGHT:
-            tunnelMap[cell] |= tunnelVerticalCenterMask;
             tunnelMap[cell] |= getHorizontalDigStepMask(slotIndex);
+            if ((tunnelMap[cell] & tunnelHorizontalCenterMask) == tunnelHorizontalCenterMask) {
+                tunnelMap[cell] |= tunnelVerticalCenterMask;
+            }
             break;
         case J_UP:
         case J_DOWN:
-            tunnelMap[cell] |= tunnelHorizontalCenterMask;
             tunnelMap[cell] |= getVerticalDigStepMask(slotIndex);
+            if ((tunnelMap[cell] & tunnelVerticalCenterMask) == tunnelVerticalCenterMask) {
+                tunnelMap[cell] |= tunnelHorizontalCenterMask;
+            }
             break;
         default:
             return;
