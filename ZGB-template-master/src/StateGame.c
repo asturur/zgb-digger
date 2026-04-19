@@ -116,21 +116,267 @@ static UBYTE countItemsOnMap(UBYTE item) {
 
 static UBYTE legacySeedToTunnel(UBYTE seed) NONBANKED {
 	UBYTE tunnel = 0;
+	const UBYTE hasHorizontalTunnel = seed & (legacySeedTunnelLeft | legacySeedTunnelRight);
+	const UBYTE hasVerticalTunnel = seed & (legacySeedTunnelUp | legacySeedTunnelDown);
 
 	if ((seed & legacySeedTunnelLeft) != 0) {
-		tunnel |= 0x03;
+		tunnel |= tunnelHorizontalStep12;
 	}
 	if ((seed & legacySeedTunnelRight) != 0) {
-		tunnel |= 0x0C;
+		tunnel |= tunnelHorizontalStep34;
 	}
 	if ((seed & legacySeedTunnelUp) != 0) {
-		tunnel |= 0x30;
+		tunnel |= tunnelVerticalStep12;
 	}
 	if ((seed & legacySeedTunnelDown) != 0) {
-		tunnel |= 0xC0;
+		tunnel |= tunnelVerticalStep34;
+	}
+
+	if (hasHorizontalTunnel != 0) {
+		tunnel |= tunnelVerticalCenterMask;
+	}
+	if (hasVerticalTunnel != 0) {
+		tunnel |= tunnelHorizontalCenterMask;
 	}
 
 	return tunnel;
+}
+
+static UBYTE getTunnelTileForQuadrant(
+	UBYTE tunnel,
+	UBYTE horizontalMask,
+	UBYTE verticalMask,
+	UBYTE verticalWallTile,
+	UBYTE horizontalWallTile,
+	UBYTE cornerWallTile
+) NONBANKED {
+	const UBYTE horizontalOpen = (tunnel & horizontalMask) == horizontalMask;
+	const UBYTE verticalOpen = (tunnel & verticalMask) == verticalMask;
+
+	if (horizontalOpen && verticalOpen) {
+		return tileBlack;
+	}
+	if (horizontalOpen) {
+		return horizontalWallTile;
+	}
+	if (verticalOpen) {
+		return verticalWallTile;
+	}
+	return cornerWallTile;
+}
+
+void determineDigTiles(
+	UBYTE currentCell,
+	UBYTE topCell,
+	UBYTE rightCell,
+	UBYTE bottomCell,
+	UBYTE leftCell,
+	UBYTE* tiles
+) NONBANKED {
+	(void)topCell;
+	(void)rightCell;
+	(void)bottomCell;
+	(void)leftCell;
+
+	tiles[0] = tileGrass;
+	tiles[1] = tileGrass;
+	tiles[2] = tileGrass;
+	tiles[3] = tileGrass;
+
+	switch (currentCell) {
+		// Solid grass cell with no tunnel opened yet.
+		case 0x00:
+			break;
+
+		// HORIZONTAL
+		// Horizontal cell being dug from the left, first quarter opened.
+		case (tunnelVerticalCenterMask | tunnelHorizontalStep1 ):
+			tiles[0] = tileHalfDigLeftTop;
+			tiles[2] = tileHalfDigLeftBottom;
+			break;
+
+		// Horizontal cell open on the left tile only, or left horizontal dead-end.
+		case (tunnelVerticalCenterMask | tunnelHorizontalStep12 ):
+			tiles[0] = tileTopRightWall;
+			tiles[2] = tileBottomRightWall;
+			break;
+
+		// Horizontal cell being dug from the left into the right tile.
+		case (tunnelVerticalCenterMask | tunnelHorizontalStep123 ):
+			tiles[0] = tileTopWall;
+			tiles[2] = tileBottomWall;
+			tiles[1] = tileHalfDigLeftTop;
+			tiles[3] = tileHalfDigLeftBottom;
+			break;
+
+		// Fully dug horizontal cell.
+		case (tunnelVerticalCenterMask | tunnelHorizontalMask):
+			tiles[0] = tileTopWall;
+			tiles[2] = tileBottomWall;
+			tiles[1] = tileTopWall;
+			tiles[3] = tileBottomWall;
+			break;
+
+		// Horizontal cell being dug from the right, first quarter opened.
+		case (tunnelVerticalCenterMask | tunnelHorizontalStep4):
+			tiles[1] = tileHalfDigRightTop;
+			tiles[3] = tileHalfDigRightBottom;
+			break;
+
+		// Horizontal cell open on the right tile only, or right horizontal dead-end.
+		case (tunnelVerticalCenterMask | tunnelHorizontalStep34):
+			tiles[1] = tileTopLeftWall;
+			tiles[3] = tileBottomLeftWall;
+			break;
+
+		// Horizontal cell being dug from the right into the left tile.
+		case (tunnelVerticalCenterMask | tunnelHorizontalStep234):
+			tiles[0] = tileHalfDigRightTop;
+			tiles[2] = tileHalfDigRightBottom;
+			tiles[1] = tileTopWall;
+			tiles[3] = tileBottomWall;
+			break;
+
+		// VERTICAL
+		// Vertical cell being dug from the top, first quarter opened.
+		case (tunnelHorizontalCenterMask | tunnelVerticalStep1):
+			tiles[0] = tileHalfDigTopLeft;
+			tiles[1] = tileHalfDigTopRight;
+			break;
+
+		// Vertical cell open on the top tile only, or top vertical dead-end.
+		case (tunnelHorizontalCenterMask | tunnelVerticalStep12):
+			tiles[0] = tileBottomLeftWall;
+			tiles[1] = tileBottomRightWall;
+			break;
+
+		// Vertical cell being dug from the top into the bottom tile.
+		case (tunnelHorizontalCenterMask | tunnelVerticalStep123):
+			tiles[0] = tileLeftWall;
+			tiles[1] = tileRightWall;
+			tiles[2] = tileHalfDigTopLeft;
+			tiles[3] = tileHalfDigTopRight;
+			break;
+
+		// Fully dug vertical cell.
+		case (tunnelHorizontalCenterMask | tunnelVerticalMask):
+			tiles[0] = tileLeftWall;
+			tiles[1] = tileRightWall;
+			tiles[2] = tileLeftWall;
+			tiles[3] = tileRightWall;
+			break;
+
+		// Vertical cell being dug from the bottom, first quarter opened.
+		case (tunnelHorizontalCenterMask | tunnelVerticalStep4):
+			tiles[2] = tileHalfDigBottomLeft;
+			tiles[3] = tileHalfDigBottomRight;
+			break;
+
+		// Vertical cell open on the bottom tile only, or bottom vertical dead-end.
+		case (tunnelHorizontalCenterMask | tunnelVerticalStep34):
+			tiles[2] = tileTopLeftWall;
+			tiles[3] = tileTopRightWall;
+			break;
+
+		// Vertical cell being dug from the bottom into the top tile.
+		case (tunnelHorizontalCenterMask | tunnelVerticalStep234):
+			tiles[0] = tileHalfDigBottomLeft;
+			tiles[1] = tileHalfDigBottomRight;
+		    tiles[2] = tileLeftWall;
+			tiles[3] = tileRightWall;
+			break;
+
+		// CORNERS
+		// Corner cell open to the left and up.
+		case ( tunnelHorizontalStep123 | tunnelVerticalStep123 ):
+		    tiles[0] = tileBlack;
+			tiles[1] = tileRightWall;
+		    tiles[2] = tileBottomWall;
+			tiles[3] = tileBottomRightWall;
+		    break;
+
+		// Corner cell open to the right and up.
+		case ( tunnelHorizontalStep234 | tunnelVerticalStep123 ):
+		    tiles[0] = tileLeftWall;
+			tiles[1] = tileBlack;
+		    tiles[2] = tileBottomLeftWall;
+			tiles[3] = tileBottomWall;
+		    break;
+
+		// Corner cell open to the right and down.
+		case ( tunnelHorizontalStep234 | tunnelVerticalStep234 ):
+		    tiles[0] = tileTopLeftWall;
+			tiles[1] = tileTopWall;
+		    tiles[2] = tileLeftWall;
+			tiles[3] = tileBlack;
+		    break;
+
+		// Corner cell open to the left and down.
+		case ( tunnelHorizontalStep123 | tunnelVerticalStep234 ):
+		    tiles[0] = tileTopWall;
+			tiles[1] = tileTopRightWall;
+		    tiles[2] = tileBlack;
+			tiles[3] = tileRightWall;
+		    break;
+
+		// T JUNCTIONS
+		// Tee cell open left, right, and up.
+		case (tunnelHorizontalMask | tunnelVerticalStep123):
+			tiles[0] = tileBlack;
+			tiles[1] = tileBlack;
+		    tiles[2] = tileBottomWall;
+			tiles[3] = tileBottomWall;
+			break;
+
+		// Tee cell open left, right, and down.
+		case (tunnelHorizontalMask | tunnelVerticalStep234):
+			tiles[0] = tileTopWall;
+			tiles[1] = tileTopWall;
+		    tiles[2] = tileBlack;
+			tiles[3] = tileBlack;
+			break;
+
+		// Tee cell open up, down, and left.
+		case (tunnelVerticalMask | tunnelHorizontalStep123):
+			tiles[0] = tileBlack;
+			tiles[1] = tileRightWall;
+		    tiles[2] = tileBlack;
+			tiles[3] = tileRightWall;
+			break;
+		
+	    // Tee cell open up, down, and right.
+		case (tunnelVerticalMask | tunnelHorizontalStep234):
+			tiles[0] = tileLeftWall;
+			tiles[1] = tileBlack;
+		    tiles[2] = tileLeftWall;
+			tiles[3] = tileBlack;
+			break;
+
+		// Cross cell open in all four directions.
+		case tunnelVerticalMask | tunnelHorizontalMask:
+		    tiles[0] = tileBlack;
+			tiles[1] = tileBlack;
+		    tiles[2] = tileBlack;
+			tiles[3] = tileBlack;
+		    break;
+
+		// BAD DIGGED STUFF
+		// Digged one  bottom, one right
+		case (tunnelVerticalStep4 | tunnelHorizontalStep4):
+		    tiles[1] = tileHalfDigRightTop;
+			tiles[2] = tileHalfDigBottomLeft;
+			tiles[3] = tileDig75BottomRight;
+            break;
+		// Digged one  bottom, one left
+		case (tunnelVerticalStep4 | tunnelHorizontalStep1):
+		    tiles[0] = tileHalfDigLeftTop;
+			tiles[2] = tileDig75BottomLeft;
+			tiles[3] = tileHalfDigBottomRight;
+            break;
+		// Any other byte is currently treated as unknown or invalid tunnel topology.
+		default:
+			break;
+	}
 }
 
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED {
@@ -173,10 +419,7 @@ void renderMetaCell(UBYTE cell) BANKED {
 		tiles[2] = tileGrass;
 		tiles[3] = tileGrass;
 	} else {
-		tiles[0] = tileBlack;
-		tiles[1] = tileBlack;
-		tiles[2] = tileBlack;
-		tiles[3] = tileBlack;
+		determineDigTiles(tunnel, 0, 0, 0, 0, tiles);
 	}
 
 	updateVideoMemAndMap(tileColumn, tileRow, tiles[0]);
@@ -228,20 +471,20 @@ void openTunnelConnection(UBYTE fromCell, UBYTE moveDirection) NONBANKED {
 
 	switch (moveDirection) {
 		case J_LEFT:
-			tunnelMap[fromCell] |= 0x03;
-			tunnelMap[adjacentCell] |= 0x0C;
+			tunnelMap[fromCell] |= tunnelHorizontalStep12 | tunnelVerticalCenterMask;
+			tunnelMap[adjacentCell] |= tunnelHorizontalStep34 | tunnelVerticalCenterMask;
 			break;
 		case J_RIGHT:
-			tunnelMap[fromCell] |= 0x0C;
-			tunnelMap[adjacentCell] |= 0x03;
+			tunnelMap[fromCell] |= tunnelHorizontalStep34 | tunnelVerticalCenterMask;
+			tunnelMap[adjacentCell] |= tunnelHorizontalStep12 | tunnelVerticalCenterMask;
 			break;
 		case J_UP:
-			tunnelMap[fromCell] |= 0x30;
-			tunnelMap[adjacentCell] |= 0xC0;
+			tunnelMap[fromCell] |= tunnelVerticalStep12 | tunnelHorizontalCenterMask;
+			tunnelMap[adjacentCell] |= tunnelVerticalStep34 | tunnelHorizontalCenterMask;
 			break;
 		case J_DOWN:
-			tunnelMap[fromCell] |= 0xC0;
-			tunnelMap[adjacentCell] |= 0x30;
+			tunnelMap[fromCell] |= tunnelVerticalStep34 | tunnelHorizontalCenterMask;
+			tunnelMap[adjacentCell] |= tunnelVerticalStep12 | tunnelHorizontalCenterMask;
 			break;
 		default:
 			return;
@@ -352,10 +595,7 @@ void copyLevelMapToRam(uint8_t mapToLoadBank, const unsigned char *mapToLoad, ui
 			renderedTiles[2] = tileGrass;
 			renderedTiles[3] = tileGrass;
 		} else {
-			renderedTiles[0] = tileBlack;
-			renderedTiles[1] = tileBlack;
-			renderedTiles[2] = tileBlack;
-			renderedTiles[3] = tileBlack;
+			determineDigTiles(tunnelMap[cell], 0, 0, 0, 0, renderedTiles);
 		}
         uint16_t tileNum = tileRow * tilesPerRow + tileColumn;
 		tileMap[tileNum] = renderedTiles[0];

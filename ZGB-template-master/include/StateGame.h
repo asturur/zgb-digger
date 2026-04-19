@@ -50,14 +50,60 @@
 #define bagBR 17
 
 // tunnels with walls
-#define leftWall 18
-#define rightWall 19
-#define topWall 20
-#define bottomWall 21
+#define tileLeftWall 18
+#define tileRightWall 19
+#define tileTopWall 20
+#define tileBottomWall 21
+#define tileTopLeftWall 22
+#define tileTopRightWall 23
+#define tileBottomRightWall 24
+#define tileBottomLeftWall 25
+#define tileHalfDigLeftTop 26
+#define tileHalfDigRightTop 27
+#define tileHalfDigTopLeft 28
+#define tileHalfDigBottomLeft 29
+#define tileDig75TopLeft 30
+#define tileDig75TopRight 31
+#define tileDig75BottomRight 32
+#define tileDig75BottomLeft 33
+#define tileHalfDigLeftBottom 34
+#define tileHalfDigRightBottom 35
+#define tileHalfDigTopRight 36
+#define tileHalfDigBottomRight 37
 
+// Temporary compatibility aliases for older live-dig code paths.
+#define tileHalfDigLeft tileHalfDigLeftTop
+#define tileHalfDigRight tileHalfDigRightTop
+#define tileHalfDigTop tileHalfDigTopLeft
+#define tileHalfDigBottom tileHalfDigBottomLeft
 
 #define tunnelHorizontalMask 0x0F
 #define tunnelVerticalMask 0xF0
+
+// PREFERRED TUNNEL BIT MASKS
+#define tunnelHorizontalStep1 0x01
+#define tunnelHorizontalStep12 0x03
+#define tunnelHorizontalStep123 0x07
+#define tunnelHorizontalStep234 0x0E
+#define tunnelHorizontalStep34 0x0C
+#define tunnelHorizontalStep4 0x08
+#define tunnelHorizontalCenterMask 0x06
+
+#define tunnelVerticalStep1 0x10
+#define tunnelVerticalStep12 0x30
+#define tunnelVerticalStep123 0x70
+#define tunnelVerticalStep234 0xE0
+#define tunnelVerticalStep34 0xC0
+#define tunnelVerticalStep4 0x80
+#define tunnelVerticalCenterMask 0x60
+
+// END OF PREFERRED TUNNEL BIT MASKS
+// Temporary compatibility aliases for older tunnel-mask names.
+#define tunnelHorizontalLeftTileMask tunnelHorizontalStep12
+#define tunnelHorizontalRightTileMask tunnelHorizontalStep34
+
+#define tunnelVerticalTopTileMask tunnelVerticalStep12
+#define tunnelVerticalBottomTileMask tunnelVerticalStep34
 
 #define itemNone 0
 #define itemEmerald 1
@@ -98,6 +144,14 @@
 void updateScore(uint16_t addScore) BANKED;
 UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y) NONBANKED;
 void renderMetaCell(UBYTE cell) BANKED;
+void determineDigTiles(
+    UBYTE currentCell,
+    UBYTE topCell,
+    UBYTE rightCell,
+    UBYTE bottomCell,
+    UBYTE leftCell,
+    UBYTE* tiles
+) NONBANKED;
 void openTunnelConnection(UBYTE fromCell, UBYTE direction) NONBANKED;
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
 void runMapSideEffects(void) BANKED;

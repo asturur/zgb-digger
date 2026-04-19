@@ -37,6 +37,7 @@ static const UBYTE deathBounceOffsets[] = {3, 5, 6, 6, 5, 3, 0};
 #define META_CELL_TILE_ROW(CELL) ((UBYTE)(2 + (((CELL) / mapMetaWidth) << 1)))
 
 UBYTE direction;
+static UBYTE activeDigDirection;
 
 static uint16_t getRechargeTime(void) {
     return ((uint16_t)THIS->custom_data[recharge_time_hi] << 8) | THIS->custom_data[recharge_time_lo];
@@ -171,6 +172,7 @@ void START(void) {
         SPRITE_SET_PALETTE(THIS,1);
     }
     setDirection(J_RIGHT);
+    activeDigDirection = J_RIGHT;
     setRechargeTime(0);
     THIS->custom_data[death_state] = playerDeathNone;
     THIS->custom_data[player_movement_accumulator] = 0;
@@ -330,37 +332,52 @@ static void updateAnimation(void) {
     }
 }
 
-static UBYTE getLeadingDigCell(void) {
+static UBYTE isOppositeDirection(UBYTE dirA, UBYTE dirB) {
+    return (dirA == J_LEFT && dirB == J_RIGHT) ||
+        (dirA == J_RIGHT && dirB == J_LEFT) ||
+        (dirA == J_UP && dirB == J_DOWN) ||
+        (dirA == J_DOWN && dirB == J_UP);
+}
+
+static UBYTE getLeadingDigCellForDirection(UBYTE moveDirection) {
     uint16_t leadX = THIS->x;
     uint16_t leadY = THIS->y;
 
-    if (direction == J_RIGHT) {
+    if (moveDirection == J_RIGHT) {
         leadX = (uint16_t)(leadX + largeTileSize - 1);
-    } else if (direction == J_DOWN) {
+    } else if (moveDirection == J_DOWN) {
         leadY = (uint16_t)(leadY + largeTileSize - 1);
     }
 
     return getMapMetaTileArrayPosition(leadX, leadY);
 }
 
-static UBYTE getLeadingDigSlot(void) {
+static UBYTE getLeadingDigSlotForDirection(UBYTE moveDirection) {
     UBYTE offset;
 
-    if (direction == J_LEFT || direction == J_RIGHT) {
+    if (moveDirection == J_LEFT || moveDirection == J_RIGHT) {
         uint16_t leadX = THIS->x;
-        if (direction == J_RIGHT) {
+        if (moveDirection == J_RIGHT) {
             leadX = (uint16_t)(leadX + largeTileSize - 1);
         }
         offset = MOD_FOR_LARGE_TILE(leadX - mapBoundLeft);
     } else {
         uint16_t leadY = THIS->y;
-        if (direction == J_DOWN) {
+        if (moveDirection == J_DOWN) {
             leadY = (uint16_t)(leadY + largeTileSize - 1);
         }
         offset = MOD_FOR_LARGE_TILE(leadY - mapBoundUp);
     }
 
     return offset >> 2;
+}
+
+static UBYTE getHorizontalDigStepMask(UBYTE slotIndex) {
+    return (UBYTE)(tunnelHorizontalStep1 << slotIndex);
+}
+
+static UBYTE getVerticalDigStepMask(UBYTE slotIndex) {
+    return (UBYTE)(tunnelVerticalStep1 << slotIndex);
 }
 
 static void extendTunnelProgress(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex) {
@@ -371,125 +388,41 @@ static void extendTunnelProgress(UBYTE cell, UBYTE moveDirection, UBYTE slotInde
     switch (moveDirection) {
         case J_LEFT:
         case J_RIGHT:
-            tunnelMap[cell] |= (UBYTE)(1u << slotIndex);
+            tunnelMap[cell] |= tunnelVerticalCenterMask;
+            tunnelMap[cell] |= getHorizontalDigStepMask(slotIndex);
             break;
         case J_UP:
         case J_DOWN:
-            tunnelMap[cell] |= (UBYTE)(1u << (slotIndex + 4));
+            tunnelMap[cell] |= tunnelHorizontalCenterMask;
+            tunnelMap[cell] |= getVerticalDigStepMask(slotIndex);
             break;
         default:
             return;
     }
 }
 
-static UBYTE hasVerticalAtTopLeft(UBYTE tunnel) {
-    return (tunnel & 0x30) != 0;
-}
-
-static UBYTE hasVerticalAtTopRight(UBYTE tunnel) {
-    return (tunnel & 0x30) != 0;
-}
-
-static UBYTE hasVerticalAtBottomLeft(UBYTE tunnel) {
-    return (tunnel & 0xC0) != 0;
-}
-
-static UBYTE hasVerticalAtBottomRight(UBYTE tunnel) {
-    return (tunnel & 0xC0) != 0;
-}
-
-static UBYTE hasHorizontalAtTopLeft(UBYTE tunnel) {
-    return (tunnel & 0x03) != 0;
-}
-
-static UBYTE hasHorizontalAtTopRight(UBYTE tunnel) {
-    return (tunnel & 0x0C) != 0;
-}
-
-static UBYTE hasHorizontalAtBottomLeft(UBYTE tunnel) {
-    return (tunnel & 0x03) != 0;
-}
-
-static UBYTE hasHorizontalAtBottomRight(UBYTE tunnel) {
-    return (tunnel & 0x0C) != 0;
-}
-
-static void renderDiggingStrip(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex, UBYTE previousTunnel) {
-    const UBYTE tileColumn = META_CELL_TILE_COLUMN(cell);
-    const UBYTE tileRow = META_CELL_TILE_ROW(cell);
-
-    if (moveDirection == J_LEFT || moveDirection == J_RIGHT) {
-        const UBYTE stripColumn = (slotIndex < 2) ? tileColumn : (UBYTE)(tileColumn + 1);
-        const UBYTE topTile = (slotIndex < 2) ?
-            (hasVerticalAtTopLeft(previousTunnel) ? tileBlack : topWall) :
-            (hasVerticalAtTopRight(previousTunnel) ? tileBlack : topWall);
-        const UBYTE bottomTile = (slotIndex < 2) ?
-            (hasVerticalAtBottomLeft(previousTunnel) ? tileBlack : bottomWall) :
-            (hasVerticalAtBottomRight(previousTunnel) ? tileBlack : bottomWall);
-
-        updateVideoMemAndMap(stripColumn, tileRow, topTile);
-        updateVideoMemAndMap(stripColumn, (UBYTE)(tileRow + 1), bottomTile);
-    } else if (moveDirection == J_UP || moveDirection == J_DOWN) {
-        const UBYTE stripRow = (slotIndex < 2) ? tileRow : (UBYTE)(tileRow + 1);
-        const UBYTE leftTile = (slotIndex < 2) ?
-            (hasHorizontalAtTopLeft(previousTunnel) ? tileBlack : leftWall) :
-            (hasHorizontalAtBottomLeft(previousTunnel) ? tileBlack : leftWall);
-        const UBYTE rightTile = (slotIndex < 2) ?
-            (hasHorizontalAtTopRight(previousTunnel) ? tileBlack : rightWall) :
-            (hasHorizontalAtBottomRight(previousTunnel) ? tileBlack : rightWall);
-
-        updateVideoMemAndMap(tileColumn, stripRow, leftTile);
-        updateVideoMemAndMap((UBYTE)(tileColumn + 1), stripRow, rightTile);
-    }
-}
-
-static void connectDigCells(UBYTE previousCell, UBYTE currentCell, UBYTE moveDirection) {
-    const UBYTE previousTunnel = tunnelMap[previousCell];
-    const UBYTE currentTunnel = tunnelMap[currentCell];
-
-    switch (moveDirection) {
-        case J_LEFT:
-            tunnelMap[previousCell] |= 0x03;
-            tunnelMap[currentCell] |= 0x0C;
-            renderDiggingStrip(previousCell, moveDirection, 0, previousTunnel);
-            renderDiggingStrip(currentCell, moveDirection, 3, currentTunnel);
-            break;
-        case J_RIGHT:
-            tunnelMap[previousCell] |= 0x0C;
-            tunnelMap[currentCell] |= 0x03;
-            renderDiggingStrip(previousCell, moveDirection, 3, previousTunnel);
-            renderDiggingStrip(currentCell, moveDirection, 0, currentTunnel);
-            break;
-        case J_UP:
-            tunnelMap[previousCell] |= 0x30;
-            tunnelMap[currentCell] |= 0xC0;
-            renderDiggingStrip(previousCell, moveDirection, 0, previousTunnel);
-            renderDiggingStrip(currentCell, moveDirection, 3, currentTunnel);
-            break;
-        case J_DOWN:
-            tunnelMap[previousCell] |= 0xC0;
-            tunnelMap[currentCell] |= 0x30;
-            renderDiggingStrip(previousCell, moveDirection, 3, previousTunnel);
-            renderDiggingStrip(currentCell, moveDirection, 0, currentTunnel);
-            break;
-        default:
-            break;
-    }
-}
-
 static void updateTunnelProgress(void) {
-    const UBYTE currentDigCell = getLeadingDigCell();
-    const UBYTE currentDigSlot = getLeadingDigSlot();
     const UBYTE previousDigCell = THIS->custom_data[player_last_dig_cell];
-    const UBYTE previousTunnel = tunnelMap[currentDigCell];
+    UBYTE digDirection = direction;
+    UBYTE currentDigCell = getLeadingDigCellForDirection(digDirection);
+    UBYTE currentDigSlot = getLeadingDigSlotForDirection(digDirection);
+
+    if (previousDigCell != 0xFF &&
+        currentDigCell == previousDigCell &&
+        isOppositeDirection(direction, activeDigDirection)) {
+        digDirection = activeDigDirection;
+        currentDigCell = previousDigCell;
+        currentDigSlot = getLeadingDigSlotForDirection(digDirection);
+    }
 
     if (previousDigCell != 0xFF && previousDigCell != currentDigCell) {
-        connectDigCells(previousDigCell, currentDigCell, direction);
+        renderMetaCell(previousDigCell);
     }
 
-    extendTunnelProgress(currentDigCell, direction, currentDigSlot);
-    renderDiggingStrip(currentDigCell, direction, currentDigSlot, previousTunnel);
+    extendTunnelProgress(currentDigCell, digDirection, currentDigSlot);
+    renderMetaCell(currentDigCell);
     THIS->custom_data[player_last_dig_cell] = currentDigCell;
+    activeDigDirection = digDirection;
 }
 
 void UPDATE(void) {

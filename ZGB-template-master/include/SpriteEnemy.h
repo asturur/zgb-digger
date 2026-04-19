@@ -20,6 +20,7 @@
 #define enemy_direction 3
 #define frightned 4
 #define enemy_movement_accumulator 6
+#define enemy_last_dig_cell 7
 // #define deathTimer 7
 
 #define enemySpawnGapBaseTimer 180
