@@ -159,24 +159,24 @@ void determineDigTiles(
 	tiles[3] = tileGrass;
 
 	switch (currentCell) {
-		// Solid grass cell with no tunnel opened yet.
+		// 0 - Solid grass cell with no tunnel opened yet.
 		case 0x00:
 			break;
 
 		// HORIZONTAL
-		// Horizontal cell being dug from the left, first quarter opened.
+		// 2 - Horizontal cell being dug from the left, first quarter opened.
 		case tunnelHorizontalStep1:
 			tiles[0] = tileHalfDigLeftTop;
 			tiles[2] = tileHalfDigLeftBottom;
 			break;
 
-		// Horizontal cell open on the left tile only, or left horizontal dead-end.
+		// 4 - Horizontal cell open on the left tile only, or left horizontal dead-end.
 		case tunnelHorizontalStep12:
 			tiles[0] = tileTopRightWall;
 			tiles[2] = tileBottomRightWall;
 			break;
 
-		// Horizontal cell being dug from the left into the right tile.
+		// 6 - Horizontal cell being dug from the left into the right tile.
 		case (tunnelVerticalCenterMask | tunnelHorizontalStep123 ):
 			tiles[0] = tileTopWall;
 			tiles[2] = tileBottomWall;
@@ -184,7 +184,7 @@ void determineDigTiles(
 			tiles[3] = tileHalfDigLeftBottom;
 			break;
 
-		// Fully dug horizontal cell.
+		// 8 - Fully dug horizontal cell.
 		case (tunnelVerticalCenterMask | tunnelHorizontalMask):
 			tiles[0] = tileTopWall;
 			tiles[2] = tileBottomWall;
@@ -192,19 +192,19 @@ void determineDigTiles(
 			tiles[3] = tileBottomWall;
 			break;
 
-		// Horizontal cell being dug from the right, first quarter opened.
+		// 10 - Horizontal cell being dug from the right, first quarter opened.
 		case tunnelHorizontalStep4:
 			tiles[1] = tileHalfDigRightTop;
 			tiles[3] = tileHalfDigRightBottom;
 			break;
 
-		// Horizontal cell open on the right tile only, or right horizontal dead-end.
+		// 12 - Horizontal cell open on the right tile only, or right horizontal dead-end.
 		case tunnelHorizontalStep34:
 			tiles[1] = tileTopLeftWall;
 			tiles[3] = tileBottomLeftWall;
 			break;
 
-		// Horizontal cell being dug from the right into the left tile.
+		// 14 - Horizontal cell being dug from the right into the left tile.
 		case (tunnelVerticalCenterMask | tunnelHorizontalStep234):
 			tiles[0] = tileHalfDigRightTop;
 			tiles[2] = tileHalfDigRightBottom;
@@ -213,19 +213,19 @@ void determineDigTiles(
 			break;
 
 		// VERTICAL
-		// Vertical cell being dug from the top, first quarter opened.
+		// 16 - Vertical cell being dug from the top, first quarter opened.
 		case tunnelVerticalStep1:
 			tiles[0] = tileHalfDigTopLeft;
 			tiles[1] = tileHalfDigTopRight;
 			break;
 
-		// Vertical cell open on the top tile only, or top vertical dead-end.
+		// 18 - Vertical cell open on the top tile only, or top vertical dead-end.
 		case tunnelVerticalStep12:
 			tiles[0] = tileBottomLeftWall;
 			tiles[1] = tileBottomRightWall;
 			break;
 
-		// Vertical cell being dug from the top into the bottom tile.
+		// 20 - Vertical cell being dug from the top into the bottom tile.
 		case (tunnelHorizontalCenterMask | tunnelVerticalStep123):
 			tiles[0] = tileLeftWall;
 			tiles[1] = tileRightWall;
@@ -233,7 +233,7 @@ void determineDigTiles(
 			tiles[3] = tileHalfDigTopRight;
 			break;
 
-		// Fully dug vertical cell.
+		// 22 - Fully dug vertical cell.
 		case (tunnelHorizontalCenterMask | tunnelVerticalMask):
 			tiles[0] = tileLeftWall;
 			tiles[1] = tileRightWall;
@@ -241,19 +241,19 @@ void determineDigTiles(
 			tiles[3] = tileRightWall;
 			break;
 
-		// Vertical cell being dug from the bottom, first quarter opened.
+		// 24 - Vertical cell being dug from the bottom, first quarter opened.
 		case tunnelVerticalStep4:
 			tiles[2] = tileHalfDigBottomLeft;
 			tiles[3] = tileHalfDigBottomRight;
 			break;
 
-		// Vertical cell open on the bottom tile only, or bottom vertical dead-end.
+		// 26 - Vertical cell open on the bottom tile only, or bottom vertical dead-end.
 		case tunnelVerticalStep34:
 			tiles[2] = tileTopLeftWall;
 			tiles[3] = tileTopRightWall;
 			break;
 
-		// Vertical cell being dug from the bottom into the top tile.
+		// 28 - Vertical cell being dug from the bottom into the top tile.
 		case (tunnelHorizontalCenterMask | tunnelVerticalStep234):
 			tiles[0] = tileHalfDigBottomLeft;
 			tiles[1] = tileHalfDigBottomRight;
@@ -262,28 +262,28 @@ void determineDigTiles(
 			break;
 
 		// PARTIALLY DUG FROM 2 DIRECTION
-		// Single tile fully dug top-left tile.
+		// 30 - Single tile fully dug top-left tile.
 		case ( tunnelHorizontalStep12 | tunnelVerticalStep12 ):
 		    tiles[0] = tileBlack;
 			tiles[1] = tileBottomRightWall;
 		    tiles[2] = tileBottomRightWall;
 		    break;
 
-		// Single tile fully dug top-right tile.
+		// 32 - Single tile fully dug top-right tile.
 		case ( tunnelHorizontalStep34 | tunnelVerticalStep12 ):
 		    tiles[0] = tileBottomLeftWall;
 			tiles[1] = tileBlack;
 			tiles[3] = tileBottomLeftWall;
 		    break;
 
-		// Single tile fully dug bottom-right tile.
+		// 34 - Single tile fully dug bottom-right tile.
 		case ( tunnelHorizontalStep34 | tunnelVerticalStep34 ):
 			tiles[1] = tileTopLeftWall;
 		    tiles[2] = tileTopLeftWall;
 			tiles[3] = tileBlack;
 		    break;
 
-		// Single tile fully dug bottom-left tile.
+		// 36 - Single tile fully dug bottom-left tile.
 		case ( tunnelHorizontalStep12 | tunnelVerticalStep34 ):
 		    tiles[0] = tileTopRightWall;
 		    tiles[2] = tileBlack;
@@ -291,7 +291,7 @@ void determineDigTiles(
 		    break;
 
 		// MIXED FULL TILE PLUS HALF TILE
-		// Fully dug top-left tile plus a half-dug top-right extension.
+		// 38 - Fully dug top-left tile plus a half-dug top-right extension.
 		case ( tunnelHorizontalStep123 | tunnelVerticalStep123 ):
 			tiles[0] = tileBlack;
 			tiles[1] = tileHalfDigLeftTop;
@@ -299,7 +299,7 @@ void determineDigTiles(
 			tiles[3] = tileGrass;
 			break;
 
-		// Fully dug top-right tile plus a half-dug top-left extension.
+		// 40 - Fully dug top-right tile plus a half-dug top-left extension.
 		case ( tunnelHorizontalStep234 | tunnelVerticalStep123 ):
 			tiles[0] = tileHalfDigRightTop;
 			tiles[1] = tileBlack;
@@ -307,7 +307,7 @@ void determineDigTiles(
 			tiles[3] = tileBottomWall;
 			break;
 
-		// Fully dug top-left tile plus a half-dug bottom-left extension.
+		// 42 - Fully dug top-left tile plus a half-dug bottom-left extension.
 		case ( tunnelHorizontalStep123 | tunnelVerticalStep234 ):
 			tiles[0] = tileBlack;
 			tiles[1] = tileRightWall;
@@ -315,7 +315,7 @@ void determineDigTiles(
 			tiles[3] = tileGrass;
 			break;
 
-		// Fully dug top-right tile plus a half-dug bottom-right extension.
+		// 44 - Fully dug top-right tile plus a half-dug bottom-right extension.
 		case ( tunnelHorizontalStep234 | tunnelVerticalStep234 ):
 			tiles[0] = tileLeftWall;
 			tiles[1] = tileBlack;
@@ -324,7 +324,7 @@ void determineDigTiles(
 			break;
 
 		// T JUNCTIONS
-		// Tee cell open left, right, and up.
+		// 46 - Tee cell open left, right, and up.
 		case (tunnelHorizontalMask | tunnelVerticalStep123):
 			tiles[0] = tileBlack;
 			tiles[1] = tileBlack;
@@ -332,7 +332,7 @@ void determineDigTiles(
 			tiles[3] = tileBottomWall;
 			break;
 
-		// Tee cell open left, right, and down.
+		// 48 - Tee cell open left, right, and down.
 		case (tunnelHorizontalMask | tunnelVerticalStep234):
 			tiles[0] = tileTopWall;
 			tiles[1] = tileTopWall;
@@ -340,7 +340,7 @@ void determineDigTiles(
 			tiles[3] = tileBlack;
 			break;
 
-		// Tee cell open up, down, and left.
+		// 50 - Tee cell open up, down, and left.
 		case (tunnelVerticalMask | tunnelHorizontalStep123):
 			tiles[0] = tileBlack;
 			tiles[1] = tileRightWall;
@@ -348,7 +348,7 @@ void determineDigTiles(
 			tiles[3] = tileRightWall;
 			break;
 		
-	    // Tee cell open up, down, and right.
+	    // 52 - Tee cell open up, down, and right.
 		case (tunnelVerticalMask | tunnelHorizontalStep234):
 			tiles[0] = tileLeftWall;
 			tiles[1] = tileBlack;
@@ -356,7 +356,7 @@ void determineDigTiles(
 			tiles[3] = tileBlack;
 			break;
 
-		// Cross cell open in all four directions.
+		// 54 - Cross cell open in all four directions.
 		case tunnelVerticalMask | tunnelHorizontalMask:
 		    tiles[0] = tileBlack;
 			tiles[1] = tileBlack;
@@ -365,32 +365,32 @@ void determineDigTiles(
 		    break;
 
 		// BAD DIGGED STUFF
-		// Digged one  bottom, one right
+		// 56 - Digged one  bottom, one right
 		case (tunnelVerticalStep4 | tunnelHorizontalStep4):
 		    tiles[1] = tileHalfDigRightTop;
 			tiles[2] = tileHalfDigBottomLeft;
 			tiles[3] = tileDig75TopLeft;
             break;
-		// Digged one  bottom, one left
+		// 58 - Digged one  bottom, one left
 		case (tunnelVerticalStep4 | tunnelHorizontalStep1):
 		    tiles[0] = tileHalfDigLeftTop;
 			tiles[2] = tileDig75TopRight;
 			tiles[3] = tileHalfDigBottomRight;
             break;
-		// Digged one top, one left
+		// 60 - Digged one top, one left
 		case (tunnelVerticalStep1 | tunnelHorizontalStep1):
 		    tiles[0] = tileDig75BottomRight;
 			tiles[1] = tileHalfDigTopRight;
 			tiles[2] = tileHalfDigLeftBottom;
             break;
-			// Digged one top, one right
+			// 62 - Digged one top, one right
 		case (tunnelVerticalStep1 | tunnelHorizontalStep4):
 			tiles[0] = tileHalfDigTopLeft;
 			tiles[1] = tileDig75BottomLeft;
 			tiles[3] = tileHalfDigRightBottom;
 			break;
 
-		// 1/4 left, 1/4 right.
+		// 64 - 1/4 left, 1/4 right.
 		case (tunnelHorizontalStep1 | tunnelHorizontalStep4):
 			tiles[0] = tileHalfDigLeftTop;
 			tiles[1] = tileHalfDigRightTop;
@@ -398,7 +398,7 @@ void determineDigTiles(
 			tiles[3] = tileHalfDigRightBottom;
 			break;
 
-		// 1/2 left, 1/4 right.
+		// 66 - 1/2 left, 1/4 right.
 		case (tunnelHorizontalStep12 | tunnelHorizontalStep4):
 			tiles[0] = tileTopWall;
 			tiles[1] = tileHalfDigRightTop;
@@ -406,7 +406,7 @@ void determineDigTiles(
 			tiles[3] = tileHalfDigRightBottom;
 			break;
 
-		// 1/4 left, 1/2 right.
+		// 68 - 1/4 left, 1/2 right.
 		case (tunnelHorizontalStep1 | tunnelHorizontalStep34):
 			tiles[0] = tileHalfDigLeftTop;
 			tiles[1] = tileTopWall;
@@ -414,14 +414,14 @@ void determineDigTiles(
 			tiles[3] = tileBottomWall;
 			break;
 
-		// 1/2 left, 1/4 top.
+		// 70 - 1/2 left, 1/4 top.
 		case (tunnelVerticalStep1 | tunnelHorizontalStep12):
 			tiles[0] = tileBlack;
 			tiles[1] = tileHalfDigTopRight;
 			tiles[2] = tileBottomRightWall;
 			break;
 
-		// 1/4 left, 1/4 right, 1/4 top.
+		// 72 - 1/4 left, 1/4 right, 1/4 top.
 		case (tunnelVerticalStep1 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
 			tiles[0] = tileDig75BottomRight;
 			tiles[1] = tileDig75BottomLeft;
@@ -429,7 +429,7 @@ void determineDigTiles(
 			tiles[3] = tileHalfDigRightBottom;
 			break;
 
-		// 1/2 left, 1/4 right, 1/4 top.
+		// 74 - 1/2 left, 1/4 right, 1/4 top.
 		case (tunnelVerticalStep1 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
 			tiles[0] = tileBlack;
 			tiles[1] = tileDig75BottomLeft;
@@ -437,14 +437,14 @@ void determineDigTiles(
 			tiles[3] = tileHalfDigRightBottom;
 			break;
 
-		// 1/2 right, 1/4 top.
+		// 76 - 1/2 right, 1/4 top.
 		case (tunnelVerticalStep1 | tunnelHorizontalStep34):
 			tiles[0] = tileHalfDigTopLeft;
 			tiles[1] = tileBlack;
 			tiles[3] = tileLeftWall;
 			break;
 
-		// 1/4 left, 1/2 right, 1/4 top.
+		// 78 - 1/4 left, 1/2 right, 1/4 top.
 		case (tunnelVerticalStep1 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
 			tiles[0] = tileDig75BottomRight;
 			tiles[1] = tileBlack;
@@ -452,21 +452,21 @@ void determineDigTiles(
 			tiles[3] = tileLeftWall;
 			break;
 
-		// 1/4 left, 1/2 top.
+		// 80 - 1/4 left, 1/2 top.
 		case (tunnelVerticalStep12 | tunnelHorizontalStep1):
 			tiles[0] = tileBlack;
 			tiles[1] = tileBottomWall;
 			tiles[2] = tileHalfDigLeftBottom;
 			break;
 
-		// 1/4 right, 1/2 top.
+		// 82 - 1/4 right, 1/2 top.
 		case (tunnelVerticalStep12 | tunnelHorizontalStep4):
 			tiles[0] = tileBottomWall;
 			tiles[1] = tileBlack;
 			tiles[3] = tileHalfDigRightBottom;
 			break;
 
-		// 1/4 left, 1/4 right, 1/2 top.
+		// 84 - 1/4 left, 1/4 right, 1/2 top.
 		case (tunnelVerticalStep12 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
 			tiles[0] = tileBlack;
 			tiles[1] = tileBlack;
@@ -474,7 +474,7 @@ void determineDigTiles(
 			tiles[3] = tileHalfDigRightBottom;
 			break;
 
-		// 1/2 left, 1/4 right, 1/2 top.
+		// 86 - 1/2 left, 1/4 right, 1/2 top.
 		case (tunnelVerticalStep12 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
 			tiles[0] = tileBlack;
 			tiles[1] = tileBlack;
@@ -482,7 +482,7 @@ void determineDigTiles(
 			tiles[3] = tileHalfDigRightBottom;
 			break;
 
-		// 1/4 left, 1/2 right, 1/2 top.
+		// 88 - 1/4 left, 1/2 right, 1/2 top.
 		case (tunnelVerticalStep12 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
 			tiles[0] = tileBlack;
 			tiles[1] = tileBlack;
@@ -490,14 +490,14 @@ void determineDigTiles(
 			tiles[3] = tileBlack;
 			break;
 
-		// 1/2 left, 1/4 bottom.
+		// 90 - 1/2 left, 1/4 bottom.
 		case (tunnelVerticalStep4 | tunnelHorizontalStep12):
 			tiles[0] = tileRightWall;
 			tiles[2] = tileDig75TopRight;
 			tiles[3] = tileHalfDigBottomRight;
 			break;
 
-		// 1/4 left, 1/4 right, 1/4 bottom.
+		// 92 - 1/4 left, 1/4 right, 1/4 bottom.
 		case (tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
 			tiles[0] = tileHalfDigLeftTop;
 			tiles[1] = tileHalfDigRightTop;
@@ -505,133 +505,258 @@ void determineDigTiles(
 			tiles[3] = tileDig75TopLeft;
 			break;
 
-		// 1/2 left, 1/4 right, 1/4 bottom.
+		// 94 - 1/2 left, 1/4 right, 1/4 bottom.
 		case (tunnelVerticalStep4 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
+			tiles[0] = tileRightWall;
+			tiles[1] = tileHalfDigRightTop;
+			tiles[2] = tileBlack;
+			tiles[3] = tileDig75TopLeft;
 			break;
 
-		// 1/2 right, 1/4 bottom.
-		case (tunnelVerticalStep4 | tunnelHorizontalStep34):
+			// 96 - 1/2 right, 1/4 bottom.
+			case (tunnelVerticalStep4 | tunnelHorizontalStep34):
+				tiles[1] = tileLeftWall;
+				tiles[2] = tileHalfDigBottomLeft;
+				tiles[3] = tileBlack;
+				break;
+
+			// 98 - 1/4 left, 1/2 right, 1/4 bottom.
+			case (tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
+				tiles[0] = tileHalfDigLeftTop;
+				tiles[1] = tileLeftWall;
+				tiles[2] = tileDig75TopRight;
+				tiles[3] = tileBlack;
+				break;
+
+			// 100 - 1/4 top, 1/4 bottom.
+			case (tunnelVerticalStep1 | tunnelVerticalStep4):
+				tiles[0] = tileHalfDigTopLeft;
+				tiles[1] = tileHalfDigTopRight;
+				tiles[2] = tileHalfDigBottomLeft;
+				tiles[3] = tileHalfDigBottomRight;
+				break;
+
+			// 102 - 1/4 left, 1/4 top, 1/4 bottom.
+			case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep1):
+				tiles[0] = tileDig75BottomRight;
+				tiles[1] = tileHalfDigTopRight;
+				tiles[2] = tileDig75TopRight;
+				tiles[3] = tileHalfDigBottomRight;
+				break;
+
+			// 104 - 1/2 left, 1/4 top, 1/4 bottom.
+			case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep12):
+				tiles[0] = tileBlack;
+				tiles[1] = tileHalfDigTopRight;
+				tiles[2] = tileBlack;
+				tiles[3] = tileHalfDigBottomRight;
 			break;
 
-		// 1/4 left, 1/2 right, 1/4 bottom.
-		case (tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
-			break;
+			// 106 - 1/4 right, 1/4 top, 1/4 bottom.
+			case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep4):
+				tiles[0] = tileHalfDigTopLeft;
+				tiles[1] = tileDig75BottomLeft;
+				tiles[2] = tileHalfDigBottomLeft;
+				tiles[3] = tileDig75TopLeft;
+				break;
 
-		// 1/4 top, 1/4 bottom.
-		case (tunnelVerticalStep1 | tunnelVerticalStep4):
-			break;
+			// 108 - 1/4 left, 1/4 right, 1/4 top, 1/4 bottom.
+			case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
+				tiles[0] = tileDig75BottomRight;
+				tiles[1] = tileDig75BottomLeft;
+				tiles[2] = tileDig75TopRight;
+				tiles[3] = tileDig75TopLeft;
+				break;
 
-		// 1/4 left, 1/4 top, 1/4 bottom.
-		case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep1):
-			break;
+			// 110 - 1/2 left, 1/4 right, 1/4 top, 1/4 bottom.
+			case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
+				tiles[0] = tileBlack;
+				tiles[1] = tileDig75BottomLeft;
+				tiles[2] = tileBlack;
+				tiles[3] = tileDig75TopLeft;
+				break;
 
-		// 1/2 left, 1/4 top, 1/4 bottom.
-		case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep12):
-			break;
+			// 112 - 1/2 right, 1/4 top, 1/4 bottom.
+			case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep34):
+				tiles[0] = tileHalfDigTopLeft;
+				tiles[1] = tileBlack;
+				tiles[2] = tileHalfDigBottomLeft;
+				tiles[3] = tileBlack;
+				break;
 
-		// 1/4 right, 1/4 top, 1/4 bottom.
-		case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep4):
-			break;
+			// 114 - 1/4 left, 1/2 right, 1/4 top, 1/4 bottom.
+			case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
+				tiles[0] = tileDig75BottomRight;
+				tiles[1] = tileBlack;
+				tiles[2] = tileDig75TopRight;
+				tiles[3] = tileBlack;
+				break;
 
-		// 1/4 left, 1/4 right, 1/4 top, 1/4 bottom.
-		case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
-			break;
+			// 116 - 1/2 top, 1/4 bottom.
+			case (tunnelVerticalStep12 | tunnelVerticalStep4):
+				tiles[0] = tileBottomLeftWall;
+				tiles[1] = tileBottomRightWall;
+				tiles[2] = tileHalfDigBottomLeft;
+				tiles[3] = tileHalfDigBottomRight;
+				break;
 
-		// 1/2 left, 1/4 right, 1/4 top, 1/4 bottom.
-		case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
-			break;
+			// 118 - 1/4 left, 1/2 top, 1/4 bottom.
+			case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep1):
+				tiles[0] = tileBlack;
+				tiles[1] = tileBottomWall;
+				tiles[2] = tileDig75TopRight;
+				tiles[3] = tileHalfDigBottomRight;
+				break;
 
-		// 1/2 right, 1/4 top, 1/4 bottom.
-		case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep34):
-			break;
+			// 120 - 1/2 left, 1/2 top, 1/4 bottom.
+			case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep12):
+				tiles[0] = tileBlack;
+				tiles[1] = tileBottomWall;
+				tiles[2] = tileBlack;
+				tiles[3] = tileHalfDigBottomRight;
+				break;
 
-		// 1/4 left, 1/2 right, 1/4 top, 1/4 bottom.
-		case (tunnelVerticalStep1 | tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
-			break;
+			// 122 - 1/4 right, 1/2 top, 1/4 bottom.
+			case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep4):
+				tiles[0] = tileBottomWall;
+				tiles[1] = tileBlack;
+				tiles[2] = tileHalfDigBottomLeft;
+				tiles[3] = tileDig75TopLeft;
+				break;
 
-		// 1/2 top, 1/4 bottom.
-		case (tunnelVerticalStep12 | tunnelVerticalStep4):
-			break;
+			// 124 - 1/4 left, 1/4 right, 1/2 top, 1/4 bottom.
+			case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
+				tiles[0] = tileBlack;
+				tiles[1] = tileBlack;
+				tiles[2] = tileDig75TopRight;
+				tiles[3] = tileDig75TopLeft;
+				break;
 
-		// 1/4 left, 1/2 top, 1/4 bottom.
-		case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep1):
-			break;
+			// 126 - 1/2 left, 1/4 right, 1/2 top, 1/4 bottom.
+			case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
+				tiles[0] = tileBlack;
+				tiles[1] = tileBlack;
+				tiles[2] = tileBlack;
+				tiles[3] = tileDig75TopLeft;
+				break;
 
-		// 1/2 left, 1/2 top, 1/4 bottom.
-		case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep12):
-			break;
+			// 128 - 1/2 right, 1/2 top, 1/4 bottom.
+			case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep34):
+				tiles[0] = tileBottomWall;
+				tiles[1] = tileBlack;
+				tiles[2] = tileHalfDigBottomLeft;
+				tiles[3] = tileBlack;
+				break;
 
-		// 1/4 right, 1/2 top, 1/4 bottom.
-		case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep4):
-			break;
+			// 130 - 1/4 left, 1/2 right, 1/2 top, 1/4 bottom.
+			case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
+				tiles[0] = tileBlack;
+				tiles[1] = tileBlack;
+				tiles[2] = tileDig75TopRight;
+				tiles[3] = tileBlack;
+				break;
 
-		// 1/4 left, 1/4 right, 1/2 top, 1/4 bottom.
-		case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
-			break;
+			// 132 - 1/4 left, 1/2 bottom.
+			case (tunnelVerticalStep34 | tunnelHorizontalStep1):
+				tiles[0] = tileHalfDigLeftTop;
+				tiles[2] = tileBlack;
+				tiles[3] = tileTopWall;
+				break;
 
-		// 1/2 left, 1/4 right, 1/2 top, 1/4 bottom.
-		case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
-			break;
+			// 134 - 1/4 right, 1/2 bottom.
+			case (tunnelVerticalStep34 | tunnelHorizontalStep4):
+				tiles[1] = tileHalfDigRightTop;
+				tiles[2] = tileTopWall;
+				tiles[3] = tileBlack;
+				break;
 
-		// 1/2 right, 1/2 top, 1/4 bottom.
-		case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep34):
-			break;
+			// 136 - 1/4 left, 1/4 right, 1/2 bottom.
+			case (tunnelVerticalStep34 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
+				tiles[0] = tileHalfDigLeftTop;
+				tiles[1] = tileHalfDigRightTop;
+				tiles[2] = tileBlack;
+				tiles[3] = tileBlack;
+				break;
 
-		// 1/4 left, 1/2 right, 1/2 top, 1/4 bottom.
-		case (tunnelVerticalStep12 | tunnelVerticalStep4 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
-			break;
+			// 138 - 1/2 left, 1/4 right, 1/2 bottom.
+			case (tunnelVerticalStep34 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
+				tiles[0] = tileBlack;
+				tiles[1] = tileHalfDigRightTop;
+				tiles[2] = tileBlack;
+				tiles[3] = tileBlack;
+				break;
 
-		// 1/4 left, 1/2 bottom.
-		case (tunnelVerticalStep34 | tunnelHorizontalStep1):
-			break;
+			// 140 - 1/4 left, 1/2 right, 1/2 bottom.
+			case (tunnelVerticalStep34 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
+				tiles[0] = tileHalfDigLeftTop;
+				tiles[1] = tileBlack;
+				tiles[2] = tileBlack;
+				tiles[3] = tileBlack;
+				break;
 
-		// 1/4 right, 1/2 bottom.
-		case (tunnelVerticalStep34 | tunnelHorizontalStep4):
-			break;
+			// 142 - 1/4 top, 1/2 bottom.
+			case (tunnelVerticalStep1 | tunnelVerticalStep34):
+				tiles[0] = tileHalfDigTopLeft;
+				tiles[1] = tileHalfDigTopRight;
+				tiles[2] = tileTopLeftWall;
+				tiles[3] = tileTopRightWall;
+				break;
 
-		// 1/4 left, 1/4 right, 1/2 bottom.
-		case (tunnelVerticalStep34 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
-			break;
+			// 144 - 1/4 left, 1/4 top, 1/2 bottom.
+			case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep1):
+				tiles[0] = tileDig75BottomRight;
+				tiles[1] = tileHalfDigTopRight;
+				tiles[2] = tileBlack;
+				tiles[3] = tileTopWall;
+				break;
 
-		// 1/2 left, 1/4 right, 1/2 bottom.
-		case (tunnelVerticalStep34 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
-			break;
+			// 146 - 1/2 left, 1/4 top, 1/2 bottom.
+			case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep12):
+				tiles[0] = tileBlack;
+				tiles[1] = tileHalfDigTopRight;
+				tiles[2] = tileBlack;
+				tiles[3] = tileTopWall;
+				break;
 
-		// 1/4 left, 1/2 right, 1/2 bottom.
-		case (tunnelVerticalStep34 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
-			break;
+			// 148 - 1/4 right, 1/4 top, 1/2 bottom.
+			case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep4):
+				tiles[0] = tileHalfDigTopLeft;
+				tiles[1] = tileDig75BottomLeft;
+				tiles[2] = tileTopWall;
+				tiles[3] = tileBlack;
+				break;
 
-		// 1/4 top, 1/2 bottom.
-		case (tunnelVerticalStep1 | tunnelVerticalStep34):
-			break;
+			// 150 - 1/4 left, 1/4 right, 1/4 top, 1/2 bottom.
+			case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
+				tiles[0] = tileDig75BottomRight;
+				tiles[1] = tileDig75BottomLeft;
+				tiles[2] = tileBlack;
+				tiles[3] = tileBlack;
+				break;
 
-		// 1/4 left, 1/4 top, 1/2 bottom.
-		case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep1):
-			break;
+			// 152 - 1/2 left, 1/4 right, 1/4 top, 1/2 bottom.
+			case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
+				tiles[0] = tileBlack;
+				tiles[1] = tileDig75BottomLeft;
+				tiles[2] = tileBlack;
+				tiles[3] = tileBlack;
+				break;
 
-		// 1/2 left, 1/4 top, 1/2 bottom.
-		case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep12):
-			break;
+			// 154 - 1/2 right, 1/4 top, 1/2 bottom.
+			case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep34):
+				tiles[0] = tileHalfDigTopLeft;
+				tiles[1] = tileBlack;
+				tiles[2] = tileTopWall;
+				tiles[3] = tileBlack;
+				break;
 
-		// 1/4 right, 1/4 top, 1/2 bottom.
-		case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep4):
-			break;
-
-		// 1/4 left, 1/4 right, 1/4 top, 1/2 bottom.
-		case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep1 | tunnelHorizontalStep4):
-			break;
-
-		// 1/2 left, 1/4 right, 1/4 top, 1/2 bottom.
-		case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep12 | tunnelHorizontalStep4):
-			break;
-
-		// 1/2 right, 1/4 top, 1/2 bottom.
-		case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep34):
-			break;
-
-		// 1/4 left, 1/2 right, 1/4 top, 1/2 bottom.
-		case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
-			break;
+			// 156 - 1/4 left, 1/2 right, 1/4 top, 1/2 bottom.
+			case (tunnelVerticalStep1 | tunnelVerticalStep34 | tunnelHorizontalStep1 | tunnelHorizontalStep34):
+				tiles[0] = tileDig75BottomRight;
+				tiles[1] = tileBlack;
+				tiles[2] = tileBlack;
+				tiles[3] = tileBlack;
+				break;
 
 		// Any other byte is currently treated as unknown or invalid tunnel topology.
 		default:
