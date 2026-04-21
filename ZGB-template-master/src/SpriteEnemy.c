@@ -310,39 +310,6 @@ static UBYTE getEnemyLeadingDigSlot(void) {
     return offset >> 2;
 }
 
-static UBYTE getEnemyHorizontalDigStepMask(UBYTE slotIndex) {
-    return (UBYTE)(tunnelHorizontalStep1 << slotIndex);
-}
-
-static UBYTE getEnemyVerticalDigStepMask(UBYTE slotIndex) {
-    return (UBYTE)(tunnelVerticalStep1 << slotIndex);
-}
-
-static void extendEnemyTunnelProgress(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex) {
-    if (slotIndex > 3) {
-        slotIndex = 3;
-    }
-
-    switch (moveDirection) {
-        case J_LEFT:
-        case J_RIGHT:
-            tunnelMap[cell] |= getEnemyHorizontalDigStepMask(slotIndex);
-            if ((tunnelMap[cell] & tunnelHorizontalCenterMask) == tunnelHorizontalCenterMask) {
-                tunnelMap[cell] |= tunnelVerticalCenterMask;
-            }
-            break;
-        case J_UP:
-        case J_DOWN:
-            tunnelMap[cell] |= getEnemyVerticalDigStepMask(slotIndex);
-            if ((tunnelMap[cell] & tunnelVerticalCenterMask) == tunnelVerticalCenterMask) {
-                tunnelMap[cell] |= tunnelHorizontalCenterMask;
-            }
-            break;
-        default:
-            return;
-    }
-}
-
 static void finalizeEnemyDigCell(UBYTE cell) {
     if (cell != 0xFF) {
         renderMetaCell(cell);
@@ -359,7 +326,7 @@ static void updateEnemyTunnelProgress(void) {
         finalizeEnemyDigCell(previousDigCell);
     }
 
-    extendEnemyTunnelProgress(currentDigCell, moveDirection, currentDigSlot);
+    extendTunnelProgressAt(currentDigCell, moveDirection, currentDigSlot);
     renderMetaCell(currentDigCell);
     THIS->custom_data[enemy_last_dig_cell] = currentDigCell;
 }

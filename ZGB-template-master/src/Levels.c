@@ -1,150 +1,137 @@
 #include "Banks/SetAutoBank.h"
 #include "StateGame.h"
-// map descriptors
-// 0 grass
-// 1-15 walkable tunnel12 is a V,  3 is H, 
-// EM diamond
-// BG bag
-
-// walkability of tunnels
-//
-// - 8 -   
-// |   |
-// 1   2
-// |   |
-// - 4 -
 
 BANKREF(level1Map)
 // emerald count 30
 const unsigned char level1Map[] = {
-	4,  0,  0,  0, BG,  0,  0,  0,  0,  0,  6,  3,  3,  3,  1, // "S   B     HHHHS", 
-   12,  0,  0, EM, EM,  0,  0, EM,  0,  0, 12,  0, BG,  0,  0, // "V  CC  C  V B  "
-	12, BG,  0, EM, EM,  0,  0, EM,  0,  0, 12,  0,  0,  0,  0, // "VB CC  C  V    ",
-   12,  0,  0, EM, EM, BG,  0, EM, BG,  0, 12,  0, EM, EM, EM, // "V  CCB CB V CCC",
-   12,  0,  0, EM, EM,  0,  0, EM,  0,  0, 12,  0, EM, EM, EM, // "V  CC  C  V CCC",
-	10,  5,  0, EM, EM,  0,  0, EM,  0,  0, 12,  0, EM, EM, EM, // "HH CC  C  V CCC",
-	0, 12,  0,  0,  0,  0, BG,  0, BG,  0, 12,  0,  0,  0,  0, //  " V    B B V    ",
-   0, 10,  3,  3,  5,  0,  0,  0,  0,  0, 12,  0,  0,  0,  0, //  " HHHH     V    ",
-   EM,  0,  0,  0, 12,  0,  0,  0,  0,  0, 12,  0,  0,  0, EM, // "C   V     V   C",
-   EM, EM,  0,  0, 10,  3,  3,  3,  3,  3,  9,  0,  0, EM, EM, // "CC  HHHHHHH  CC",
+	O_D, GRS, GRS, GRS, BAG, GRS, GRS, GRS, GRS, GRS, CBR, HHH, HHH, HHH, O_L,
+	VVV, GRS, GRS, EMR, EMR, GRS, GRS, EMR, GRS, GRS, VVV, GRS, BAG, GRS, GRS,
+	VVV, BAG, GRS, EMR, EMR, GRS, GRS, EMR, GRS, GRS, VVV, GRS, GRS, GRS, GRS,
+	VVV, GRS, GRS, EMR, EMR, BAG, GRS, EMR, BAG, GRS, VVV, GRS, EMR, EMR, EMR,
+	VVV, GRS, GRS, EMR, EMR, GRS, GRS, EMR, GRS, GRS, VVV, GRS, EMR, EMR, EMR,
+	CTR, CBL, GRS, EMR, EMR, GRS, GRS, EMR, GRS, GRS, VVV, GRS, EMR, EMR, EMR,
+	GRS, VVV, GRS, GRS, GRS, GRS, BAG, GRS, BAG, GRS, VVV, GRS, GRS, GRS, GRS,
+	GRS, CTR, HHH, HHH, CBL, GRS, GRS, GRS, GRS, GRS, VVV, GRS, GRS, GRS, GRS,
+	EMR, GRS, GRS, GRS, VVV, GRS, GRS, GRS, GRS, GRS, VVV, GRS, GRS, GRS, EMR,
+	EMR, EMR, GRS, GRS, CTR, HHH, HHH, HHH, HHH, HHH, CTL, GRS, GRS, EMR, EMR,
 };
 
 BANKREF(level2Map)
 // emerald count 41
 const unsigned char level2Map[] = {
-	2,  3,  3,  3,  3,  5,  0,  0, BG,  0, BG,  0,  0,  6,  1, // "SHHHHH  B B  HS", 
-   0, EM, EM,  0,  0, 12,  0,  0,  0,  0,  0,  0,  0, 12,  0, // " CC  V       V "
-	0, EM, EM,  0,  0, 12,  0, EM, EM, EM, EM, EM,  0, 12,  0, // " CC  V CCCCC V ",
-   BG, EM, EM, BG,  0, 12,  0, EM, EM, EM, EM, EM,  0, 12,  0, // "BCCB V CCCCC V ",
-   EM, EM, EM, EM,  0, 12,  0,  0,  0,  0,  0,  0,  0, 12,  0, // "CCCC V       V ",
-   EM, EM, EM, EM,  0, 12,  0, BG,  0,  0,  6,  3,  3,  9,  0, // "CCCC V B  HHHH ",
-	0, EM, EM,  0,  0, 12,  0, EM, EM,  0, 12,  0,  0,  0,  0, // " CC  V CC V    ",
-   0, BG, BG,  0,  0, 12, EM, EM, EM, EM, 12,  0, EM, EM,  0, // " BB  VCCCCV CC ",
-   EM,  0,  0,  0,  0, 12,  0, EM, EM,  0, 12,  0, EM, EM,  0, // "C    V CC V CC ",
-   EM, EM,  0,  0,  0, 10,  3,  3,  3,  3,  9,  0,  0,  0,  0, // "CC   HHHHHH    ",
+	O_R, HHH, HHH, HHH, HHH, CBL, GRS, GRS, BAG, GRS, BAG, GRS, GRS, CBR, O_L,
+	GRS, EMR, EMR, GRS, GRS, VVV, GRS, GRS, GRS, GRS, GRS, GRS, GRS, VVV, GRS,
+	GRS, EMR, EMR, GRS, GRS, VVV, GRS, EMR, EMR, EMR, EMR, EMR, GRS, VVV, GRS,
+	BAG, EMR, EMR, BAG, GRS, VVV, GRS, EMR, EMR, EMR, EMR, EMR, GRS, VVV, GRS,
+	EMR, EMR, EMR, EMR, GRS, VVV, GRS, GRS, GRS, GRS, GRS, GRS, GRS, VVV, GRS,
+	EMR, EMR, EMR, EMR, GRS, VVV, GRS, BAG, GRS, GRS, CBR, HHH, HHH, CTL, GRS,
+	GRS, EMR, EMR, GRS, GRS, VVV, GRS, EMR, EMR, GRS, VVV, GRS, GRS, GRS, GRS,
+	GRS, BAG, BAG, GRS, GRS, VVV, EMR, EMR, EMR, EMR, VVV, GRS, EMR, EMR, GRS,
+	EMR, GRS, GRS, GRS, GRS, VVV, GRS, EMR, EMR, GRS, VVV, GRS, EMR, EMR, GRS,
+	EMR, EMR, GRS, GRS, GRS, CTR, HHH, HHH, HHH, HHH, CTL, GRS, GRS, GRS, GRS,
 };
 
 BANKREF(level3Map)
 // emerald count 51
 const unsigned char level3Map[] = {
-	2,  3,  3,  3,  5, BG,  0, BG,  0, BG,  6,  3,  3,  3,  1, // "SHHHHB B BHHHHS",
-   EM, EM,  0,  0, 12,  0, EM,  0, EM,  0, 12,  0, BG, BG,  0, // "CC  V C C V BB ",
-   EM,  0,  0,  0, 12,  0, EM,  0, EM,  0, 12,  0, EM, EM,  0, // "C   V C C V CC ",
-    0, BG, BG,  0, 12,  0, EM,  0, EM,  0, 12, EM, EM, EM, EM, // " BB V C C VCCCC",
-   EM, EM, EM, EM, 12,  0, EM,  0, EM,  0, 12, EM, EM, EM, EM, // "CCCCV C C VCCCC",
-   EM, EM, EM, EM, 10,  3,  3,  7,  3,  3,  9,  0, EM, EM,  0, // "CCCCHHHHHHH CC ",
-	0, EM, EM,  0,  0, EM,  0, 12,  0, EM,  0,  0, EM, EM,  0, // " CC  C V C  CC ",
-    0, EM, EM,  0,  0, EM,  0, 12,  0, EM,  0,  0,  0,  0,  0, // " CC  C V C     ",
-   EM,  0,  0,  0,  0, EM,  0, 12,  0, EM,  0,  0,  0,  0, EM, // "C    C V C    C",
-   EM, EM,  0,  0,  0, EM,  0, 11,  0, EM,  0,  0,  0, EM, EM, // "CC   C H C   CC"
+	O_R, HHH, HHH, HHH, CBL, BAG, GRS, BAG, GRS, BAG, CBR, HHH, HHH, HHH, O_L,
+	EMR, EMR, GRS, GRS, VVV, GRS, EMR, GRS, EMR, GRS, VVV, GRS, BAG, BAG, GRS,
+	EMR, GRS, GRS, GRS, VVV, GRS, EMR, GRS, EMR, GRS, VVV, GRS, EMR, EMR, GRS,
+	GRS, BAG, BAG, GRS, VVV, GRS, EMR, GRS, EMR, GRS, VVV, EMR, EMR, EMR, EMR,
+	EMR, EMR, EMR, EMR, VVV, GRS, EMR, GRS, EMR, GRS, VVV, EMR, EMR, EMR, EMR,
+	EMR, EMR, EMR, EMR, CTR, HHH, HHH, T_D, HHH, HHH, CTL, GRS, EMR, EMR, GRS,
+	GRS, EMR, EMR, GRS, GRS, EMR, GRS, VVV, GRS, EMR, GRS, GRS, EMR, EMR, GRS,
+	GRS, EMR, EMR, GRS, GRS, EMR, GRS, VVV, GRS, EMR, GRS, GRS, GRS, GRS, GRS,
+	EMR, GRS, GRS, GRS, GRS, EMR, GRS, VVV, GRS, EMR, GRS, GRS, GRS, GRS, EMR,
+	EMR, EMR, GRS, GRS, GRS, EMR, GRS, T_U, GRS, EMR, GRS, GRS, GRS, EMR, EMR,
 };
 
 BANKREF(level4Map)
 // emerald count 65
 const unsigned char level4Map[] = {
-	2,  5, BG, EM, EM, EM, EM, BG, EM, EM, EM, EM, BG,  6,  1, // "SHBCCCCBCCCCBHS"
-   EM, 12,  0,  0, EM, EM, EM, EM, EM, EM, EM,  0,  0, 12, EM, // "CV  CCCCCCC  VC"
-   EM, 10,  3,  5,  0, EM, EM, EM, EM, EM,  0,  6,  3,  9, EM, // "CHHH CCCCC HHHC"
-   EM,  0,  0, 12,  0,  0, EM, EM, EM,  0,  0, 12,  0,  0, EM, // "C  V  CCC  V  C"
-    0,  0,  0, 10,  3,  5,  0, EM,  0,  6,  3,  9,  0,  0,  0, // "   HHH C HHH   "
-    0,  0, BG,  0,  0, 12,  0, BG,  0, 12,  0,  0, BG,  0,  0, // "  B  V B V  B  "
-    0,  0, EM,  0,  0, 12, EM, EM, EM, 12,  0,  0, EM,  0,  0, // "  C  VCCCV  C  "
-    0, EM, EM, EM,  0, 10,  3,  7,  3,  9,  0, EM, EM, EM,  0, // " CCC HHHHH CCC "
-   EM, EM, EM, EM, EM,  0, EM, 12, EM,  0, EM, EM, EM, EM, EM, // "CCCCC CVC CCCCC"
-   EM, EM, EM, EM, EM,  0, EM,  8, EM,  0, EM, EM, EM, EM, EM  // "CCCCC CHC CCCCC"
+	O_R, CBL, BAG, EMR, EMR, EMR, EMR, BAG, EMR, EMR, EMR, EMR, BAG, CBR, O_L,
+	EMR, VVV, GRS, GRS, EMR, EMR, EMR, EMR, EMR, EMR, EMR, GRS, GRS, VVV, EMR,
+	EMR, CTR, HHH, CBL, GRS, EMR, EMR, EMR, EMR, EMR, GRS, CBR, HHH, CTL, EMR,
+	EMR, GRS, GRS, VVV, GRS, GRS, EMR, EMR, EMR, GRS, GRS, VVV, GRS, GRS, EMR,
+	GRS, GRS, GRS, CTR, HHH, CBL, GRS, EMR, GRS, CBR, HHH, CTL, GRS, GRS, GRS,
+	GRS, GRS, BAG, GRS, GRS, VVV, GRS, BAG, GRS, VVV, GRS, GRS, BAG, GRS, GRS,
+	GRS, GRS, EMR, GRS, GRS, VVV, EMR, EMR, EMR, VVV, GRS, GRS, EMR, GRS, GRS,
+	GRS, EMR, EMR, EMR, GRS, CTR, HHH, T_D, HHH, CTL, GRS, EMR, EMR, EMR, GRS,
+	EMR, EMR, EMR, EMR, EMR, GRS, EMR, VVV, EMR, GRS, EMR, EMR, EMR, EMR, EMR,
+	EMR, EMR, EMR, EMR, EMR, GRS, EMR, O_U, EMR, GRS, EMR, EMR, EMR, EMR, EMR,
 };
 
 BANKREF(level5Map)
 // emerald count 77
 const unsigned char level5Map[] = {
-     6,  3,  3,  3,  3,  3,  3,  7,  3,  3,  3,  3,  3,  3,  5, // SHHHHHHHHHHHHHS
-    12, BG, EM, EM, EM, EM, BG, 12, EM, EM, EM, EM, EM, EM, 12, // VBCCCCBVCCCCCCV
-    12, EM, EM, EM, EM, EM, EM, 12,  0, EM, EM, BG, EM,  0, 12, // VCCCCCCV CCBC V
-    12,  0, EM, EM, EM, EM,  0, 12, EM, EM, BG, EM, EM, EM, 12, // V CCCC VCCBCCCV
-    12, EM, EM, EM, EM, EM, EM, 12,  0, EM, EM, EM, EM,  0, 12, // VCCCCCCV CCCC V
-    12,  0, EM, EM, EM, EM,  0, 12, BG, EM, EM, EM, EM, EM, 12, // V CCCC VBCCCCCV
-    12, EM, EM, BG, EM, EM, EM, 12,  0, EM, EM, EM, EM,  0, 12, // VCCBCCCV CCCC V
-    12,  0, EM, EM, BG, EM,  0, 12, EM, EM, EM, EM, EM, EM, 12, // V CCBC VCCCCCCV
-    12, EM, EM, EM, EM, EM, EM, 12, EM, EM, EM, EM, EM, EM, 12, // VCCCCCCVCCCCCCV
-    10,  3,  3,  3,  3,  3,  3, 11,  3,  3,  3,  3,  3,  3,  9, // HHHHHHHHHHHHHHH
+	CBR, HHH, HHH, HHH, HHH, HHH, HHH, T_D, HHH, HHH, HHH, HHH, HHH, HHH, CBL,
+	VVV, BAG, EMR, EMR, EMR, EMR, BAG, VVV, EMR, EMR, EMR, EMR, EMR, EMR, VVV,
+	VVV, EMR, EMR, EMR, EMR, EMR, EMR, VVV, GRS, EMR, EMR, BAG, EMR, GRS, VVV,
+	VVV, GRS, EMR, EMR, EMR, EMR, GRS, VVV, EMR, EMR, BAG, EMR, EMR, EMR, VVV,
+	VVV, EMR, EMR, EMR, EMR, EMR, EMR, VVV, GRS, EMR, EMR, EMR, EMR, GRS, VVV,
+	VVV, GRS, EMR, EMR, EMR, EMR, GRS, VVV, BAG, EMR, EMR, EMR, EMR, EMR, VVV,
+	VVV, EMR, EMR, BAG, EMR, EMR, EMR, VVV, GRS, EMR, EMR, EMR, EMR, GRS, VVV,
+	VVV, GRS, EMR, EMR, BAG, EMR, GRS, VVV, EMR, EMR, EMR, EMR, EMR, EMR, VVV,
+	VVV, EMR, EMR, EMR, EMR, EMR, EMR, VVV, EMR, EMR, EMR, EMR, EMR, EMR, VVV,
+	CTR, HHH, HHH, HHH, HHH, HHH, HHH, T_U, HHH, HHH, HHH, HHH, HHH, HHH, CTL,
 };
 
 BANKREF(level6Map)
 // emerald count 52
 const unsigned char level6Map[] = {
-     6,  3,  3,  3,  3,  7,  3,  7,  3,  7,  3,  3,  3,  3,  5, // SHHHHHHHHHHHHHS
-    12, EM, BG, EM, EM, 12,  0, 12,  0, 12, EM, EM, BG, EM, 12, // VCBCCV V VCCBCV
-    12, EM, EM, EM,  0, 12, BG, 12, BG, 12,  0, EM, EM, EM, 12, // VCCC VBVBV CCCV
-    12, EM, EM, EM,  6,  9,  0, 12,  0, 10,  5, EM, EM, EM, 12, // VCCCHH V HHCCCV
-    12, EM, EM,  0, 12,  0, EM, 12, EM,  0, 12,  0, EM, EM, 12, // VCC V CVC V CCV
-    12, EM, EM,  6,  9,  0, EM, 12, EM,  0, 10,  5, EM, EM, 12, // VCCHH CVC HHCCV
-    12, EM,  0, 12,  0, EM, EM, 12, EM, EM,  0, 12,  0, EM, 12, // VC V CCVCC V CV
-    12, EM,  6,  9, BG, EM, EM, 12, EM, EM, BG, 10,  5, EM, 12, // VCHHBCCVCCBHHCV
-    12, EM, 12, EM, EM, EM, EM, 12, EM, EM, EM, EM, 12, EM, 12, // VCVCCCCVCCCCVCV
-    10,  3, 11,  3,  3,  3,  3, 11,  3,  3,  3,  3, 11,  3,  9, // HHHHHHHHHHHHHHH
+	CBR, HHH, HHH, HHH, HHH, T_D, HHH, T_D, HHH, T_D, HHH, HHH, HHH, HHH, CBL,
+	VVV, EMR, BAG, EMR, EMR, VVV, GRS, VVV, GRS, VVV, EMR, EMR, BAG, EMR, VVV,
+	VVV, EMR, EMR, EMR, GRS, VVV, BAG, VVV, BAG, VVV, GRS, EMR, EMR, EMR, VVV,
+	VVV, EMR, EMR, EMR, CBR, CTL, GRS, VVV, GRS, CTR, CBL, EMR, EMR, EMR, VVV,
+	VVV, EMR, EMR, GRS, VVV, GRS, EMR, VVV, EMR, GRS, VVV, GRS, EMR, EMR, VVV,
+	VVV, EMR, EMR, CBR, CTL, GRS, EMR, VVV, EMR, GRS, CTR, CBL, EMR, EMR, VVV,
+	VVV, EMR, GRS, VVV, GRS, EMR, EMR, VVV, EMR, EMR, GRS, VVV, GRS, EMR, VVV,
+	VVV, EMR, CBR, CTL, BAG, EMR, EMR, VVV, EMR, EMR, BAG, CTR, CBL, EMR, VVV,
+	VVV, EMR, VVV, EMR, EMR, EMR, EMR, VVV, EMR, EMR, EMR, EMR, VVV, EMR, VVV,
+	CTR, HHH, T_U, HHH, HHH, HHH, HHH, T_U, HHH, HHH, HHH, HHH, T_U, HHH, CTL,
 };
 
 BANKREF(level7Map)
 // emerald count 92
 const unsigned char level7Map[] = {
-     2,  5, EM, EM, EM, EM, EM,  4, EM, EM, EM, EM, EM,  6,  1, // SHCCCCCVCCCCCHS
-     0, 12, EM, BG, EM, BG, EM, 12, EM, BG, EM, BG, EM, 12,  0, //  VCBCBCVCBCBCV
-    BG, 12, EM, EM, EM, EM, EM, 12, EM, EM, EM, EM, EM, 12, BG, // BVCCCCCVCCCCCVB
-    EM, 10,  5, EM, EM, EM, EM, 12, EM, EM, EM, EM,  6,  9, EM, // CHHCCCCVCCCCHHC
-    EM, EM, 12,  0, EM, EM, EM, 12, EM, EM, EM,  0, 12, EM, EM, // CCV CCCVCCC VCC
-    EM, EM, 10,  3,  5, EM, EM, 12, EM, EM,  6,  3,  9, EM, EM, // CCHHHCCVCCHHHCC
-    EM, EM, EM, EM, 12,  0, EM, 12, EM,  0, 12, EM, EM, EM, EM, // CCCCV CVC VCCCC
-    EM, EM, EM, EM, 10,  5,  0, 12,  0,  6,  9, EM, EM, EM, EM, // CCCCHH V HHCCCC
-    EM, EM, EM, EM, EM, 12,  0, 12,  0, 12, EM, EM, EM, EM, EM, // CCCCCV V VCCCCC
-    EM, EM, EM, EM, EM, 10,  3, 11,  3,  9, EM, EM, EM, EM, EM, // CCCCCHHHHHCCCCC
+	O_R, CBL, EMR, EMR, EMR, EMR, EMR, O_D, EMR, EMR, EMR, EMR, EMR, CBR, O_L,
+	GRS, VVV, EMR, BAG, EMR, BAG, EMR, VVV, EMR, BAG, EMR, BAG, EMR, VVV, GRS,
+	BAG, VVV, EMR, EMR, EMR, EMR, EMR, VVV, EMR, EMR, EMR, EMR, EMR, VVV, BAG,
+	EMR, CTR, CBL, EMR, EMR, EMR, EMR, VVV, EMR, EMR, EMR, EMR, CBR, CTL, EMR,
+	EMR, EMR, VVV, GRS, EMR, EMR, EMR, VVV, EMR, EMR, EMR, GRS, VVV, EMR, EMR,
+	EMR, EMR, CTR, HHH, CBL, EMR, EMR, VVV, EMR, EMR, CBR, HHH, CTL, EMR, EMR,
+	EMR, EMR, EMR, EMR, VVV, GRS, EMR, VVV, EMR, GRS, VVV, EMR, EMR, EMR, EMR,
+	EMR, EMR, EMR, EMR, CTR, CBL, GRS, VVV, GRS, CBR, CTL, EMR, EMR, EMR, EMR,
+	EMR, EMR, EMR, EMR, EMR, VVV, GRS, VVV, GRS, VVV, EMR, EMR, EMR, EMR, EMR,
+	EMR, EMR, EMR, EMR, EMR, CTR, HHH, T_U, HHH, CTL, EMR, EMR, EMR, EMR, EMR,
 };
 
 BANKREF(level8Map)
 // emerald count 63
 const unsigned char level8Map[] = {
-     6,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  5, // HHHHHHHHHHHHHHS
-    12,  0, EM, EM, BG, EM, EM, EM, EM, EM, BG, EM, EM,  0, 12, // V CCBCCCCCBCC V
-    14,  3,  5, EM, EM, EM, EM, BG, EM, EM, EM, EM,  6,  3, 13, // HHHCCCCBCCCCHHH
-    12, BG, 12,  0, EM, EM, EM, EM, EM, EM, EM,  0, 12, BG, 12, // VBV CCCCCCC VBV
-    12, EM, 10,  3,  5, EM, EM, EM, EM, EM,  6,  3,  9, EM, 12, // VCHHHCCCCCHHHCV
-    12, EM, EM, BG, 12,  0, EM, EM, EM,  0, 12, BG, EM, EM, 12, // VCCBV CCC VBCCV
-    12, EM, EM, EM, 10,  3,  5, EM,  6,  3,  9, EM, EM, EM, 12, // VCCCHHHCHHHCCCV
-    12, EM, EM, EM, EM,  0, 12,  0, 12,  0, EM, EM, EM, EM, 12, // VCCCC V V CCCCV
-    12, EM, EM, EM, EM, EM, 12,  0, 12, EM, EM, EM, EM, EM, 12, // VCCCCCV VCCCCCV
-    10,  3,  3,  3,  3,  3, 11,  3, 11,  3,  3,  3,  3,  3,  9, // HHHHHHHHHHHHHHH
+	CBR, HHH, HHH, HHH, HHH, HHH, HHH, HHH, HHH, HHH, HHH, HHH, HHH, HHH, CBL,
+	VVV, GRS, EMR, EMR, BAG, EMR, EMR, EMR, EMR, EMR, BAG, EMR, EMR, GRS, VVV,
+	T_R, HHH, CBL, EMR, EMR, EMR, EMR, BAG, EMR, EMR, EMR, EMR, CBR, HHH, T_L,
+	VVV, BAG, VVV, GRS, EMR, EMR, EMR, EMR, EMR, EMR, EMR, GRS, VVV, BAG, VVV,
+	VVV, EMR, CTR, HHH, CBL, EMR, EMR, EMR, EMR, EMR, CBR, HHH, CTL, EMR, VVV,
+	VVV, EMR, EMR, BAG, VVV, GRS, EMR, EMR, EMR, GRS, VVV, BAG, EMR, EMR, VVV,
+	VVV, EMR, EMR, EMR, CTR, HHH, CBL, EMR, CBR, HHH, CTL, EMR, EMR, EMR, VVV,
+	VVV, EMR, EMR, EMR, EMR, GRS, VVV, GRS, VVV, GRS, EMR, EMR, EMR, EMR, VVV,
+	VVV, EMR, EMR, EMR, EMR, EMR, VVV, GRS, VVV, EMR, EMR, EMR, EMR, EMR, VVV,
+	CTR, HHH, HHH, HHH, HHH, HHH, T_U, HHH, T_U, HHH, HHH, HHH, HHH, HHH, CTL,
 };
 
 BANKREF(levelDebugMap)
 // emerald count 63
 const unsigned char levelDebugMap[] = {
-     6,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  5, // 
-    10,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  9, // 
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, //
-     0,  0, BG, BG, BG, BG, BG, BG,  0,  0,  0,  0,  0,  0, 12, //
-     0,  0,  0,  0,  0,  0,  0,  0,  0, 12,  0, 12,  0,  0, 12, //
-     0,  0, BG,  0, BG,  0,  0, BG,  0,  0,  0, BG,  0,  0, 12, // 
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 12, // 
-     0,  0, BG, BG, BG, BG, BG, BG,  0,  0,  0,  0,  0,  0, 12, //
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 12, //
-     0,  0,  0,  0,  0,  0,  3,  3,  3,  3,  3,  3,  3,  3,  9, // 
+	CBR, HHH, HHH, HHH, HHH, HHH, HHH, HHH, HHH, HHH, HHH, HHH, HHH, HHH, CBL,
+	CTR, HHH, HHH, HHH, HHH, HHH, HHH, HHH, HHH, HHH, HHH, HHH, HHH, HHH, CTL,
+	GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS,
+	GRS, GRS, BAG, BAG, BAG, BAG, BAG, BAG, GRS, GRS, GRS, GRS, GRS, GRS, VVV,
+	GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, VVV, GRS, VVV, GRS, GRS, VVV,
+	GRS, GRS, BAG, GRS, BAG, GRS, GRS, BAG, GRS, GRS, GRS, BAG, GRS, GRS, VVV,
+	GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, VVV,
+	GRS, GRS, BAG, BAG, BAG, BAG, BAG, BAG, GRS, GRS, GRS, GRS, GRS, GRS, VVV,
+	GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, GRS, VVV,
+	GRS, GRS, GRS, GRS, GRS, GRS, HHH, HHH, HHH, HHH, HHH, HHH, HHH, HHH, CTL,
 };

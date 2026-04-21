@@ -114,30 +114,29 @@ static UBYTE countItemsOnMap(UBYTE item) {
 	return count;
 }
 
-static UBYTE legacySeedToTunnel(UBYTE seed) NONBANKED {
-	UBYTE tunnel = 0;
-
-	if ((seed & legacySeedTunnelLeft) != 0) {
-		tunnel |= tunnelHorizontalStep12;
-	}
-	if ((seed & legacySeedTunnelRight) != 0) {
-		tunnel |= tunnelHorizontalStep34;
-	}
-	if ((seed & legacySeedTunnelUp) != 0) {
-		tunnel |= tunnelVerticalStep12;
-	}
-	if ((seed & legacySeedTunnelDown) != 0) {
-		tunnel |= tunnelVerticalStep34;
+void extendTunnelProgressAt(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex) BANKED {
+	if (slotIndex > 3) {
+		slotIndex = 3;
 	}
 
-	if ((tunnel & tunnelHorizontalCenterMask) == tunnelHorizontalCenterMask) {
-		tunnel |= tunnelVerticalCenterMask;
+	switch (moveDirection) {
+		case J_LEFT:
+		case J_RIGHT:
+			tunnelMap[cell] |= (UBYTE)(tunnelHorizontalStep1 << slotIndex);
+			if ((tunnelMap[cell] & tunnelHorizontalCenterMask) == tunnelHorizontalCenterMask) {
+				tunnelMap[cell] |= tunnelVerticalCenterMask;
+			}
+			break;
+		case J_UP:
+		case J_DOWN:
+			tunnelMap[cell] |= (UBYTE)(tunnelVerticalStep1 << slotIndex);
+			if ((tunnelMap[cell] & tunnelVerticalCenterMask) == tunnelVerticalCenterMask) {
+				tunnelMap[cell] |= tunnelHorizontalCenterMask;
+			}
+			break;
+		default:
+			return;
 	}
-	if ((tunnel & tunnelVerticalCenterMask) == tunnelVerticalCenterMask) {
-		tunnel |= tunnelHorizontalCenterMask;
-	}
-
-	return tunnel;
 }
 
 void determineDigTiles(
@@ -955,23 +954,25 @@ void copyLevelMapToRam(uint8_t mapToLoadBank, const unsigned char *mapToLoad, ui
 
 	for (cell = 0; cell != 150; ++cell) {
 		UBYTE renderedTiles[4];
-		const UBYTE seed = mapToLoad[cell];
+		const UBYTE mapValue = mapToLoad[cell];
 		const UBYTE tileColumn = META_CELL_TILE_COLUMN(cell);
 		const UBYTE tileRow = META_CELL_TILE_ROW(cell);
 
-		tunnelMap[cell] = legacySeedToTunnel(seed);
-		if (seed == seedItemEmerald) {
+		tunnelMap[cell] = 0;
+		if (mapValue == EMR) {
 			itemMap[cell] = itemEmerald;
-		} else if (seed == seedItemBag) {
+		} else if (mapValue == BAG) {
 			itemMap[cell] = itemBag;
+		} else {
+			tunnelMap[cell] = mapValue;
 		}
 
-		if (itemMap[cell] == itemEmerald) {
+		if (mapValue == EMR) {
 			renderedTiles[0] = tileEmeraldTL;
 			renderedTiles[1] = tileEmeraldTR;
 			renderedTiles[2] = tileEmeraldBL;
 			renderedTiles[3] = tileEmeraldBR;
-		} else if (itemMap[cell] == itemBag) {
+		} else if (mapValue == BAG) {
 			if (tunnelMap[cell] != 0) {
 				renderedTiles[0] = bagTL;
 				renderedTiles[1] = bagTR;
@@ -983,17 +984,7 @@ void copyLevelMapToRam(uint8_t mapToLoadBank, const unsigned char *mapToLoad, ui
 				renderedTiles[2] = tileBagBL;
 				renderedTiles[3] = tileBagBR;
 			}
-		} else if (itemMap[cell] == itemGold || itemMap[cell] == itemBonus) {
-			renderedTiles[0] = goldTL;
-			renderedTiles[1] = goldTR;
-			renderedTiles[2] = goldBL;
-			renderedTiles[3] = goldBR;
-		} else if (tunnelMap[cell] == 0) {
-			renderedTiles[0] = tileGrass;
-			renderedTiles[1] = tileGrass;
-			renderedTiles[2] = tileGrass;
-			renderedTiles[3] = tileGrass;
-		} else {
+        } else {
 			determineDigTiles(tunnelMap[cell], 0, 0, 0, 0, renderedTiles);
 		}
         uint16_t tileNum = tileRow * tilesPerRow + tileColumn;

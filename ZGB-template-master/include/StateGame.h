@@ -99,22 +99,34 @@
 #define tunnelVerticalTopTileMask tunnelVerticalStep12
 #define tunnelVerticalBottomTileMask tunnelVerticalStep34
 
+#define GRS 0x00
+#define HHH (tunnelVerticalCenterMask | tunnelHorizontalMask)
+#define VVV (tunnelHorizontalCenterMask | tunnelVerticalMask)
+
+#define O_U tunnelVerticalStep123
+#define O_D tunnelVerticalStep234
+#define O_L tunnelHorizontalStep123
+#define O_R tunnelHorizontalStep234
+
+#define T_U (tunnelHorizontalMask | tunnelVerticalStep123)
+#define T_D (tunnelHorizontalMask | tunnelVerticalStep234)
+#define T_L (tunnelVerticalMask | tunnelHorizontalStep123)
+#define T_R (tunnelVerticalMask | tunnelHorizontalStep234)
+
+#define CTL (tunnelHorizontalStep123 | tunnelVerticalStep123)
+#define CTR (tunnelHorizontalStep234 | tunnelVerticalStep123)
+#define CBR (tunnelHorizontalStep234 | tunnelVerticalStep234)
+#define CBL (tunnelHorizontalStep123 | tunnelVerticalStep234)
+#define XXX (tunnelHorizontalMask | tunnelVerticalMask)
+
+#define EMR 0x05
+#define BAG 0x50
+
 #define itemNone 0
 #define itemEmerald 1
 #define itemBag 2
 #define itemGold 3
 #define itemBonus 4
-
-#define seedItemEmerald 16
-#define seedItemBag 32
-#define seedItemGold 64
-#define legacyTunnelMask 0x0F
-#define legacySeedTunnelLeft 0x01
-#define legacySeedTunnelRight 0x02
-#define legacySeedTunnelDown 0x04
-#define legacySeedTunnelUp 0x08
-#define EM seedItemEmerald
-#define BG seedItemBag
 #define mapMetaWidth 15
 #define mapMetaHeight 10
 #define metaTileGallery 0
@@ -146,6 +158,7 @@ void determineDigTiles(
     UBYTE leftCell,
     UBYTE* tiles
 ) BANKED;
+void extendTunnelProgressAt(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex) BANKED;
 void openTunnelConnection(UBYTE fromCell, UBYTE direction) NONBANKED;
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
 void runMapSideEffects(void) BANKED;

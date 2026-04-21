@@ -118,6 +118,76 @@ Current direction:
 
 ## Thin-Wall Digging Tiles
 
+## Transition Bug Findings
+
+These findings capture the current bug where Digger leaves stale tiles behind when exiting a cell, especially while turning from a horizontal tunnel into an upward tunnel.
+
+### Symptom
+
+- When Digger exits a meta-cell, the cell being left behind can keep an incorrect wall strip.
+- A reproducible example is turning upward out of a horizontal tunnel:
+  - the junction should become a tee
+  - instead, the old cell can keep a right-side dirt strip rendered as `tileTopWall`
+
+### Root Cause
+
+- The problem is not missing redraw calls.
+- The problem is stale `tunnelMap` bits on the cell being exited.
+
+In the current player digging path:
+
+- `updateTunnelProgress()` in `SpritePlayer.c` already calls:
+  - `renderMetaCell(previousDigCell)` when the leading edge moves into a new meta-cell
+  - `renderMetaCell(currentDigCell)` after extending the new leading cell
+- However, before redrawing `previousDigCell`, the code does not update that old cell with the new exit connection bits.
+
+So the sequence is currently:
+
+1. Leading edge enters the next meta-cell.
+2. Only `currentDigCell` gets new tunnel progress bits through `extendTunnelProgress()`.
+3. `previousDigCell` is redrawn without receiving the exit bits for the new branch direction.
+4. The old cell is rendered from stale topology and stays visually wrong.
+
+### Exact Wrong Location
+
+Player path:
+
+- `ZGB-template-master/src/SpritePlayer.c`
+- `updateTunnelProgress()`
+
+Relevant behavior:
+
+- `previousDigCell` is only rendered on cell change.
+- `currentDigCell` is the only cell whose tunnel bits are extended.
+
+Enemy Hobbin path has the same structural issue:
+
+- `ZGB-template-master/src/SpriteEnemy.c`
+- `updateEnemyTunnelProgress()`
+
+There too:
+
+- `previousDigCell` is only rendered
+- `currentDigCell` is the only cell whose tunnel bits are extended
+
+### Why Rendering Alone Is Not The Fix
+
+- Calling `renderMetaCell()` on both cells is already happening in the player transition path.
+- Adding more redraw calls without changing `tunnelMap` would redraw the same stale topology.
+- So the simplest correct fix direction is to update the exiting cell's tunnel bits first, then redraw it.
+
+### Existing Helper That Matches The Correct Shape
+
+- `openTunnelConnection()` in `StateGame.c`
+
+This helper already follows the correct pattern:
+
+1. update tunnel bits for both connected cells
+2. apply center-mask promotion for both cells
+3. redraw both cells
+
+That is the right conceptual model for fixing player and Hobbin transition updates as well.
+
 Current temporary tunnel visuals use these tiles:
 
 - `leftWall`

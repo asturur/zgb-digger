@@ -369,39 +369,6 @@ static UBYTE getLeadingDigSlotForDirection(UBYTE moveDirection) {
     return offset >> 2;
 }
 
-static UBYTE getHorizontalDigStepMask(UBYTE slotIndex) {
-    return (UBYTE)(tunnelHorizontalStep1 << slotIndex);
-}
-
-static UBYTE getVerticalDigStepMask(UBYTE slotIndex) {
-    return (UBYTE)(tunnelVerticalStep1 << slotIndex);
-}
-
-static void extendTunnelProgress(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex) {
-    if (slotIndex > 3) {
-        slotIndex = 3;
-    }
-
-    switch (moveDirection) {
-        case J_LEFT:
-        case J_RIGHT:
-            tunnelMap[cell] |= getHorizontalDigStepMask(slotIndex);
-            if ((tunnelMap[cell] & tunnelHorizontalCenterMask) == tunnelHorizontalCenterMask) {
-                tunnelMap[cell] |= tunnelVerticalCenterMask;
-            }
-            break;
-        case J_UP:
-        case J_DOWN:
-            tunnelMap[cell] |= getVerticalDigStepMask(slotIndex);
-            if ((tunnelMap[cell] & tunnelVerticalCenterMask) == tunnelVerticalCenterMask) {
-                tunnelMap[cell] |= tunnelHorizontalCenterMask;
-            }
-            break;
-        default:
-            return;
-    }
-}
-
 static void updateTunnelProgress(void) {
     const UBYTE previousDigCell = THIS->custom_data[player_last_dig_cell];
     UBYTE digDirection = direction;
@@ -420,7 +387,7 @@ static void updateTunnelProgress(void) {
         renderMetaCell(previousDigCell);
     }
 
-    extendTunnelProgress(currentDigCell, digDirection, currentDigSlot);
+    extendTunnelProgressAt(currentDigCell, digDirection, currentDigSlot);
     renderMetaCell(currentDigCell);
     THIS->custom_data[player_last_dig_cell] = currentDigCell;
     activeDigDirection = digDirection;
