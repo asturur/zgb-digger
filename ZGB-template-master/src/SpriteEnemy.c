@@ -27,6 +27,12 @@ static BOOLEAN enemyUsesHobAnimation(Sprite* enemy) {
 
 void setEnemyModeFor(Sprite* enemy, UBYTE enemyMode) BANKED {
     BOOLEAN useHobDeathAnim = enemyUsesHobAnimation(enemy);
+    if (enemy->custom_data[mode] == hobMode &&
+        enemyMode != hobMode &&
+        enemy->custom_data[enemy_last_dig_cell] != 0xFF) {
+        renderMetaCell(enemy->custom_data[enemy_last_dig_cell]);
+        enemy->custom_data[enemy_last_dig_cell] = 0xFF;
+    }
     enemy->custom_data[mode] = enemyMode;
 
     switch (enemyMode) {
@@ -109,13 +115,13 @@ static BOOLEAN cellHasExit(UBYTE cell, UBYTE moveDirection) {
 
     switch (moveDirection) {
         case J_LEFT:
-            return (tunnel & 0x01) != 0;
+            return (tunnel & tunnelHorizontalStep1) != 0;
         case J_RIGHT:
-            return (tunnel & 0x08) != 0;
+            return (tunnel & tunnelHorizontalStep4) != 0;
         case J_UP:
-            return (tunnel & 0x10) != 0;
+            return (tunnel & tunnelVerticalStep1) != 0;
         case J_DOWN:
-            return (tunnel & 0x80) != 0;
+            return (tunnel & tunnelVerticalStep4) != 0;
         default:
             return FALSE;
     }
@@ -126,13 +132,13 @@ static BOOLEAN cellIsFullyOpenForEntrance(UBYTE cell, UBYTE moveDirection) {
 
     switch (moveDirection) {
         case J_LEFT:
-            return (tunnel & 0x0C) == 0x0C;
+            return (tunnel & tunnelHorizontalRightTileMask) == tunnelHorizontalRightTileMask;
         case J_RIGHT:
-            return (tunnel & 0x03) == 0x03;
+            return (tunnel & tunnelHorizontalLeftTileMask) == tunnelHorizontalLeftTileMask;
         case J_UP:
-            return (tunnel & 0xC0) == 0xC0;
+            return (tunnel & tunnelVerticalBottomTileMask) == tunnelVerticalBottomTileMask;
         case J_DOWN:
-            return (tunnel & 0x30) == 0x30;
+            return (tunnel & tunnelVerticalTopTileMask) == tunnelVerticalTopTileMask;
         default:
             return FALSE;
     }
@@ -198,6 +204,9 @@ static BOOLEAN enemyCanMove(UBYTE direction) {
             break;
         default:
             return FALSE;
+    }
+    if (THIS->custom_data[mode] == hobMode) {
+        return TRUE;
     }
     if (!cellIsFullyOpenForEntrance(nextCell, direction)) {
         return FALSE;
@@ -266,6 +275,63 @@ static void consumeGoldAtCurrentCell(void) {
     renderMetaCell(currentCell);
 }
 
+static UBYTE getEnemyLeadingDigCell(void) {
+    uint16_t leadX = THIS->x;
+    uint16_t leadY = THIS->y;
+    const UBYTE moveDirection = THIS->custom_data[enemy_direction];
+
+    if (moveDirection == J_RIGHT) {
+        leadX = (uint16_t)(leadX + largeTileSize - 1);
+    } else if (moveDirection == J_DOWN) {
+        leadY = (uint16_t)(leadY + largeTileSize - 1);
+    }
+
+    return getMapMetaTileArrayPosition(leadX, leadY);
+}
+
+static UBYTE getEnemyLeadingDigSlot(void) {
+    UBYTE offset;
+    const UBYTE moveDirection = THIS->custom_data[enemy_direction];
+
+    if (moveDirection == J_LEFT || moveDirection == J_RIGHT) {
+        uint16_t leadX = THIS->x;
+        if (moveDirection == J_RIGHT) {
+            leadX = (uint16_t)(leadX + largeTileSize - 1);
+        }
+        offset = MOD_FOR_LARGE_TILE(leadX - mapBoundLeft);
+    } else {
+        uint16_t leadY = THIS->y;
+        if (moveDirection == J_DOWN) {
+            leadY = (uint16_t)(leadY + largeTileSize - 1);
+        }
+        offset = MOD_FOR_LARGE_TILE(leadY - mapBoundUp);
+    }
+
+    return offset >> 2;
+}
+
+static void finalizeEnemyDigCell(UBYTE cell) {
+    if (cell != 0xFF) {
+        renderMetaCell(cell);
+    }
+}
+
+static void updateEnemyTunnelProgress(void) {
+    const UBYTE currentDigCell = getEnemyLeadingDigCell();
+    const UBYTE currentDigSlot = getEnemyLeadingDigSlot();
+    const UBYTE previousDigCell = THIS->custom_data[enemy_last_dig_cell];
+    const UBYTE moveDirection = THIS->custom_data[enemy_direction];
+
+    if (previousDigCell != 0xFF && previousDigCell != currentDigCell) {
+        extendTunnelProgressAt(previousDigCell, moveDirection, currentDigSlot, FALSE);
+        finalizeEnemyDigCell(previousDigCell);
+    }
+
+    extendTunnelProgressAt(currentDigCell, moveDirection, currentDigSlot, TRUE);
+    renderMetaCell(currentDigCell);
+    THIS->custom_data[enemy_last_dig_cell] = currentDigCell;
+}
+
 static void chooseEnemyDirection(void) {
     const UBYTE currentDirection = THIS->custom_data[enemy_direction];
     const UBYTE reverseDirection = oppositeDirectionBit(currentDirection);
@@ -314,6 +380,7 @@ void START(void) {
     
     THIS->custom_data[enemy_direction] = J_LEFT;
     THIS->custom_data[enemy_movement_accumulator] = 20;
+    THIS->custom_data[enemy_last_dig_cell] = 0xFF;
     THIS->lim_x = 256;
     THIS->lim_y = 256;
 }
@@ -400,6 +467,12 @@ void UPDATE(void) {
                 THIS->y++;
             }
         break;
+    }
+    if (THIS->custom_data[mode] == hobMode) {
+        updateEnemyTunnelProgress();
+    } else if (THIS->custom_data[enemy_last_dig_cell] != 0xFF) {
+        finalizeEnemyDigCell(THIS->custom_data[enemy_last_dig_cell]);
+        THIS->custom_data[enemy_last_dig_cell] = 0xFF;
     }
 }
 

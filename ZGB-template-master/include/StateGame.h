@@ -50,31 +50,83 @@
 #define bagBR 17
 
 // tunnels with walls
-#define leftWall 18
-#define rightWall 19
-#define topWall 20
-#define bottomWall 21
-
+#define tileLeftWall 18
+#define tileRightWall 19
+#define tileTopWall 20
+#define tileBottomWall 21
+#define tileTopLeftWall 22
+#define tileTopRightWall 23
+#define tileBottomRightWall 24
+#define tileBottomLeftWall 25
+#define tileHalfDigLeftTop 26
+#define tileHalfDigRightTop 27
+#define tileHalfDigTopLeft 28
+#define tileHalfDigBottomLeft 29
+#define tileDig75TopLeft 30
+#define tileDig75TopRight 31
+#define tileDig75BottomRight 32
+#define tileDig75BottomLeft 33
+#define tileHalfDigLeftBottom 34
+#define tileHalfDigRightBottom 35
+#define tileHalfDigTopRight 36
+#define tileHalfDigBottomRight 37
 
 #define tunnelHorizontalMask 0x0F
 #define tunnelVerticalMask 0xF0
+
+// PREFERRED TUNNEL BIT MASKS
+#define tunnelHorizontalStep1 0x01
+#define tunnelHorizontalStep12 0x03
+#define tunnelHorizontalStep123 0x07
+#define tunnelHorizontalStep234 0x0E
+#define tunnelHorizontalStep34 0x0C
+#define tunnelHorizontalStep4 0x08
+#define tunnelHorizontalCenterMask 0x06
+
+#define tunnelVerticalStep1 0x10
+#define tunnelVerticalStep12 0x30
+#define tunnelVerticalStep123 0x70
+#define tunnelVerticalStep234 0xE0
+#define tunnelVerticalStep34 0xC0
+#define tunnelVerticalStep4 0x80
+#define tunnelVerticalCenterMask 0x60
+
+// END OF PREFERRED TUNNEL BIT MASKS
+// Temporary compatibility aliases for older tunnel-mask names.
+#define tunnelHorizontalLeftTileMask tunnelHorizontalStep12
+#define tunnelHorizontalRightTileMask tunnelHorizontalStep34
+
+#define tunnelVerticalTopTileMask tunnelVerticalStep12
+#define tunnelVerticalBottomTileMask tunnelVerticalStep34
+
+#define GRS 0x00
+#define HHH (tunnelVerticalCenterMask | tunnelHorizontalMask)
+#define VVV (tunnelHorizontalCenterMask | tunnelVerticalMask)
+
+#define O_U tunnelVerticalStep123
+#define O_D tunnelVerticalStep234
+#define O_L tunnelHorizontalStep123
+#define O_R tunnelHorizontalStep234
+
+#define T_U (tunnelHorizontalMask | tunnelVerticalStep123)
+#define T_D (tunnelHorizontalMask | tunnelVerticalStep234)
+#define T_L (tunnelVerticalMask | tunnelHorizontalStep123)
+#define T_R (tunnelVerticalMask | tunnelHorizontalStep234)
+
+#define CTL (tunnelHorizontalStep123 | tunnelVerticalStep123)
+#define CTR (tunnelHorizontalStep234 | tunnelVerticalStep123)
+#define CBR (tunnelHorizontalStep234 | tunnelVerticalStep234)
+#define CBL (tunnelHorizontalStep123 | tunnelVerticalStep234)
+#define XXX (tunnelHorizontalMask | tunnelVerticalMask)
+
+#define EMR 0x05
+#define BAG 0x50
 
 #define itemNone 0
 #define itemEmerald 1
 #define itemBag 2
 #define itemGold 3
 #define itemBonus 4
-
-#define seedItemEmerald 16
-#define seedItemBag 32
-#define seedItemGold 64
-#define legacyTunnelMask 0x0F
-#define legacySeedTunnelLeft 0x01
-#define legacySeedTunnelRight 0x02
-#define legacySeedTunnelDown 0x04
-#define legacySeedTunnelUp 0x08
-#define EM seedItemEmerald
-#define BG seedItemBag
 #define mapMetaWidth 15
 #define mapMetaHeight 10
 #define metaTileGallery 0
@@ -98,6 +150,15 @@
 void updateScore(uint16_t addScore) BANKED;
 UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y) NONBANKED;
 void renderMetaCell(UBYTE cell) BANKED;
+void determineDigTiles(
+    UBYTE currentCell,
+    UBYTE topCell,
+    UBYTE rightCell,
+    UBYTE bottomCell,
+    UBYTE leftCell,
+    UBYTE* tiles
+) BANKED;
+void extendTunnelProgressAt(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex, UBYTE enteringCell) BANKED;
 void openTunnelConnection(UBYTE fromCell, UBYTE direction) NONBANKED;
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
 void runMapSideEffects(void) BANKED;
