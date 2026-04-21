@@ -114,7 +114,42 @@ static UBYTE countItemsOnMap(UBYTE item) {
 	return count;
 }
 
-void extendTunnelProgressAt(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex) BANKED {
+static const UBYTE horizontalProgressMasksRight[4] = {
+	// Digging from the left edge toward the right edge of the meta-cell.
+	tunnelHorizontalStep1,
+	tunnelHorizontalStep12,
+	tunnelHorizontalStep123,
+	tunnelHorizontalMask
+};
+
+static const UBYTE horizontalProgressMasksLeft[4] = {
+	// Digging from the right edge toward the left edge of the meta-cell.
+	tunnelHorizontalMask,
+	tunnelHorizontalStep234,
+	tunnelHorizontalStep34,
+	tunnelHorizontalStep4
+};
+
+static const UBYTE verticalProgressMasksDown[4] = {
+	// Digging from the top edge toward the bottom edge of the meta-cell.
+	tunnelVerticalStep1,
+	tunnelVerticalStep12,
+	tunnelVerticalStep123,
+	tunnelVerticalMask
+};
+
+static const UBYTE verticalProgressMasksUp[4] = {
+	// Digging from the bottom edge toward the top edge of the meta-cell.
+	tunnelVerticalMask,
+	tunnelVerticalStep234,
+	tunnelVerticalStep34,
+	tunnelVerticalStep4
+};
+
+void extendTunnelProgressAt(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex, UBYTE enteringCell) BANKED {
+	const UBYTE* progressMasks;
+	UBYTE sideMask;
+
 	if (slotIndex > 3) {
 		slotIndex = 3;
 	}
@@ -122,14 +157,41 @@ void extendTunnelProgressAt(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex) BA
 	switch (moveDirection) {
 		case J_LEFT:
 		case J_RIGHT:
-			tunnelMap[cell] |= (UBYTE)(tunnelHorizontalStep1 << slotIndex);
+			progressMasks = (moveDirection == J_LEFT) ? horizontalProgressMasksLeft : horizontalProgressMasksRight;
+			sideMask = enteringCell
+				? ((moveDirection == J_LEFT) ? tunnelHorizontalStep34 : tunnelHorizontalStep12)
+				: ((moveDirection == J_LEFT) ? tunnelHorizontalStep12 : tunnelHorizontalStep34);
+			if ((tunnelMap[cell] & tunnelHorizontalCenterMask) == tunnelHorizontalCenterMask) {
+				// This cell already has the horizontal center band open.
+				// Straight progress from a boundary is no longer the right model here.
+				// When entering an already-open cell we only need the entrance half-lane.
+				// When exiting a cell we only need the exit half-lane.
+				tunnelMap[cell] |= sideMask;
+			} else {
+				// Normal straight digging path: open from the entry boundary up to slotIndex.
+				tunnelMap[cell] |= progressMasks[slotIndex];
+			}
+			// Once the horizontal center is open, the cell needs the vertical center band too so
+			// renderMetaCell() can draw thin top/bottom walls instead of falling back to corners.
 			if ((tunnelMap[cell] & tunnelHorizontalCenterMask) == tunnelHorizontalCenterMask) {
 				tunnelMap[cell] |= tunnelVerticalCenterMask;
 			}
 			break;
 		case J_UP:
 		case J_DOWN:
-			tunnelMap[cell] |= (UBYTE)(tunnelVerticalStep1 << slotIndex);
+			progressMasks = (moveDirection == J_UP) ? verticalProgressMasksUp : verticalProgressMasksDown;
+			sideMask = enteringCell
+				? ((moveDirection == J_UP) ? tunnelVerticalStep34 : tunnelVerticalStep12)
+				: ((moveDirection == J_UP) ? tunnelVerticalStep12 : tunnelVerticalStep34);
+			if ((tunnelMap[cell] & tunnelVerticalCenterMask) == tunnelVerticalCenterMask) {
+				// Vertical version of the same rule above.
+				tunnelMap[cell] |= sideMask;
+			} else {
+				// Normal straight digging path: open from the entry boundary up to slotIndex.
+				tunnelMap[cell] |= progressMasks[slotIndex];
+			}
+			// Once the vertical center is open, the cell needs the horizontal center band too so
+			// renderMetaCell() can draw thin left/right walls instead of falling back to corners.
 			if ((tunnelMap[cell] & tunnelVerticalCenterMask) == tunnelVerticalCenterMask) {
 				tunnelMap[cell] |= tunnelHorizontalCenterMask;
 			}
@@ -289,34 +351,34 @@ void determineDigTiles(
 			tiles[3] = tileTopRightWall;
 		    break;
 
-		// MIXED FULL TILE PLUS HALF TILE
+		// CORNERS
 		// 38 - Fully dug top-left tile plus a half-dug top-right extension.
 		case ( tunnelHorizontalStep123 | tunnelVerticalStep123 ):
 			tiles[0] = tileBlack;
 			tiles[1] = tileRightWall;
 			tiles[2] = tileBottomWall;
-			tiles[3] = tileDig75BottomRight;
+			tiles[3] = tileBottomRightWall;
 			break;
 
 		// 40 - Fully dug top-right tile plus a half-dug top-left extension.
 		case ( tunnelHorizontalStep234 | tunnelVerticalStep123 ):
 			tiles[0] = tileLeftWall;
 			tiles[1] = tileBlack;
-			tiles[2] = tileBottomWall;
-			tiles[3] = tileDig75BottomLeft;
+			tiles[2] = tileBottomLeftWall; // tileDig75BottomLeft;
+			tiles[3] = tileBottomWall;
 			break;
 
 		// 42 - Fully dug top-left tile plus a half-dug bottom-left extension.
 		case ( tunnelHorizontalStep123 | tunnelVerticalStep234 ):
 			tiles[0] = tileTopWall;
-			tiles[1] = tileDig75TopRight;
+			tiles[1] = tileTopRightWall; // tileDig75TopRight;
 			tiles[2] = tileBlack;
 			tiles[3] = tileRightWall;
 			break;
 
 		// 44 - Fully dug top-right tile plus a half-dug bottom-right extension.
 		case ( tunnelHorizontalStep234 | tunnelVerticalStep234 ):
-			tiles[0] = tileDig75TopLeft;
+			tiles[0] = tileTopLeftWall; // tileDig75TopLeft;
 			tiles[1] = tileTopWall;
 			tiles[2] = tileLeftWall;
 			tiles[3] = tileBlack;
@@ -382,7 +444,8 @@ void determineDigTiles(
 			tiles[1] = tileHalfDigTopRight;
 			tiles[2] = tileHalfDigLeftBottom;
             break;
-			// 62 - Digged one top, one right
+
+		// 62 - Digged one top, one right
 		case (tunnelVerticalStep1 | tunnelHorizontalStep4):
 			tiles[0] = tileHalfDigTopLeft;
 			tiles[1] = tileDig75BottomLeft;

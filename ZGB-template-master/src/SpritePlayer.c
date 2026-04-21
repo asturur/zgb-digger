@@ -384,10 +384,11 @@ static void updateTunnelProgress(void) {
     }
 
     if (previousDigCell != 0xFF && previousDigCell != currentDigCell) {
+        extendTunnelProgressAt(previousDigCell, digDirection, currentDigSlot, FALSE);
         renderMetaCell(previousDigCell);
     }
 
-    extendTunnelProgressAt(currentDigCell, digDirection, currentDigSlot);
+    extendTunnelProgressAt(currentDigCell, digDirection, currentDigSlot, TRUE);
     renderMetaCell(currentDigCell);
     THIS->custom_data[player_last_dig_cell] = currentDigCell;
     activeDigDirection = digDirection;

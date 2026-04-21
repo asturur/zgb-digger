@@ -323,10 +323,11 @@ static void updateEnemyTunnelProgress(void) {
     const UBYTE moveDirection = THIS->custom_data[enemy_direction];
 
     if (previousDigCell != 0xFF && previousDigCell != currentDigCell) {
+        extendTunnelProgressAt(previousDigCell, moveDirection, currentDigSlot, FALSE);
         finalizeEnemyDigCell(previousDigCell);
     }
 
-    extendTunnelProgressAt(currentDigCell, moveDirection, currentDigSlot);
+    extendTunnelProgressAt(currentDigCell, moveDirection, currentDigSlot, TRUE);
     renderMetaCell(currentDigCell);
     THIS->custom_data[enemy_last_dig_cell] = currentDigCell;
 }

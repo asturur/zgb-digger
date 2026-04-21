@@ -9,8 +9,9 @@ It is a checkpoint note, not a final design spec.
 - Runtime map state is split into two RAM arrays:
   - `itemMap[150]` stores cell occupancy such as emeralds, bags, gold, and reserved bonus cells
   - `tunnelMap[150]` stores tunnel topology and digging progress
-- Legacy level data in `Levels.c` still stays in the old compact seed format.
-- Level load translates legacy seed bytes into the new runtime maps.
+- `Levels.c` now stores direct tunnel bytes for open cells and `0` for grass.
+- Reserved unreachable bytes such as `EMR` and `BAG` are used as item sentinels in the level data.
+- Level load copies tunnel bytes directly into `tunnelMap` and resolves item sentinels into `itemMap`.
 
 ## Tunnel Byte Meaning
 
@@ -46,34 +47,54 @@ It is a checkpoint note, not a final design spec.
 - A tile should only be treated as fully open on an axis when both bits for that tile are set on that axis.
 - The current load-time render rule is:
   - both axes open for that tile: `tileBlack`
-  - only horizontal open: `topWall` or `bottomWall`
-  - only vertical open: `leftWall` or `rightWall`
+  - only horizontal open: `tileTopWall` or `tileBottomWall`
+  - only vertical open: `tileLeftWall` or `tileRightWall`
   - neither axis open: the matching corner wall tile
 - This is what keeps straight tunnels thin:
   - horizontal travel eventually fills all four horizontal bits and only the two center vertical bits
   - vertical travel eventually fills all four vertical bits and only the two center horizontal bits
 - Examples:
-  - legacy `3` loads as a horizontal cell with top and bottom walls only
-  - legacy `12` loads as a vertical cell with left and right walls only
-  - legacy `9` loads as left-plus-up, with `tileBlack` in the top-left and `bottomRightWall` in the bottom-right
-  - legacy `5` loads as left-plus-down, with `tileBlack` in the bottom-left and `topRightWall` in the top-right
+  - `HHH` loads as a horizontal cell with top and bottom walls only
+  - `VVV` loads as a vertical cell with left and right walls only
+  - `CTL` loads as left-plus-up, with `tileBlack` in the top-left and `tileBottomRightWall` in the bottom-right
+  - `CBL` loads as left-plus-down, with `tileBlack` in the bottom-left and `tileTopRightWall` in the top-right
 
-## Legacy Seed Translation
+## Progress Helper Semantics
 
-One important bug found during the refactor:
+The shared helper `extendTunnelProgressAt(cell, direction, slotIndex)` has two different phases.
 
-- The legacy seed format does not use the same bit layout as joypad `J_*` constants.
-- The old level encoding is:
-  - left = `0x01`
-  - right = `0x02`
-  - down = `0x04`
-  - up = `0x08`
-- Using `J_LEFT`, `J_RIGHT`, `J_UP`, `J_DOWN` to decode level seeds silently broke seeded tunnel topology, especially corners.
-- Straight tunnels often looked fine by accident, but enemy movement exposed the bad corner mapping quickly.
+### Phase 1: Straight Progress From The Entry Edge
+
+- This is the normal case for a fresh cell.
+- Each direction uses a 4-entry table that opens the lane from the boundary the digger entered from up to `slotIndex`.
+- The four tables are:
+  - `horizontalProgressMasksRight`
+  - `horizontalProgressMasksLeft`
+  - `verticalProgressMasksDown`
+  - `verticalProgressMasksUp`
+
+Examples:
+
+- moving right uses `0x01`, `0x03`, `0x07`, `0x0F`
+- moving left uses `0x0F`, `0x0E`, `0x0C`, `0x08`
+- moving down uses `0x10`, `0x30`, `0x70`, `0xF0`
+- moving up uses `0xF0`, `0xE0`, `0xC0`, `0x80`
+
+### Phase 2: Branching Or Turning From An Already-Open Center
+
+- Once a cell already has the axis center band open, `slotIndex` no longer means "keep opening from the far boundary".
+- On a turn or branch, the desired result is only to stamp the half-lane on the side being exited toward.
+- If we reused the phase-1 table in this state, a turn could wrongly reopen the opposite half of the cell and create the wrong tee orientation.
+
+Examples:
+
+- from a horizontal cell, turning up should add only `tunnelVerticalStep12`, not replay vertical progress from the bottom edge
+- from a vertical cell, turning right should add only `tunnelHorizontalStep34`, not replay horizontal progress from the left edge
 
 Rule:
 
-- Keep explicit legacy tunnel seed constants separate from joypad direction constants.
+- before the center band exists on that axis, use the per-direction progress table
+- after the center band exists on that axis, stamp only the directional half-lane for the turn or branch
 
 ## Banking Lessons
 
@@ -85,7 +106,6 @@ Confirmed cases:
 
 - `copyLevelMapToRam()` must stay `NONBANKED`
 - `copyTileMapToRam()` must stay `NONBANKED`
-- `legacySeedToTunnel()` also had to become `NONBANKED` because it is called from the fixed-bank level-load path after switching to the level-data bank
 
 Observed failure mode:
 
@@ -98,29 +118,21 @@ Rule:
 
 ## Digging Rendering Lessons
 
-The player digging path should not use `renderMetaCell()`.
-
-Why:
-
-- `renderMetaCell()` redraws the full 2x2 meta-cell and is correct for item restoration and whole-cell redraws
-- digging progression needs partial updates
-- using `renderMetaCell()` while digging caused the whole cell to black out too early
+The current tunnel refactor moved visual ownership back to `renderMetaCell()`.
 
 Current direction:
 
-- `SpritePlayer.c` owns the digging-progress renderer
-- digging updates only the affected 2-tile strip
-- `renderMetaCell()` stays for non-digging redraws such as:
-  - item restoration
-  - bag removal or replacement
-  - gold consumption
-  - whole-cell state refresh
+- digging code is responsible for updating `tunnelMap`
+- `renderMetaCell()` is responsible for turning tunnel bits into the final 2x2 tile quartet
+- both the cell being entered and the cell being exited must be rendered after their tunnel bits are updated
+
+This is simpler than the old partial-strip renderer, but it makes the tunnel-bit semantics more important because wrong bits now redraw the whole meta-cell incorrectly.
 
 ## Thin-Wall Digging Tiles
 
 ## Transition Bug Findings
 
-These findings capture the current bug where Digger leaves stale tiles behind when exiting a cell, especially while turning from a horizontal tunnel into an upward tunnel.
+These findings capture the stale exiting-cell bug that showed up during the refactor, especially while turning from a horizontal tunnel into an upward tunnel. The bug is useful to keep documented because it explains why the progress helper needs separate "fresh progress" and "branch/turn" behavior.
 
 ### Symptom
 
@@ -190,15 +202,15 @@ That is the right conceptual model for fixing player and Hobbin transition updat
 
 Current temporary tunnel visuals use these tiles:
 
-- `leftWall`
-- `rightWall`
-- `topWall`
-- `bottomWall`
+- `tileLeftWall`
+- `tileRightWall`
+- `tileTopWall`
+- `tileBottomWall`
 
 Current behavior:
 
-- vertical digging uses `leftWall` and `rightWall`
-- horizontal digging uses `topWall` and `bottomWall`
+- vertical digging uses `tileLeftWall` and `tileRightWall`
+- horizontal digging uses `tileTopWall` and `tileBottomWall`
 - a strip falls back to `tileBlack` only when that 8x8 tile was already open in the orthogonal direction
 
 This is intentionally a temporary visual rule until more tunnel tiles are available.
@@ -222,7 +234,7 @@ Result:
 
 Enemy movement was sensitive to tunnel interpretation in two separate ways:
 
-1. Legacy seeded corners broke when seed translation used joypad constants instead of explicit legacy seed bits.
+1. Tunnel bits must stay consistent with the actual `VVVVHHHH` digging model and rendered cell shapes.
 2. A too-strong destination-cell rule blocked enemies from entering valid curve cells.
 
 What worked best so far:
@@ -265,7 +277,7 @@ This should be revisited when the final tunnel tile set is available.
 ## Practical Rules For Future Work
 
 1. Keep `itemMap` and `tunnelMap` as the authoritative runtime state.
-2. Do not use joypad direction constants to decode legacy level seed tunnel bits.
-3. Keep fixed-bank level-load helpers `NONBANKED` when they switch ROM banks.
-4. Keep partial digging rendering local to the player path instead of routing it through `renderMetaCell()`.
+2. Keep fixed-bank level-load helpers `NONBANKED` when they switch ROM banks.
+3. For fresh digging, interpret `slotIndex` as progress from the entry boundary toward the center.
+4. For turns and branches on an already-open center band, stamp only the half-lane on the exit side instead of replaying boundary progress.
 5. Treat enemy movement and tunnel rendering as related but not identical concerns; visual progress and movement legality may need different abstractions.
