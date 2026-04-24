@@ -2,6 +2,7 @@
 #include "SpriteManager.h"
 #include "SpriteEnemy.h"
 #include "SpriteBag.h"
+#include "Scroll.h"
 #include "ZGBMain.h"
 #include "StateGame.h"
 
@@ -104,6 +105,67 @@ static UBYTE oppositeDirectionBit(UBYTE direction) {
         default:
             return 0;
     }
+}
+
+static UBYTE absoluteAxisDistance(UBYTE a, UBYTE b) {
+    return a > b ? (UBYTE)(a - b) : (UBYTE)(b - a);
+}
+
+static void demoteReverseDirection(UBYTE priorities[4], UBYTE reverseDirection) {
+    UBYTE swap;
+
+    if (reverseDirection == priorities[0]) {
+        priorities[0] = priorities[1];
+        priorities[1] = priorities[2];
+        priorities[2] = priorities[3];
+        priorities[3] = reverseDirection;
+        return;
+    }
+    if (reverseDirection == priorities[1]) {
+        priorities[1] = priorities[2];
+        priorities[2] = priorities[3];
+        priorities[3] = reverseDirection;
+        return;
+    }
+    if (reverseDirection == priorities[2]) {
+        swap = priorities[2];
+        priorities[2] = priorities[3];
+        priorities[3] = swap;
+    }
+}
+
+static BOOLEAN buildEnemyChasePriorities(UBYTE priorities[4]) {
+    const UBYTE currentDirection = THIS->custom_data[enemy_direction];
+    const UBYTE reverseDirection = oppositeDirectionBit(currentDirection);
+    Sprite* player = scroll_target;
+    UBYTE towardVertical;
+    UBYTE awayVertical;
+    UBYTE towardHorizontal;
+    UBYTE awayHorizontal;
+
+    if (player == 0 || player->marked_for_removal) {
+        return FALSE;
+    }
+
+    towardVertical = player->y < THIS->y ? J_UP : J_DOWN;
+    awayVertical = towardVertical == J_UP ? J_DOWN : J_UP;
+    towardHorizontal = player->x < THIS->x ? J_LEFT : J_RIGHT;
+    awayHorizontal = towardHorizontal == J_LEFT ? J_RIGHT : J_LEFT;
+
+    if (absoluteAxisDistance(player->y, THIS->y) > absoluteAxisDistance(player->x, THIS->x)) {
+        priorities[0] = towardVertical;
+        priorities[1] = towardHorizontal;
+        priorities[2] = awayHorizontal;
+        priorities[3] = awayVertical;
+    } else {
+        priorities[0] = towardHorizontal;
+        priorities[1] = towardVertical;
+        priorities[2] = awayVertical;
+        priorities[3] = awayHorizontal;
+    }
+
+    demoteReverseDirection(priorities, reverseDirection);
+    return TRUE;
 }
 
 static BOOLEAN isEnemyAligned(void) {
@@ -335,35 +397,30 @@ static void updateEnemyTunnelProgress(void) {
 static void chooseEnemyDirection(void) {
     const UBYTE currentDirection = THIS->custom_data[enemy_direction];
     const UBYTE reverseDirection = oppositeDirectionBit(currentDirection);
-    UBYTE priorities[3];
+    UBYTE priorities[4];
+    UBYTE nextDirection = currentDirection;
     UBYTE idx;
 
-    if (enemyCanMove(currentDirection)) {
+    if (!buildEnemyChasePriorities(priorities)) {
         return;
     }
 
-    if (currentDirection == J_LEFT || currentDirection == J_RIGHT) {
-        priorities[0] = J_DOWN;
-        priorities[1] = J_UP;
-    } else {
-        priorities[0] = J_LEFT;
-        priorities[1] = J_RIGHT;
-    }
-    priorities[2] = reverseDirection;
-
-    for (idx = 0; idx != 3; ++idx) {
+    for (idx = 0; idx != 4; ++idx) {
         if (enemyCanMove(priorities[idx])) {
-            THIS->custom_data[enemy_direction] = priorities[idx];
-            THIS->custom_data[enemy_movement_accumulator] = 0;
+            nextDirection = priorities[idx];
             break;
         }
     }
 
-    // idx == 2 means reverse was the only legal fallback, idx == 3 means blocked.
+    if (nextDirection != currentDirection) {
+        THIS->custom_data[enemy_direction] = nextDirection;
+        THIS->custom_data[enemy_movement_accumulator] = 0;
+    }
+
+    // idx == 3 means reverse was the only legal fallback, idx == 4 means blocked.
     if (THIS->custom_data[mode] == nobMode &&
         THIS->custom_data[mode_timer] < 255 &&
-        // idx bigger than 1 means the nob had to change direction or is completely stuck
-        idx > 1) {
+        (idx == 3 || idx == 4 || nextDirection == reverseDirection)) {
         THIS->custom_data[mode_timer]++;
         if (THIS->custom_data[mode_timer] > (10 - difficultyLevel)) {
             setEnemyMode(hobMode);
