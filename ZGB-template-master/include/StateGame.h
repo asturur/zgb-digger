@@ -70,6 +70,10 @@
 #define tileHalfDigRightBottom 35
 #define tileHalfDigTopRight 36
 #define tileHalfDigBottomRight 37
+#define tileBonusTL 38
+#define tileBonusTR 39
+#define tileBonusBL 40
+#define tileBonusBR 41
 
 #define tunnelHorizontalMask 0x0F
 #define tunnelVerticalMask 0xF0
@@ -139,6 +143,7 @@
 #define maxEnemiesOnScreenLevel1 3
 #define maxEnemiesOnScreenLevel2To7 4
 #define maxEnemiesOnScreenLevel8To10 5
+#define bonusSpawnCell (mapMetaWidth - 1)
 
 // useful macros
 #define TILE_FROM_PIXEL(X) ((X) >> tileSizeBitShift)

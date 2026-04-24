@@ -68,6 +68,7 @@ uint8_t enemyCountOnScreen = 0;
 uint8_t enemyMaxOnScreen = 0;
 uint8_t enemyMaxTotal = 0;
 uint8_t enemySpawned = 0;
+static BOOLEAN bonusSpawned = FALSE;
 uint8_t lives = 3;
 
 uint8_t emeraldLoop = EMERALD_DING_QTY;
@@ -856,11 +857,16 @@ void renderMetaCell(UBYTE cell) BANKED {
 			tiles[2] = tileBagBL;
 			tiles[3] = tileBagBR;
 		}
-	} else if (item == itemGold || item == itemBonus) {
+	} else if (item == itemGold) {
 		tiles[0] = goldTL;
 		tiles[1] = goldTR;
 		tiles[2] = goldBL;
 		tiles[3] = goldBR;
+	} else if (item == itemBonus) {
+		tiles[0] = tileBonusTL;
+		tiles[1] = tileBonusTR;
+		tiles[2] = tileBonusBL;
+		tiles[3] = tileBonusBR;
 	} else if (tunnel == 0) {
 		tiles[0] = tileGrass;
 		tiles[1] = tileGrass;
@@ -1324,6 +1330,7 @@ static void resetLevelState(void) {
 	SpriteManagerReset();
 	enemyCountOnScreen = 0;
 	enemySpawned = 0;
+	bonusSpawned = FALSE;
 	spawnTimer = enemyFirstSpawnTimer;
 	isDying = FALSE;
 	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 160);
@@ -1409,6 +1416,18 @@ static void loadLevel(UBYTE level) {
 	spawnTimer = enemyFirstSpawnTimer;
 }
 
+static void spawnBonus(void) {
+	if (bonusSpawned) {
+		return;
+	}
+	bonusSpawned = TRUE;
+	if (itemMap[bonusSpawnCell] != itemNone) {
+		return;
+	}
+	itemMap[bonusSpawnCell] = itemBonus;
+	renderMetaCell(bonusSpawnCell);
+}
+
 void START(void) {
 	NR52_REG = 0x80; //Enables sound, you should always setup this first
 	NR51_REG = 0xFF; //Enables all channels (left and right)
@@ -1453,6 +1472,9 @@ void UPDATE(void) {
 	if (diamonds == 0 || (enemySpawned == enemyMaxTotal && enemyCountOnScreen == 0)) {
 		currentLevel++;
 		loadLevel(currentLevel);
+	}
+	if (!bonusSpawned && enemySpawned == enemyMaxTotal && spawnTimer == 0) {
+		spawnBonus();
 	}
 	if (spawnTimer == 0 && enemyCountOnScreen < enemyMaxOnScreen && enemySpawned < enemyMaxTotal) {
 		enemyCountOnScreen++;
