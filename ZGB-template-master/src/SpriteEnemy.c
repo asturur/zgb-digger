@@ -134,6 +134,15 @@ static void demoteReverseDirection(UBYTE priorities[4], UBYTE reverseDirection) 
     }
 }
 
+static void invertChasePriorities(UBYTE priorities[4]) {
+    UBYTE swap = priorities[0];
+    priorities[0] = priorities[3];
+    priorities[3] = swap;
+    swap = priorities[1];
+    priorities[1] = priorities[2];
+    priorities[2] = swap;
+}
+
 static BOOLEAN buildEnemyChasePriorities(UBYTE priorities[4]) {
     const UBYTE currentDirection = THIS->custom_data[enemy_direction];
     const UBYTE reverseDirection = oppositeDirectionBit(currentDirection);
@@ -164,6 +173,9 @@ static BOOLEAN buildEnemyChasePriorities(UBYTE priorities[4]) {
         priorities[3] = awayHorizontal;
     }
 
+    if (bonusMode) {
+        invertChasePriorities(priorities);
+    }
     demoteReverseDirection(priorities, reverseDirection);
     return TRUE;
 }
@@ -428,6 +440,20 @@ static void chooseEnemyDirection(void) {
     }
 }
 
+static BOOLEAN handleBonusPlayerCollision(void) {
+    if (!bonusMode ||
+        scroll_target == 0 ||
+        scroll_target->marked_for_removal ||
+        !CheckCollision(THIS, scroll_target)) {
+        return FALSE;
+    }
+    if (killEnemy(THIS)) {
+        scoreBonusEnemyKill();
+        return TRUE;
+    }
+    return FALSE;
+}
+
 void START(void) {
     if(_cpu != CGB_TYPE){
         SPRITE_SET_PALETTE(THIS,1);
@@ -524,6 +550,9 @@ void UPDATE(void) {
                 THIS->y++;
             }
         break;
+    }
+    if (handleBonusPlayerCollision()) {
+        return;
     }
     if (THIS->custom_data[mode] == hobMode) {
         updateEnemyTunnelProgress();

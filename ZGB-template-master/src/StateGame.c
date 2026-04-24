@@ -57,6 +57,7 @@ extern uint8_t spawnTimer;
 BOOLEAN infiniteLives = FALSE;
 BOOLEAN invincibility = FALSE;
 BOOLEAN debugMode = TRUE;
+BOOLEAN bonusMode = FALSE;
 
 //
 BOOLEAN paused = FALSE;
@@ -69,6 +70,8 @@ uint8_t enemyMaxOnScreen = 0;
 uint8_t enemyMaxTotal = 0;
 uint8_t enemySpawned = 0;
 static BOOLEAN bonusSpawned = FALSE;
+static uint16_t bonusModeTimer = 0;
+static uint16_t bonusEnemyScore = scoreBonusEnemyBase;
 uint8_t lives = 3;
 
 uint8_t emeraldLoop = EMERALD_DING_QTY;
@@ -88,6 +91,7 @@ uint8_t lastVisitedMetaCell = 0;
 uint8_t isDying = 0;
 static BOOLEAN deathRespawnQueued = FALSE;
 static uint16_t deathRespawnTimer = 0;
+static void startBonusMode(void);
 
 DECLARE_MUSIC(popcorn);
 DECLARE_MUSIC(dirge);
@@ -1166,6 +1170,16 @@ void updateScore(uint16_t addScore) BANKED {
 	paintScore();
 }
 
+void scoreBonusEnemyKill(void) BANKED {
+	updateScore(bonusEnemyScore);
+	if (bonusEnemyScore <= 1600) {
+		bonusEnemyScore <<= 1;
+	}
+	if (enemyMaxTotal < 255) {
+		enemyMaxTotal++;
+	}
+}
+
 static void updateEmeraldSound(void) {
 	if (emeraldScaleTimer > 0) {
 		emeraldScaleTimer--;
@@ -1275,7 +1289,7 @@ void runMapSideEffects(void) BANKED {
 	const UBYTE currentCell = getPlayerLeadingMetaCell();
 	const UBYTE currentItem = itemMap[currentCell];
 	tryActivateBagsAbovePlayer();
-	if (currentCell == lastVisitedMetaCell && currentItem != itemGold) {
+	if (currentCell == lastVisitedMetaCell && currentItem != itemGold && currentItem != itemBonus) {
 		return;
 	}
 	if (currentItem == itemGold) {
@@ -1283,6 +1297,12 @@ void runMapSideEffects(void) BANKED {
 		triggerGoldSound();
 		itemMap[currentCell] = itemNone;
 		renderMetaCell(currentCell);
+	}
+	if (currentItem == itemBonus) {
+		updateScore(scoreBonus);
+		itemMap[currentCell] = itemNone;
+		renderMetaCell(currentCell);
+		startBonusMode();
 	}
 	// we eat a gem
 	if (currentItem == itemEmerald) {
@@ -1331,6 +1351,9 @@ static void resetLevelState(void) {
 	enemyCountOnScreen = 0;
 	enemySpawned = 0;
 	bonusSpawned = FALSE;
+	bonusMode = FALSE;
+	bonusModeTimer = 0;
+	bonusEnemyScore = scoreBonusEnemyBase;
 	spawnTimer = enemyFirstSpawnTimer;
 	isDying = FALSE;
 	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 160);
@@ -1428,6 +1451,30 @@ static void spawnBonus(void) {
 	renderMetaCell(bonusSpawnCell);
 }
 
+static uint16_t getBonusModeFrames(void) {
+	UBYTE bonusTicks = bonusModeBaseTicks - (difficultyLevel * bonusModeDifficultyTickStep);
+	return (uint16_t)bonusTicks * originalTickToGameBoyFrameRatio;
+}
+
+static void startBonusMode(void) {
+	bonusMode = TRUE;
+	bonusModeTimer = getBonusModeFrames();
+	bonusEnemyScore = scoreBonusEnemyBase;
+}
+
+static void updateBonusMode(void) {
+	if (!bonusMode) {
+		return;
+	}
+	if (bonusModeTimer > 0) {
+		bonusModeTimer--;
+	}
+	if (bonusModeTimer == 0) {
+		bonusMode = FALSE;
+		bonusEnemyScore = scoreBonusEnemyBase;
+	}
+}
+
 void START(void) {
 	NR52_REG = 0x80; //Enables sound, you should always setup this first
 	NR51_REG = 0xFF; //Enables all channels (left and right)
@@ -1466,6 +1513,7 @@ void UPDATE(void) {
 		}
 		return;
 	}
+	updateBonusMode();
 	if (spawnTimer > 0) {
 		spawnTimer--;
 	}
@@ -1476,7 +1524,7 @@ void UPDATE(void) {
 	if (!bonusSpawned && enemySpawned == enemyMaxTotal && spawnTimer == 0) {
 		spawnBonus();
 	}
-	if (spawnTimer == 0 && enemyCountOnScreen < enemyMaxOnScreen && enemySpawned < enemyMaxTotal) {
+	if (!bonusMode && spawnTimer == 0 && enemyCountOnScreen < enemyMaxOnScreen && enemySpawned < enemyMaxTotal) {
 		enemyCountOnScreen++;
 		enemySpawned++;
 		SpriteManagerAdd(SpriteEnemy, 232, 16);
