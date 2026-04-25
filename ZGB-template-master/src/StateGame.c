@@ -51,6 +51,8 @@ extern uint8_t fx_00[];
 extern void __mute_mask_fx_00;
 extern uint8_t fx_01[];
 extern void __mute_mask_fx_01;
+extern uint8_t fx_02[];
+extern void __mute_mask_fx_02;
 extern uint8_t spawnTimer;
 
 // options
@@ -75,6 +77,7 @@ static uint16_t bonusModeTimer = 0;
 static uint16_t bonusEnemyScore = scoreBonusEnemyBase;
 static UBYTE bonusPaletteTimer = 0;
 static BOOLEAN bonusPaletteSwapped = FALSE;
+static BOOLEAN bonusMusicStarted = FALSE;
 uint8_t lives = 3;
 
 uint8_t emeraldLoop = EMERALD_DING_QTY;
@@ -96,9 +99,12 @@ static BOOLEAN deathRespawnQueued = FALSE;
 static uint16_t deathRespawnTimer = 0;
 static void startBonusMode(void);
 static void stopBonusMode(void);
+static uint16_t getBonusPaletteFlashFrames(void);
+static void loadLevel(UBYTE level);
 
 DECLARE_MUSIC(popcorn);
 DECLARE_MUSIC(dirge);
+DECLARE_MUSIC(bonus_jingle);
 
 #define META_CELL_TILE_COLUMN(CELL) ((UBYTE)(1 + (((CELL) % mapMetaWidth) << 1)))
 #define META_CELL_TILE_ROW(CELL) ((UBYTE)(2 + (((CELL) / mapMetaWidth) << 1)))
@@ -1367,6 +1373,7 @@ static void resetLevelState(void) {
 	bonusEnemyScore = scoreBonusEnemyBase;
 	bonusPaletteTimer = 0;
 	bonusPaletteSwapped = FALSE;
+	bonusMusicStarted = FALSE;
 	BGP_REG = normalBackgroundPalette;
 	spawnTimer = enemyFirstSpawnTimer;
 	isDying = FALSE;
@@ -1389,6 +1396,12 @@ void playDeathMusic(void) BANKED {
 void queueDeathRespawn(uint16_t frames) BANKED {
 	deathRespawnTimer = frames;
 	deathRespawnQueued = TRUE;
+}
+
+static void loadDebugLevel(UBYTE level) {
+	currentLevel = level;
+	loadLevel(currentLevel);
+	PlayMusic(popcorn, 1);
 }
 
 static void loadLevel(UBYTE level) {
@@ -1454,6 +1467,26 @@ static void loadLevel(UBYTE level) {
 	spawnTimer = enemyFirstSpawnTimer;
 }
 
+static BOOLEAN handleDebugShortcuts(void) {
+	const BOOLEAN selectTicked = KEY_TICKED(J_SELECT);
+	if (!debugMode || !KEY_PRESSED(J_SELECT)) {
+		return FALSE;
+	}
+	if (KEY_TICKED(J_UP) || (selectTicked && KEY_PRESSED(J_UP))) {
+		loadDebugLevel(currentLevel + 1);
+		return TRUE;
+	}
+	if (KEY_TICKED(J_DOWN) || (selectTicked && KEY_PRESSED(J_DOWN))) {
+		loadDebugLevel(currentLevel == 0 ? 8 : currentLevel - 1);
+		return TRUE;
+	}
+	if (selectTicked && !isDying && !bonusMode) {
+		startBonusMode();
+		return TRUE;
+	}
+	return FALSE;
+}
+
 static void spawnBonus(void) {
 	if (bonusSpawned) {
 		return;
@@ -1471,6 +1504,10 @@ static uint16_t getBonusModeFrames(void) {
 	return (uint16_t)bonusTicks * originalTickToGameBoyFrameRatio;
 }
 
+static uint16_t getBonusPaletteFlashFrames(void) {
+	return (uint16_t)bonusPaletteFlashTicks * originalTickToGameBoyFrameRatio;
+}
+
 static void startBonusMode(void) {
 	bonusMode = TRUE;
 	bonusModeTotalFrames = getBonusModeFrames();
@@ -1478,12 +1515,18 @@ static void startBonusMode(void) {
 	bonusEnemyScore = scoreBonusEnemyBase;
 	bonusPaletteTimer = originalTickToGameBoyFrameRatio;
 	bonusPaletteSwapped = FALSE;
+	bonusMusicStarted = FALSE;
 	BGP_REG = normalBackgroundPalette;
 }
 
 static BOOLEAN isBonusPaletteFlashWindow(void) {
-	const uint16_t flashFrames = (uint16_t)bonusPaletteFlashTicks * originalTickToGameBoyFrameRatio;
+	const uint16_t flashFrames = getBonusPaletteFlashFrames();
 	return bonusModeTimer > (bonusModeTotalFrames - flashFrames) || bonusModeTimer <= flashFrames;
+}
+
+static void triggerBonusFlashSound(void) {
+	fx_02[fxNotePos] = bonusPaletteSwapped ? fxBonusFlashLow : fxBonusFlashHigh;
+	ExecuteSFX(CURRENT_BANK, fx_02, SFX_MUTE_MASK(fx_02), SFX_PRIORITY_NORMAL);
 }
 
 static void updateBonusPalette(void) {
@@ -1506,6 +1549,15 @@ static void updateBonusPalette(void) {
 	BGP_REG = bonusPaletteSwapped ?
 		bonusFlashBackgroundPalette :
 		normalBackgroundPalette;
+	triggerBonusFlashSound();
+}
+
+static void updateBonusMusic(void) {
+	if (!bonusMusicStarted &&
+		bonusModeTimer <= (bonusModeTotalFrames - getBonusPaletteFlashFrames())) {
+		PlayMusic(bonus_jingle, 1);
+		bonusMusicStarted = TRUE;
+	}
 }
 
 static void stopBonusMode(void) {
@@ -1515,6 +1567,7 @@ static void stopBonusMode(void) {
 	bonusEnemyScore = scoreBonusEnemyBase;
 	bonusPaletteTimer = 0;
 	bonusPaletteSwapped = FALSE;
+	bonusMusicStarted = FALSE;
 	BGP_REG = normalBackgroundPalette;
 }
 
@@ -1523,11 +1576,13 @@ static void updateBonusMode(void) {
 		return;
 	}
 	updateBonusPalette();
+	updateBonusMusic();
 	if (bonusModeTimer > 0) {
 		bonusModeTimer--;
 	}
 	if (bonusModeTimer == 0) {
 		stopBonusMode();
+		PlayMusic(popcorn, 1);
 	}
 }
 
@@ -1548,6 +1603,9 @@ void START(void) {
 }
 
 void UPDATE(void) {
+	if (handleDebugShortcuts()) {
+		return;
+	}
 	if (KEY_TICKED(J_START) && !isDying) {
 		togglePause();
 	}

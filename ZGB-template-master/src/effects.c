@@ -28,3 +28,10 @@ uint8_t fx_01[] = {
 0x02,0b01000100,0xff,0b00000111
 };
 void AT(0b00000010) __mute_mask_fx_01;
+
+uint8_t fx_02[] = {
+0x12,0b01000100,0x77,0b01111001,0x80,0xf8,0x2c,0x80,
+0x11,0b01011001,0x80,fxBonusFlashHigh,0x87,
+0x02,0b01000100,0xff,0b00000111
+};
+void AT(0b00000010) __mute_mask_fx_02;
