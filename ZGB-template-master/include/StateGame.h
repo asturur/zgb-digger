@@ -6,6 +6,8 @@
 #define scoreEmerald 25
 #define scoreGold 500
 #define scoreKill 250
+#define scoreBonus 1000
+#define scoreBonusEnemyBase 200
 #define maxLives 5
 
 // maps and tiles
@@ -70,6 +72,10 @@
 #define tileHalfDigRightBottom 35
 #define tileHalfDigTopRight 36
 #define tileHalfDigBottomRight 37
+#define tileBonusTL 38
+#define tileBonusTR 39
+#define tileBonusBL 40
+#define tileBonusBR 41
 
 #define tunnelHorizontalMask 0x0F
 #define tunnelVerticalMask 0xF0
@@ -139,6 +145,9 @@
 #define maxEnemiesOnScreenLevel1 3
 #define maxEnemiesOnScreenLevel2To7 4
 #define maxEnemiesOnScreenLevel8To10 5
+#define bonusSpawnCell (mapMetaWidth - 1)
+#define bonusModeBaseTicks 250
+#define bonusModeDifficultyTickStep 20
 
 // useful macros
 #define TILE_FROM_PIXEL(X) ((X) >> tileSizeBitShift)
@@ -148,6 +157,7 @@
 #define MOD_FOR_LARGE_TILE(X) ((X) & 0x0F)
 // utility functions
 void updateScore(uint16_t addScore) BANKED;
+void scoreBonusEnemyKill(void) BANKED;
 UBYTE getMapMetaTileArrayPosition(uint16_t x, uint16_t y) NONBANKED;
 void renderMetaCell(UBYTE cell) BANKED;
 void determineDigTiles(
@@ -158,7 +168,7 @@ void determineDigTiles(
     UBYTE leftCell,
     UBYTE* tiles
 ) BANKED;
-void extendTunnelProgressAt(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex, UBYTE enteringCell) BANKED;
+BOOLEAN extendTunnelProgressAt(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex, UBYTE enteringCell) BANKED;
 void openTunnelConnection(UBYTE fromCell, UBYTE direction) NONBANKED;
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
 void runMapSideEffects(void) BANKED;
@@ -176,3 +186,4 @@ extern uint8_t isDying;
 extern BOOLEAN infiniteLives;
 extern uint8_t lives;
 extern BOOLEAN paused;
+extern BOOLEAN bonusMode;

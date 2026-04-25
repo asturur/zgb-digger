@@ -13,6 +13,8 @@
 #define fxA_4 0xb6
 #define fxB_4 0xbe
 #define fxC_5 0xc1
+#define fxBonusFlashHigh 0x79
+#define fxBonusFlashLow 0x5a
 
 #define EMERALD_DING_GAP_DURATION 13
 #define EMERALD_SCALE_TIMER 60

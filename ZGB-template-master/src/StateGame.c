@@ -51,12 +51,15 @@ extern uint8_t fx_00[];
 extern void __mute_mask_fx_00;
 extern uint8_t fx_01[];
 extern void __mute_mask_fx_01;
+extern uint8_t fx_02[];
+extern void __mute_mask_fx_02;
 extern uint8_t spawnTimer;
 
 // options
 BOOLEAN infiniteLives = FALSE;
 BOOLEAN invincibility = FALSE;
 BOOLEAN debugMode = TRUE;
+BOOLEAN bonusMode = FALSE;
 
 //
 BOOLEAN paused = FALSE;
@@ -68,6 +71,13 @@ uint8_t enemyCountOnScreen = 0;
 uint8_t enemyMaxOnScreen = 0;
 uint8_t enemyMaxTotal = 0;
 uint8_t enemySpawned = 0;
+static BOOLEAN bonusSpawned = FALSE;
+static uint16_t bonusModeTotalFrames = 0;
+static uint16_t bonusModeTimer = 0;
+static uint16_t bonusEnemyScore = scoreBonusEnemyBase;
+static UBYTE bonusPaletteTimer = 0;
+static BOOLEAN bonusPaletteSwapped = FALSE;
+static BOOLEAN bonusMusicStarted = FALSE;
 uint8_t lives = 3;
 
 uint8_t emeraldLoop = EMERALD_DING_QTY;
@@ -87,12 +97,20 @@ uint8_t lastVisitedMetaCell = 0;
 uint8_t isDying = 0;
 static BOOLEAN deathRespawnQueued = FALSE;
 static uint16_t deathRespawnTimer = 0;
+static void startBonusMode(void);
+static void stopBonusMode(void);
+static uint16_t getBonusPaletteFlashFrames(void);
+static void loadLevel(UBYTE level);
 
 DECLARE_MUSIC(popcorn);
 DECLARE_MUSIC(dirge);
+DECLARE_MUSIC(bonus_jingle);
 
 #define META_CELL_TILE_COLUMN(CELL) ((UBYTE)(1 + (((CELL) % mapMetaWidth) << 1)))
 #define META_CELL_TILE_ROW(CELL) ((UBYTE)(2 + (((CELL) / mapMetaWidth) << 1)))
+#define bonusPaletteFlashTicks 20
+#define normalBackgroundPalette DMG_PALETTE(DMG_WHITE, DMG_LITE_GRAY, DMG_DARK_GRAY, DMG_BLACK)
+#define bonusFlashBackgroundPalette DMG_PALETTE(DMG_WHITE, DMG_DARK_GRAY, DMG_LITE_GRAY, DMG_BLACK)
 
 // contains current game map tiles for rendering
 unsigned char tileMap[736];
@@ -146,8 +164,9 @@ static const UBYTE verticalProgressMasksUp[4] = {
 	tunnelVerticalStep4
 };
 
-void extendTunnelProgressAt(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex, UBYTE enteringCell) BANKED {
+BOOLEAN extendTunnelProgressAt(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex, UBYTE enteringCell) BANKED {
 	const UBYTE* progressMasks;
+	const UBYTE previousTunnel = tunnelMap[cell];
 	UBYTE sideMask;
 
 	if (slotIndex > 3) {
@@ -197,8 +216,10 @@ void extendTunnelProgressAt(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex, UB
 			}
 			break;
 		default:
-			return;
+			return FALSE;
 	}
+
+	return tunnelMap[cell] != previousTunnel;
 }
 
 void determineDigTiles(
@@ -856,11 +877,16 @@ void renderMetaCell(UBYTE cell) BANKED {
 			tiles[2] = tileBagBL;
 			tiles[3] = tileBagBR;
 		}
-	} else if (item == itemGold || item == itemBonus) {
+	} else if (item == itemGold) {
 		tiles[0] = goldTL;
 		tiles[1] = goldTR;
 		tiles[2] = goldBL;
 		tiles[3] = goldBR;
+	} else if (item == itemBonus) {
+		tiles[0] = tileBonusTL;
+		tiles[1] = tileBonusTR;
+		tiles[2] = tileBonusBL;
+		tiles[3] = tileBonusBR;
 	} else if (tunnel == 0) {
 		tiles[0] = tileGrass;
 		tiles[1] = tileGrass;
@@ -1160,6 +1186,16 @@ void updateScore(uint16_t addScore) BANKED {
 	paintScore();
 }
 
+void scoreBonusEnemyKill(void) BANKED {
+	updateScore(bonusEnemyScore);
+	if (bonusEnemyScore <= 1600) {
+		bonusEnemyScore <<= 1;
+	}
+	if (enemyMaxTotal < 255) {
+		enemyMaxTotal++;
+	}
+}
+
 static void updateEmeraldSound(void) {
 	if (emeraldScaleTimer > 0) {
 		emeraldScaleTimer--;
@@ -1269,7 +1305,7 @@ void runMapSideEffects(void) BANKED {
 	const UBYTE currentCell = getPlayerLeadingMetaCell();
 	const UBYTE currentItem = itemMap[currentCell];
 	tryActivateBagsAbovePlayer();
-	if (currentCell == lastVisitedMetaCell && currentItem != itemGold) {
+	if (currentCell == lastVisitedMetaCell && currentItem != itemGold && currentItem != itemBonus) {
 		return;
 	}
 	if (currentItem == itemGold) {
@@ -1277,6 +1313,12 @@ void runMapSideEffects(void) BANKED {
 		triggerGoldSound();
 		itemMap[currentCell] = itemNone;
 		renderMetaCell(currentCell);
+	}
+	if (currentItem == itemBonus) {
+		updateScore(scoreBonus);
+		itemMap[currentCell] = itemNone;
+		renderMetaCell(currentCell);
+		startBonusMode();
 	}
 	// we eat a gem
 	if (currentItem == itemEmerald) {
@@ -1324,6 +1366,15 @@ static void resetLevelState(void) {
 	SpriteManagerReset();
 	enemyCountOnScreen = 0;
 	enemySpawned = 0;
+	bonusSpawned = FALSE;
+	bonusMode = FALSE;
+	bonusModeTotalFrames = 0;
+	bonusModeTimer = 0;
+	bonusEnemyScore = scoreBonusEnemyBase;
+	bonusPaletteTimer = 0;
+	bonusPaletteSwapped = FALSE;
+	bonusMusicStarted = FALSE;
+	BGP_REG = normalBackgroundPalette;
 	spawnTimer = enemyFirstSpawnTimer;
 	isDying = FALSE;
 	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 160);
@@ -1334,6 +1385,7 @@ void beginDeathFreeze(void) BANKED {
 	isDying = TRUE;
 	deathRespawnQueued = FALSE;
 	deathRespawnTimer = 0;
+	stopBonusMode();
 	StopMusic;
 }
 
@@ -1344,6 +1396,12 @@ void playDeathMusic(void) BANKED {
 void queueDeathRespawn(uint16_t frames) BANKED {
 	deathRespawnTimer = frames;
 	deathRespawnQueued = TRUE;
+}
+
+static void loadDebugLevel(UBYTE level) {
+	currentLevel = level;
+	loadLevel(currentLevel);
+	PlayMusic(popcorn, 1);
 }
 
 static void loadLevel(UBYTE level) {
@@ -1409,10 +1467,130 @@ static void loadLevel(UBYTE level) {
 	spawnTimer = enemyFirstSpawnTimer;
 }
 
+static BOOLEAN handleDebugShortcuts(void) {
+	const BOOLEAN selectTicked = KEY_TICKED(J_SELECT);
+	if (!debugMode || !KEY_PRESSED(J_SELECT)) {
+		return FALSE;
+	}
+	if (KEY_TICKED(J_UP) || (selectTicked && KEY_PRESSED(J_UP))) {
+		loadDebugLevel(currentLevel + 1);
+		return TRUE;
+	}
+	if (KEY_TICKED(J_DOWN) || (selectTicked && KEY_PRESSED(J_DOWN))) {
+		loadDebugLevel(currentLevel == 0 ? 8 : currentLevel - 1);
+		return TRUE;
+	}
+	if (selectTicked && !isDying && !bonusMode) {
+		startBonusMode();
+		return TRUE;
+	}
+	return FALSE;
+}
+
+static void spawnBonus(void) {
+	if (bonusSpawned) {
+		return;
+	}
+	bonusSpawned = TRUE;
+	if (itemMap[bonusSpawnCell] != itemNone) {
+		return;
+	}
+	itemMap[bonusSpawnCell] = itemBonus;
+	renderMetaCell(bonusSpawnCell);
+}
+
+static uint16_t getBonusModeFrames(void) {
+	UBYTE bonusTicks = bonusModeBaseTicks - (difficultyLevel * bonusModeDifficultyTickStep);
+	return (uint16_t)bonusTicks * originalTickToGameBoyFrameRatio;
+}
+
+static uint16_t getBonusPaletteFlashFrames(void) {
+	return (uint16_t)bonusPaletteFlashTicks * originalTickToGameBoyFrameRatio;
+}
+
+static void startBonusMode(void) {
+	bonusMode = TRUE;
+	bonusModeTotalFrames = getBonusModeFrames();
+	bonusModeTimer = bonusModeTotalFrames;
+	bonusEnemyScore = scoreBonusEnemyBase;
+	bonusPaletteTimer = originalTickToGameBoyFrameRatio;
+	bonusPaletteSwapped = FALSE;
+	bonusMusicStarted = FALSE;
+	BGP_REG = normalBackgroundPalette;
+}
+
+static BOOLEAN isBonusPaletteFlashWindow(void) {
+	const uint16_t flashFrames = getBonusPaletteFlashFrames();
+	return bonusModeTimer > (bonusModeTotalFrames - flashFrames) || bonusModeTimer <= flashFrames;
+}
+
+static void triggerBonusFlashSound(void) {
+	fx_02[fxNotePos] = bonusPaletteSwapped ? fxBonusFlashLow : fxBonusFlashHigh;
+	ExecuteSFX(CURRENT_BANK, fx_02, SFX_MUTE_MASK(fx_02), SFX_PRIORITY_NORMAL);
+}
+
+static void updateBonusPalette(void) {
+	if (!isBonusPaletteFlashWindow()) {
+		bonusPaletteTimer = originalTickToGameBoyFrameRatio;
+		if (!bonusPaletteSwapped) {
+			bonusPaletteSwapped = TRUE;
+			BGP_REG = bonusFlashBackgroundPalette;
+		}
+		return;
+	}
+	if (bonusPaletteTimer > 0) {
+		bonusPaletteTimer--;
+	}
+	if (bonusPaletteTimer != 0) {
+		return;
+	}
+	bonusPaletteTimer = originalTickToGameBoyFrameRatio;
+	bonusPaletteSwapped = !bonusPaletteSwapped;
+	BGP_REG = bonusPaletteSwapped ?
+		bonusFlashBackgroundPalette :
+		normalBackgroundPalette;
+	triggerBonusFlashSound();
+}
+
+static void updateBonusMusic(void) {
+	if (!bonusMusicStarted &&
+		bonusModeTimer <= (bonusModeTotalFrames - getBonusPaletteFlashFrames())) {
+		PlayMusic(bonus_jingle, 1);
+		bonusMusicStarted = TRUE;
+	}
+}
+
+static void stopBonusMode(void) {
+	bonusMode = FALSE;
+	bonusModeTotalFrames = 0;
+	bonusModeTimer = 0;
+	bonusEnemyScore = scoreBonusEnemyBase;
+	bonusPaletteTimer = 0;
+	bonusPaletteSwapped = FALSE;
+	bonusMusicStarted = FALSE;
+	BGP_REG = normalBackgroundPalette;
+}
+
+static void updateBonusMode(void) {
+	if (!bonusMode) {
+		return;
+	}
+	updateBonusPalette();
+	updateBonusMusic();
+	if (bonusModeTimer > 0) {
+		bonusModeTimer--;
+	}
+	if (bonusModeTimer == 0) {
+		stopBonusMode();
+		PlayMusic(popcorn, 1);
+	}
+}
+
 void START(void) {
 	NR52_REG = 0x80; //Enables sound, you should always setup this first
 	NR51_REG = 0xFF; //Enables all channels (left and right)
 	NR50_REG = 0x77; //Max volume
+	BGP_REG = normalBackgroundPalette;
 	OBP0_REG = DMG_PALETTE(DMG_WHITE, DMG_LITE_GRAY, DMG_DARK_GRAY, DMG_BLACK); // normal palette
 	OBP1_REG = DMG_PALETTE(DMG_BLACK, DMG_WHITE, DMG_LITE_GRAY, DMG_DARK_GRAY); // bright palette
 	lives = 3;
@@ -1425,6 +1603,9 @@ void START(void) {
 }
 
 void UPDATE(void) {
+	if (handleDebugShortcuts()) {
+		return;
+	}
 	if (KEY_TICKED(J_START) && !isDying) {
 		togglePause();
 	}
@@ -1447,6 +1628,7 @@ void UPDATE(void) {
 		}
 		return;
 	}
+	updateBonusMode();
 	if (spawnTimer > 0) {
 		spawnTimer--;
 	}
@@ -1454,7 +1636,10 @@ void UPDATE(void) {
 		currentLevel++;
 		loadLevel(currentLevel);
 	}
-	if (spawnTimer == 0 && enemyCountOnScreen < enemyMaxOnScreen && enemySpawned < enemyMaxTotal) {
+	if (!bonusSpawned && enemySpawned == enemyMaxTotal && spawnTimer == 0) {
+		spawnBonus();
+	}
+	if (!bonusMode && spawnTimer == 0 && enemyCountOnScreen < enemyMaxOnScreen && enemySpawned < enemyMaxTotal) {
 		enemyCountOnScreen++;
 		enemySpawned++;
 		SpriteManagerAdd(SpriteEnemy, 232, 16);
