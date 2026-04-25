@@ -70,8 +70,11 @@ uint8_t enemyMaxOnScreen = 0;
 uint8_t enemyMaxTotal = 0;
 uint8_t enemySpawned = 0;
 static BOOLEAN bonusSpawned = FALSE;
+static uint16_t bonusModeTotalFrames = 0;
 static uint16_t bonusModeTimer = 0;
 static uint16_t bonusEnemyScore = scoreBonusEnemyBase;
+static UBYTE bonusPaletteTimer = 0;
+static BOOLEAN bonusPaletteSwapped = FALSE;
 uint8_t lives = 3;
 
 uint8_t emeraldLoop = EMERALD_DING_QTY;
@@ -92,12 +95,16 @@ uint8_t isDying = 0;
 static BOOLEAN deathRespawnQueued = FALSE;
 static uint16_t deathRespawnTimer = 0;
 static void startBonusMode(void);
+static void stopBonusMode(void);
 
 DECLARE_MUSIC(popcorn);
 DECLARE_MUSIC(dirge);
 
 #define META_CELL_TILE_COLUMN(CELL) ((UBYTE)(1 + (((CELL) % mapMetaWidth) << 1)))
 #define META_CELL_TILE_ROW(CELL) ((UBYTE)(2 + (((CELL) / mapMetaWidth) << 1)))
+#define bonusPaletteFlashTicks 20
+#define normalBackgroundPalette DMG_PALETTE(DMG_WHITE, DMG_LITE_GRAY, DMG_DARK_GRAY, DMG_BLACK)
+#define bonusFlashBackgroundPalette DMG_PALETTE(DMG_WHITE, DMG_DARK_GRAY, DMG_LITE_GRAY, DMG_BLACK)
 
 // contains current game map tiles for rendering
 unsigned char tileMap[736];
@@ -151,8 +158,9 @@ static const UBYTE verticalProgressMasksUp[4] = {
 	tunnelVerticalStep4
 };
 
-void extendTunnelProgressAt(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex, UBYTE enteringCell) BANKED {
+BOOLEAN extendTunnelProgressAt(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex, UBYTE enteringCell) BANKED {
 	const UBYTE* progressMasks;
+	const UBYTE previousTunnel = tunnelMap[cell];
 	UBYTE sideMask;
 
 	if (slotIndex > 3) {
@@ -202,8 +210,10 @@ void extendTunnelProgressAt(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex, UB
 			}
 			break;
 		default:
-			return;
+			return FALSE;
 	}
+
+	return tunnelMap[cell] != previousTunnel;
 }
 
 void determineDigTiles(
@@ -1352,8 +1362,12 @@ static void resetLevelState(void) {
 	enemySpawned = 0;
 	bonusSpawned = FALSE;
 	bonusMode = FALSE;
+	bonusModeTotalFrames = 0;
 	bonusModeTimer = 0;
 	bonusEnemyScore = scoreBonusEnemyBase;
+	bonusPaletteTimer = 0;
+	bonusPaletteSwapped = FALSE;
+	BGP_REG = normalBackgroundPalette;
 	spawnTimer = enemyFirstSpawnTimer;
 	isDying = FALSE;
 	scroll_target = SpriteManagerAdd(SpritePlayer, 136, 160);
@@ -1364,6 +1378,7 @@ void beginDeathFreeze(void) BANKED {
 	isDying = TRUE;
 	deathRespawnQueued = FALSE;
 	deathRespawnTimer = 0;
+	stopBonusMode();
 	StopMusic;
 }
 
@@ -1458,20 +1473,61 @@ static uint16_t getBonusModeFrames(void) {
 
 static void startBonusMode(void) {
 	bonusMode = TRUE;
-	bonusModeTimer = getBonusModeFrames();
+	bonusModeTotalFrames = getBonusModeFrames();
+	bonusModeTimer = bonusModeTotalFrames;
 	bonusEnemyScore = scoreBonusEnemyBase;
+	bonusPaletteTimer = originalTickToGameBoyFrameRatio;
+	bonusPaletteSwapped = FALSE;
+	BGP_REG = normalBackgroundPalette;
+}
+
+static BOOLEAN isBonusPaletteFlashWindow(void) {
+	const uint16_t flashFrames = (uint16_t)bonusPaletteFlashTicks * originalTickToGameBoyFrameRatio;
+	return bonusModeTimer > (bonusModeTotalFrames - flashFrames) || bonusModeTimer <= flashFrames;
+}
+
+static void updateBonusPalette(void) {
+	if (!isBonusPaletteFlashWindow()) {
+		bonusPaletteTimer = originalTickToGameBoyFrameRatio;
+		if (!bonusPaletteSwapped) {
+			bonusPaletteSwapped = TRUE;
+			BGP_REG = bonusFlashBackgroundPalette;
+		}
+		return;
+	}
+	if (bonusPaletteTimer > 0) {
+		bonusPaletteTimer--;
+	}
+	if (bonusPaletteTimer != 0) {
+		return;
+	}
+	bonusPaletteTimer = originalTickToGameBoyFrameRatio;
+	bonusPaletteSwapped = !bonusPaletteSwapped;
+	BGP_REG = bonusPaletteSwapped ?
+		bonusFlashBackgroundPalette :
+		normalBackgroundPalette;
+}
+
+static void stopBonusMode(void) {
+	bonusMode = FALSE;
+	bonusModeTotalFrames = 0;
+	bonusModeTimer = 0;
+	bonusEnemyScore = scoreBonusEnemyBase;
+	bonusPaletteTimer = 0;
+	bonusPaletteSwapped = FALSE;
+	BGP_REG = normalBackgroundPalette;
 }
 
 static void updateBonusMode(void) {
 	if (!bonusMode) {
 		return;
 	}
+	updateBonusPalette();
 	if (bonusModeTimer > 0) {
 		bonusModeTimer--;
 	}
 	if (bonusModeTimer == 0) {
-		bonusMode = FALSE;
-		bonusEnemyScore = scoreBonusEnemyBase;
+		stopBonusMode();
 	}
 }
 
@@ -1479,6 +1535,7 @@ void START(void) {
 	NR52_REG = 0x80; //Enables sound, you should always setup this first
 	NR51_REG = 0xFF; //Enables all channels (left and right)
 	NR50_REG = 0x77; //Max volume
+	BGP_REG = normalBackgroundPalette;
 	OBP0_REG = DMG_PALETTE(DMG_WHITE, DMG_LITE_GRAY, DMG_DARK_GRAY, DMG_BLACK); // normal palette
 	OBP1_REG = DMG_PALETTE(DMG_BLACK, DMG_WHITE, DMG_LITE_GRAY, DMG_DARK_GRAY); // bright palette
 	lives = 3;

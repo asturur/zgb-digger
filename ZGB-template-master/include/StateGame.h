@@ -168,7 +168,7 @@ void determineDigTiles(
     UBYTE leftCell,
     UBYTE* tiles
 ) BANKED;
-void extendTunnelProgressAt(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex, UBYTE enteringCell) BANKED;
+BOOLEAN extendTunnelProgressAt(UBYTE cell, UBYTE moveDirection, UBYTE slotIndex, UBYTE enteringCell) BANKED;
 void openTunnelConnection(UBYTE fromCell, UBYTE direction) NONBANKED;
 void updateVideoMemAndMap(UBYTE column, UBYTE row, UBYTE type) NONBANKED;
 void runMapSideEffects(void) BANKED;
