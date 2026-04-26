@@ -8,6 +8,8 @@
 #include "ZGBMain.h"
 #include "SpriteEnemy.h"
 #include "SpritePlayer.h"
+#include "savegame.h"
+#include "StateNameEntry.h"
 
 #define CENTER(len) ((SCREEN_TILES_W - (len)) >> 1)
 #define startRight 11
@@ -55,17 +57,20 @@ void START(void) {
 	INIT_FONT(font, PRINT_BKG);
 
 	PRINT(startLeft, 3, " HI SCORES");
-	PRINT(startLeft, 4, "... 000000");
-	PRINT(startLeft, 5, "... 000000");
-	PRINT(startLeft, 6, "... 000000");
-	PRINT(startLeft, 7, "... 000000");
-	PRINT(startLeft, 8, "... 000000");
-	PRINT(startLeft, 9, "... 000000");
-	PRINT(startLeft, 10, "... 000000");
-	PRINT(startLeft, 11, "... 000000");
-	PRINT(startLeft, 12, "... 000000");
-	PRINT(startLeft, 13, "... 000000");
-    PRINT(startLeft, 14, "... 000000");
+
+	ENABLE_RAM;
+
+	for (uint8_t i = 0; i < 10; i++) {
+		if (savegame.hiscores[i].initials[0] != 0xFF && savegame.hiscores[i].initials[3] != 0xFF) {
+			PRINT(startLeft, i + 5, "%s", savegame.hiscores[i].initials);
+			printScoreOnScreen(savegame.hiscores[i].score, startLeft + 4, i + 5);
+		} else {
+			PRINT(startLeft, i + 5, "...      0");
+		}
+	}
+
+
+	DISABLE_RAM;
 
 	// PRINT(11, 10, "  GOLD");
 	// PRINT(11, 12, "  EMERALD");

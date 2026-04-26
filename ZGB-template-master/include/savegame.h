@@ -7,7 +7,7 @@
 
 typedef struct {
   uint8_t initials[4];
-  uint16_t score;
+  uint32_t score;
 } HiScore;
 
 typedef struct {
