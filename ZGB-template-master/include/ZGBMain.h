@@ -7,6 +7,7 @@ _STATE(StateMenu)\
 _STATE(StateScoreboard)\
 _STATE(StateOptions)\
 _STATE(StateGame)\
+_STATE(StateNameEntry)\
 STATE_DEF_END
 
 #define SPRITES \

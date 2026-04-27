@@ -58,14 +58,14 @@ extern uint8_t spawnTimer;
 // options
 BOOLEAN infiniteLives = FALSE;
 BOOLEAN invincibility = FALSE;
-BOOLEAN debugMode = TRUE;
+BOOLEAN debugMode = FALSE;
 BOOLEAN bonusMode = FALSE;
 
 //
 BOOLEAN paused = FALSE;
 UBYTE currentLevel = 0;
 UBYTE difficultyLevel = 0;
-uint16_t score = 0;
+uint32_t score = 0;
 UBYTE diamonds = 0;
 uint8_t enemyCountOnScreen = 0;
 uint8_t enemyMaxOnScreen = 0;
@@ -988,7 +988,7 @@ static void paintScore(void) {
 	// then >> 2 will give us the hundreds.
 	// then we need to loop again
 	uint8_t mod = 0;
-	uint16_t lastScore = score;
+	uint32_t lastScore = score;
 	for (uint8_t i = 6; i > 0; i--) {
 		mod = lastScore % 10;
 		UPDATE_HUD_TILE(i, 0, scoreFontOffset + mod);
@@ -1619,7 +1619,7 @@ void UPDATE(void) {
 			}
 			if (deathRespawnTimer == 0) {
 				if (lives == 0) {
-					SetState(StateGame);
+					SetState(StateNameEntry);
 				} else {
 					resetLevelState();
 					PlayMusic(popcorn, 1);
