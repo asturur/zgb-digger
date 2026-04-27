@@ -58,7 +58,7 @@ extern uint8_t spawnTimer;
 // options
 BOOLEAN infiniteLives = FALSE;
 BOOLEAN invincibility = FALSE;
-BOOLEAN debugMode = TRUE;
+BOOLEAN debugMode = FALSE;
 BOOLEAN bonusMode = FALSE;
 
 //
@@ -1619,7 +1619,7 @@ void UPDATE(void) {
 			}
 			if (deathRespawnTimer == 0) {
 				if (lives == 0) {
-					SetState(StateGame);
+					SetState(StateNameEntry);
 				} else {
 					resetLevelState();
 					PlayMusic(popcorn, 1);

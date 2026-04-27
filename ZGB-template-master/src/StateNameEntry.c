@@ -11,6 +11,7 @@
 #define CENTER(len) ((SCREEN_TILES_W - (len)) >> 1)
 #define usedLetters 43
 #define screenFlashTimerValue 10
+#define numSavedHiscores 10
 
 IMPORT_TILES(font);
 
@@ -24,6 +25,7 @@ static BOOLEAN charVisible = TRUE;
 uint8_t initials[4] = {'-', '-', '-', 0};
 uint8_t alphaIndex[3] = {0 ,0 ,0};
 uint8_t alphabet[usedLetters] = {'-', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '!', '(', ')', '.', ':', '?'};
+uint8_t newSpot = 10;
 
 static void printInitials() {
     uint8_t initial1[2] = {currentIndex == 0 && charVisible == FALSE ? ' ' :  initials[0], 0};
@@ -51,8 +53,19 @@ void printScoreOnScreen(uint32_t scoreToPrint, uint8_t posX, uint8_t posY) BANKE
 
 void START(void) {
 
+    ENABLE_RAM;
+    for (uint8_t i = 0; i < numSavedHiscores; i++) {
+        if (savegame.hiscores[i].score == UINT32_MAX || savegame.hiscores[i].score < score) {
+            newSpot = i;
+            break;
+        }
+    }
+    DISABLE_RAM;
 
-    score = 123456;
+    if (newSpot > numSavedHiscores - 1) {
+        SetState(StateMenu);
+        return;
+    }
 
     move_bkg(0, 0);
 	INIT_FONT(font, PRINT_BKG);
@@ -126,8 +139,12 @@ void UPDATE(void) {
 	}
 	if(KEY_TICKED(J_A) && currentIndex == 2) {
         ENABLE_RAM;
-        savegame.hiscores[0].score = score;
-        memcpy(&savegame.hiscores[0].initials, &initials, 4);
+        for (uint8_t i = numSavedHiscores - 2; i >= newSpot; i--) {
+            savegame.hiscores[i+1].score = savegame.hiscores[i].score;
+            memcpy(&savegame.hiscores[i+1].initials, &savegame.hiscores[i].initials, 4);
+        }
+        savegame.hiscores[newSpot].score = score;
+        memcpy(&savegame.hiscores[newSpot].initials, &initials, 4);
         DISABLE_RAM;
         // end insert
         SetState(StateScoreboard);
